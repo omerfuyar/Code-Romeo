@@ -19,12 +19,12 @@
 
 #### Linux using APT
 ``` bash
-sudo apt install 
+sudo apt install cmake clang ninja-build
 ```
 
 #### MacOS using Homebrew
 ``` bash
-brew install 
+brew install cmake clang ninja
 ```
 
 ### Windows using vcpkg
@@ -33,11 +33,8 @@ Download and install `CMake` from the [official site](https://cmake.org/download
 Download and install `LLVM` from the [official site](https://releases.llvm.org/download.html) (Enable the option "Add LLVM to system PATH" during installation)
 
 ``` powershell
-git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-C:\vcpkg\bootstrap-vcpkg.bat
-C:\vcpkg\vcpkg integrate install
-C:\vcpkg\vcpkg install raylib
 winget install -e --id Ninja-build.Ninja
+
 ```
 
 ## Build
@@ -46,7 +43,8 @@ winget install -e --id Ninja-build.Ninja
 ``` bash
 mkdir build
 cd build
-
+cmake .. -G Ninja -DCMAKE_C_COMPILER=clang
+cmake --build .
 ```
 
 ### Windows
