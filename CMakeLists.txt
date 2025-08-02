@@ -16,10 +16,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 message(STATUS "Using C compiler: ${CMAKE_C_COMPILER}")
 
 # Set compiler flags
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wshadow -Werror -Wnull-dereference -Wunused-result -fstack-protector-strong -fno-common")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall")
-
-# -fsanitize=undefined -fsanitize=address
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wshadow -Wpedantic -Wconversion -Werror -Wnull-dereference -Wunused-result -Wno-gnu-zero-variadic-macro-arguments -Wno-int-conversion -fstack-protector-strong -fno-common")
+# -fsanitize=address -fsanitize=undefined
 
 # Build directory setup
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -47,5 +45,5 @@ if(UNIX)
     target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 elseif(WIN32)
     find_package(raylib CONFIG REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib winmm gdi32 opengl32 user32 kernel32 msvcrt shell32)
 endif()
