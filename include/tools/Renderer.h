@@ -1,4 +1,6 @@
 #pragma once
 #include <Global.h>
 
-void Renderer_RenderObjects();
+typedef struct Object Object;
+
+void Renderer_RenderObjects(Object *object);

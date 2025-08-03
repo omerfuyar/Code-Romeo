@@ -1,6 +1,11 @@
 #include "tools/Renderer.h"
-#include <raylib.h>
 
-void Renderer_RenderObjects()
+typedef struct Object
 {
+    int foo;
+} Object;
+
+void Renderer_RenderObjects(Object *object)
+{
+    DebugAssertPointerNullCheck(object);
 }

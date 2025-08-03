@@ -3,7 +3,7 @@
 
 String *String_Create(char *string)
 {
-    DebugAssertPointerNullCheck(string, "string");
+    DebugAssertPointerNullCheck(string);
 
     String *createdString = (String *)malloc(sizeof(String));
 
@@ -17,7 +17,7 @@ String *String_Create(char *string)
 
 String *String_CreateSafe(char *string, size_t stringLength)
 {
-    DebugAssertPointerNullCheck(string, "string");
+    DebugAssertPointerNullCheck(string);
 
     String *createdString = (String *)malloc(sizeof(String));
 
@@ -31,7 +31,7 @@ String *String_CreateSafe(char *string, size_t stringLength)
 
 void String_Destroy(String *string)
 {
-    DebugAssertPointerNullCheck(string, "string");
+    DebugAssertPointerNullCheck(string);
 
     string->length = 0;
 
@@ -44,33 +44,29 @@ void String_Destroy(String *string)
 
 void String_Change(String *string, char *newString)
 {
-    DebugAssertPointerNullCheck(string, "string");
-    DebugAssertPointerNullCheck(newString, "newString");
+    DebugAssertPointerNullCheck(string);
+    DebugAssertPointerNullCheck(newString);
 
     string->length = strlen(newString);
     string->characters = (char *)realloc(string->characters, string->length);
 
     strcpy_s(string->characters, string->length * sizeof(char), newString);
-
-    return string;
 }
 
 void String_ChangeSafe(String *string, char *newString, size_t newStringLength)
 {
-    DebugAssertPointerNullCheck(string, "string");
-    DebugAssertPointerNullCheck(newString, "newString");
+    DebugAssertPointerNullCheck(string);
+    DebugAssertPointerNullCheck(newString);
 
     string->length = newStringLength;
     string->characters = (char *)realloc(string->characters, string->length);
 
     strcpy_s(string->characters, string->length * sizeof(char), newString);
-
-    return string;
 }
 
 char String_GetChar(String *string, size_t index)
 {
-    DebugAssertPointerNullCheck(string, "string");
+    DebugAssertPointerNullCheck(string);
     DebugAssert(index <= string->length, "Char index to get can not be less than the string length");
 
     return string->characters[index];

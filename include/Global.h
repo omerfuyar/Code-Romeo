@@ -125,6 +125,6 @@ void Terminate(int exitCode);
     } while (false)
 #endif
 
-#define DebugAssertPointerNullCheck(ptr, ptrName) DebugAssert(ptr != NULL, "Null pointer passed as parameter. pointer '%s' cannot be NULL.", ptrName)
+#define DebugAssertPointerNullCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
 
 #pragma endregion Debug

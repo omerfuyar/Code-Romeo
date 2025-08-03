@@ -3,7 +3,6 @@
 * This project is a cross platform project to try out some new rendering libraries, techniques and design patterns in the C programming language.
 * I once tried out making a game engine in C++ but it was too complex and I wasn't knowing what I was doing. So I decided to try something similar in C. (I also don't like C++. I find it pretty powerful but too complex for my taste. Its also more fun to make your own stuff in C.)
 * This project do not have a structure like my previous projects (Core and App, Engine and Game). Instead I have focused on mostly doing one thing, just a game or whatever it is.
-* 
 
 ## Dependencies
 
@@ -11,30 +10,33 @@
 
 ### `CMake` for build system
 
+### `Ninja` for the build system generator
+
 ### `Clang` for the preferred compiler
 
-### `Raylib` for renderer and media management
+### `OpenGL and GLAD` for OpenGL rendering (included in the project)
+
+### `GLFW` for media and OpenGL context management (included in the project)
 
 ### Commands to install all
 
-#### Linux using APT
+#### Linux
 ``` bash
 sudo apt install cmake clang ninja-build
 ```
 
-#### MacOS using Homebrew
+#### MacOS
 ``` bash
 brew install cmake clang ninja
 ```
 
-### Windows using vcpkg
+### Windows
 Download and install `CMake` from the [official site](https://cmake.org/download/) (in binary distributions section)
 
 Download and install `LLVM` from the [official site](https://releases.llvm.org/download.html) (Enable the option "Add LLVM to system PATH" during installation)
 
 ``` powershell
 winget install -e --id Ninja-build.Ninja
-
 ```
 
 ## Build
@@ -51,7 +53,7 @@ cmake --build .
 ``` powershell
 mkdir build
 cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang
+cmake .. -G "Ninja" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang
 cmake --build .
 ```
 
