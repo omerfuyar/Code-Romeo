@@ -2,8 +2,20 @@
 
 #include "Global.h"
 
+/// @brief A node in the linked list.
+typedef struct ListLinkedNode
+{
+    void *data;
+    struct ListLinkedNode *next;
+} ListLinkedNode;
+
 /// @brief A dynamic linked list implementation. Can store any type of data. Copies passed items to its own property. Shouldn't be used without helper functions.
-typedef struct ListLinked ListLinked;
+typedef struct ListLinked
+{
+    ListLinkedNode *head;
+    size_t size;
+    size_t sizeOfItem;
+} ListLinked;
 
 /// @brief Creator function for ListLinked.
 /// @param sizeOfItem Size of the item type to store in the list.

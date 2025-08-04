@@ -1,22 +1,6 @@
 #include "utilities/ListLinked.h"
 #include <string.h>
 
-#pragma region Source Only
-
-/// @brief A node in the linked list.
-typedef struct ListLinkedNode
-{
-    void *data;
-    struct ListLinkedNode *next;
-} ListLinkedNode;
-
-typedef struct ListLinked
-{
-    ListLinkedNode *head;
-    size_t size;
-    size_t sizeOfItem;
-} ListLinked;
-
 /// @brief Creator function for ListLinkedNode. Uses memcpy to copy the data.
 /// @param sizeOfData Size of the data to be stored in the node.
 /// @param data Pointer to the data to store inside the node.
@@ -24,10 +8,10 @@ typedef struct ListLinked
 ListLinkedNode *ListLinkedNode_Create(size_t sizeOfData, const void *data)
 {
     ListLinkedNode *node = (ListLinkedNode *)malloc(sizeof(ListLinkedNode));
-    DebugAssertPointerNullCheck(node);
+    DebugAssertNullPointerCheck(node);
 
     node->data = (void *)malloc(sizeOfData);
-    DebugAssertPointerNullCheck(node->data);
+    DebugAssertNullPointerCheck(node->data);
 
     memcpy(node->data, data, sizeOfData);
 
@@ -40,7 +24,7 @@ ListLinkedNode *ListLinkedNode_Create(size_t sizeOfData, const void *data)
 /// @param node Pointer to the ListLinkedNode to destroy.
 void ListLinkedNode_Destroy(ListLinkedNode *node)
 {
-    DebugAssertPointerNullCheck(node);
+    DebugAssertNullPointerCheck(node);
 
     if (node->data != NULL)
     {
@@ -57,7 +41,7 @@ void ListLinkedNode_Destroy(ListLinkedNode *node)
 /// @param node Pointer to the head node of the linked list to destroy.
 void ListLinkedNode_DestroyAll(ListLinkedNode *node)
 {
-    DebugAssertPointerNullCheck(node);
+    DebugAssertNullPointerCheck(node);
 
     if (node->next != NULL)
     {
@@ -114,12 +98,10 @@ long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, size_t sizeOfItem
     }
 }
 
-#pragma endregion Source Only
-
 ListLinked *ListLinked_Create(size_t sizeOfItem)
 {
     ListLinked *list = (ListLinked *)malloc(sizeof(ListLinked));
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     list->size = 0;
     list->sizeOfItem = sizeOfItem;
@@ -131,7 +113,7 @@ ListLinked *ListLinked_Create(size_t sizeOfItem)
 
 void ListLinked_Destroy(ListLinked *list)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     if (list->head != NULL)
     {
@@ -148,7 +130,7 @@ void ListLinked_Destroy(ListLinked *list)
 
 void *ListLinked_Get(ListLinked *list, size_t index)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
     DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
 
     ListLinkedNode *currentNode = list->head;
@@ -163,7 +145,7 @@ void *ListLinked_Get(ListLinked *list, size_t index)
 
 void ListLinked_Set(ListLinked *list, size_t index, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
     DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
 
     ListLinkedNode *nodeToSet = ListLinked_Get(list, index);
@@ -172,7 +154,7 @@ void ListLinked_Set(ListLinked *list, size_t index, const void *item)
 
 void ListLinked_Add(ListLinked *list, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     ListLinkedNode *newNode = ListLinkedNode_Create(list->sizeOfItem, item);
 
@@ -190,7 +172,7 @@ void ListLinked_Add(ListLinked *list, const void *item)
 
 void ListLinked_RemoveAtIndex(ListLinked *list, size_t index)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
     DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
 
     if (index == 0)
@@ -210,36 +192,36 @@ void ListLinked_RemoveAtIndex(ListLinked *list, size_t index)
 
 void ListLinked_RemoveItem(ListLinked *list, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     ListLinked_RemoveAtIndex(list, (size_t)ListLinked_IndexOf(list, item));
 }
 
 void ListLinked_Clear(ListLinked *list)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     ListLinkedNode_DestroyAll(list->head);
 }
 
 long long ListLinked_IndexOf(ListLinked *list, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
-    DebugAssertPointerNullCheck(list->head);
+    DebugAssertNullPointerCheck(list);
+    DebugAssertNullPointerCheck(list->head);
 
     return ListLinkedNode_GetIndexIfMatch(list->head, list->sizeOfItem, item, 0);
 }
 
 size_t ListLinked_GetSize(ListLinked *list)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     return list->size;
 }
 
 size_t ListLinked_GetSizeOfItem(ListLinked *list)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(list);
 
     return list->sizeOfItem;
 }

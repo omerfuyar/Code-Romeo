@@ -19,7 +19,9 @@
 #include <stdint.h>
 #include <limits.h>
 
-#pragma region Constants
+#define TEMP_TITLE_BUFFER_SIZE 128
+
+#pragma region Math Constants
 // These constants have a suffix of '_M' to not conflict with any system variables or macros.
 
 // The value of Pi
@@ -48,6 +50,30 @@
 
 #pragma endregion Constants
 
+#pragma region Functions
+
+/// @brief Logs a debug message to the debug log file.
+/// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
+/// @param format The format string for the log message, similar to printf.
+/// @param ... The arguments for the format string.
+/// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
+void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...);
+
+/// @brief Terminates and closes necessary utilities and exits the program.
+/// @param exitCode The code to pass to exit() function.
+void Terminate(int exitCode);
+
+/// @brief Allocates memory from the arena. Then must be freed with ArenaFree. Does not uses debug functions to leave it to the user. Must be used only one at the same time.
+/// @param size The size of the memory block to allocate.
+/// @return A pointer to the allocated memory, or NULL if the allocation failed.
+void *ArenaAllocate(size_t size);
+
+/// @brief Frees memory allocated from the arena.
+/// @param ptr A pointer to the memory block to free.
+void ArenaFree(void *ptr);
+
+#pragma endregion Functions
+
 #pragma region Debug Log
 
 #define DEBUG_INFO_ENABLED true
@@ -62,17 +88,6 @@
 
 #define DEBUG_TIME_FORMAT "%H:%M:%S"
 #define DEBUG_FILE_NAME "debug.log"
-
-/// @brief Logs a debug message to the debug log file.
-/// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
-/// @param format The format string for the log message, similar to printf.
-/// @param ... The arguments for the format string.
-/// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
-void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...);
-
-/// @brief Terminates and closes necessary utilities and exits the program.
-/// @param exitCode The code to pass to _exit() function.
-void Terminate(int exitCode);
 
 #if DEBUG_INFO_ENABLED == false
 #define DebugInfo(format, ...)
@@ -125,6 +140,6 @@ void Terminate(int exitCode);
     } while (false)
 #endif
 
-#define DebugAssertPointerNullCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
 
 #pragma endregion Debug

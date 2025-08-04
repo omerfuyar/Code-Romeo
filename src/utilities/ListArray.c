@@ -1,130 +1,110 @@
 #include "utilities/ListArray.h"
 #include <string.h>
+#include "Global.h"
 
-#pragma region Source Only
-
-typedef struct ListArray
+ListArray ListArray_Create(size_t sizeOfItem, size_t initialCapacity)
 {
-    void *data;
-    size_t capacity;
-    size_t size;
-    size_t sizeOfItem;
-} ListArray;
-
-#pragma endregion Source Only
-
-ListArray *ListArray_Create(size_t sizeOfItem, size_t initialCapacity)
-{
-    ListArray *list = (ListArray *)malloc(sizeof(ListArray));
-    DebugAssertPointerNullCheck(list);
-
-    list->capacity = initialCapacity;
-    list->size = 0;
-    list->sizeOfItem = sizeOfItem;
-    list->data = (void *)malloc(initialCapacity * sizeOfItem);
-    DebugAssert(list->data != NULL, "Memory allocation failed for ListArray data.");
+    ListArray list;
+    list.capacity = initialCapacity;
+    list.size = 0;
+    list.sizeOfItem = sizeOfItem;
+    list.data = (void *)malloc(initialCapacity * sizeOfItem);
+    DebugAssertNullPointerCheck(list.data);
 
     DebugInfo("ListArray created with initial capacity: %zu, size of item: %zu", initialCapacity, sizeOfItem);
     return list;
 }
 
-void ListArray_Destroy(ListArray *list)
+void ListArray_Destroy(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
+    free(list.data);
+    list.data = NULL;
 
-    free(list->data);
-    list->data = NULL;
-
-    free(list);
-    list = NULL;
+    list.capacity = 0;
+    list.size = 0;
+    list.sizeOfItem = 0;
 
     DebugInfo("ListArray destroyed.");
 }
 
-void ListArray_Resize(ListArray *list, size_t newCapacity)
+void ListArray_Resize(ListArray list, size_t newCapacity)
 {
-    DebugAssertPointerNullCheck(list);
+    void *newData = realloc(list.data, newCapacity * list.sizeOfItem);
+    DebugAssertNullPointerCheck(newData);
 
-    void *newData = realloc(list->data, newCapacity * list->sizeOfItem);
-    DebugAssertPointerNullCheck(newData);
+    list.data = newData;
+    list.capacity = newCapacity;
 
-    list->data = newData;
-    list->capacity = newCapacity;
-
-    if (list->size > newCapacity)
+    if (list.size > newCapacity)
     {
-        list->size = newCapacity;
+        list.size = newCapacity;
     }
 
-    DebugWarning("ListArray resized from %zu to %zu", list->capacity, newCapacity);
+    DebugWarning("ListArray resized from %zu to %zu", list.capacity, newCapacity);
 }
 
-void *ListArray_Get(const ListArray *list, size_t index)
+void *ListArray_Get(ListArray list, size_t index)
 {
-    DebugAssertPointerNullCheck(list);
-    DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
+    DebugAssert(index < list.size, "Index out of range. List size : %zu, index : %zu", list.size, index);
 
-    void *itemLocation = (void *)((char *)(list->data) + index * list->sizeOfItem);
-    DebugAssertPointerNullCheck(itemLocation);
+    void *itemLocation = (void *)((char *)list.data + index * list.sizeOfItem);
+    DebugAssertNullPointerCheck(itemLocation);
 
     return itemLocation;
 }
 
-void ListArray_Set(const ListArray *list, size_t index, const void *item)
+void ListArray_Set(ListArray list, size_t index, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
-    DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
+    DebugAssert(index < list.size, "Index out of range. List size : %zu, index : %zu", list.size, index);
 
     void *targetLocation = ListArray_Get(list, index);
 
-    memcpy(targetLocation, item, list->sizeOfItem);
+    memcpy(targetLocation, item, list.sizeOfItem);
 }
 
-void ListArray_Add(ListArray *list, const void *item)
+void ListArray_Add(ListArray list, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
+    void *targetLocation = (void *)((char *)list.data + list.size * list.sizeOfItem);
+    DebugAssertNullPointerCheck(targetLocation);
 
-    void *targetLocation = (void *)((char *)(list->data) + list->size * list->sizeOfItem);
+    memcpy(targetLocation, item, list.sizeOfItem);
 
-    memcpy(targetLocation, item, list->sizeOfItem);
+    list.size++;
 
-    list->size++;
-
-    if (list->size >= list->capacity)
+    if (list.size >= list.capacity)
     {
-        DebugWarning("ListArray is full. Resizing it from %du to %du.", list->capacity, list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
-        ListArray_Resize(list, list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
+        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list.capacity, list.capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
+        ListArray_Resize(list, list.capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
     }
 }
 
-void ListArray_RemoveAtIndex(ListArray *list, size_t index)
+void ListArray_RemoveAtIndex(ListArray list, size_t index)
 {
-    DebugAssertPointerNullCheck(list);
-    DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
+    DebugAssert(index < list.size, "Index out of range. List size : %zu, index : %zu", list.size, index);
 
     void *targetLocation = ListArray_Get(list, index);
 
-    memset(targetLocation, 0, list->sizeOfItem);
+    memset(targetLocation, 0, list.sizeOfItem);
 
-    size_t bytesToMove = (list->size - index - 1) * list->sizeOfItem;
+    size_t bytesToMove = (list.size - index - 1) * list.sizeOfItem;
 
     if (bytesToMove > 0)
     {
-        memmove(targetLocation, (char *)targetLocation + list->sizeOfItem, bytesToMove);
+        memmove(targetLocation, (char *)targetLocation + list.sizeOfItem, bytesToMove);
     }
 
-    list->size--;
+    list.size--;
 
-    if (list->size < list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT)
+    if (list.size > 0 && list.capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list.size < list.capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT)
     {
-        DebugWarning("ListArray is less than 1/%d full. Resizing it from %du to %du.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
-        ListArray_Resize(list, list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
+        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list.capacity, list.capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
+        ListArray_Resize(list, list.capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
     }
 }
 
-void ListArray_RemoveItem(ListArray *list, const void *item)
+void ListArray_RemoveItem(ListArray list, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssertNullPointerCheck(item);
 
     long long itemIndex = ListArray_IndexOf(list, item);
     if (itemIndex == -1)
@@ -136,38 +116,33 @@ void ListArray_RemoveItem(ListArray *list, const void *item)
     ListArray_RemoveAtIndex(list, (size_t)itemIndex);
 }
 
-void *ListArray_Pop(ListArray *list)
+void *ListArray_Pop(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
+    DebugAssert(list.size > 0, "Cannot pop from an empty list.");
 
-    void *item = ListArray_Get(list, list->size - 1);
-    ListArray_RemoveAtIndex(list, list->size - 1);
+    void *item = ListArray_Get(list, list.size - 1);
+    ListArray_RemoveAtIndex(list, list.size - 1);
 
     return item;
 }
 
-void ListArray_Clear(ListArray *list)
+void ListArray_Clear(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
+    list.size = 0;
 
-    list->size = 0;
-
-    if (list->data != NULL)
+    if (list.data != NULL)
     {
-        memset(list->data, 0, list->capacity * list->sizeOfItem);
+        memset(list.data, 0, list.capacity * list.sizeOfItem);
     }
 }
 
-long long ListArray_IndexOf(const ListArray *list, const void *item)
+long long ListArray_IndexOf(ListArray list, const void *item)
 {
-    DebugAssertPointerNullCheck(list);
-    void *currentItem = list->data;
-
-    for (size_t i = 0; i < list->size; i++)
+    for (size_t i = 0; i < list.size; i++)
     {
-        currentItem = (void *)((char *)currentItem + i * list->sizeOfItem);
+        void *currentItem = (void *)((char *)list.data + i * list.sizeOfItem);
 
-        if (memcmp(currentItem, item, list->sizeOfItem) == 0)
+        if (memcmp(currentItem, item, list.sizeOfItem) == 0)
         {
             return (long long)i;
         }
@@ -177,30 +152,22 @@ long long ListArray_IndexOf(const ListArray *list, const void *item)
     return -1;
 }
 
-void *ListArray_GetData(ListArray *list)
+void *ListArray_GetData(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
-
-    return list->data;
+    return list.data;
 }
 
-size_t ListArray_GetSize(ListArray *list)
+size_t ListArray_GetSize(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
-
-    return list->size;
+    return list.size;
 }
 
-size_t ListArray_GetCapacity(ListArray *list)
+size_t ListArray_GetCapacity(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
-
-    return list->capacity;
+    return list.capacity;
 }
 
-size_t ListArray_GetSizeOfItem(ListArray *list)
+size_t ListArray_GetSizeOfItem(ListArray list)
 {
-    DebugAssertPointerNullCheck(list);
-
-    return list->sizeOfItem;
+    return list.sizeOfItem;
 }

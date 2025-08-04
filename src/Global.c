@@ -1,6 +1,6 @@
+#include "Global.h"
 #include <stdio.h>
 #include <time.h>
-#include "Global.h"
 
 #if PLATFORM_WINDOWS
 #include <windows.h>
@@ -10,9 +10,12 @@
 
 FILE *DEBUG_FILE = NULL;
 
+char *ARENA_POINTER = NULL;
+char *ARENA_END = NULL;
+
 void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
-    struct timespec tempSpec = {0, 0}; //! don't change
+    struct timespec tempSpec = {0, 0};
     struct tm timer = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     char buffer[16];
 
@@ -59,4 +62,38 @@ void Terminate(int exitCode)
     DebugInfo("App terminated with exit code %d.", exitCode);
 
     exit(exitCode);
+}
+
+void *ArenaAllocate(size_t size)
+{
+    char *ptr = NULL;
+
+    if (ARENA_POINTER == NULL)
+    {
+        ptr = (char *)malloc(size);
+
+        ARENA_POINTER = ptr;
+        ARENA_END = ptr + size;
+    }
+    else if (ARENA_POINTER + size <= ARENA_END)
+    {
+        ptr = ARENA_POINTER;
+        ARENA_POINTER += size;
+    }
+    else
+    {
+        return NULL;
+    }
+
+    return (void *)ptr;
+}
+
+void ArenaFree(void *ptr)
+{
+    DebugAssertNullPointerCheck(ptr);
+
+    free(ptr);
+
+    ARENA_POINTER = NULL;
+    ARENA_END = NULL;
 }

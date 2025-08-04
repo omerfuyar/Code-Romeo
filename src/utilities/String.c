@@ -1,73 +1,71 @@
-#include <string.h>
 #include "utilities/String.h"
+#include <string.h>
 
-String *String_Create(char *string)
+String String_CreateCopy(char *string)
 {
-    DebugAssertPointerNullCheck(string);
+    DebugAssertNullPointerCheck(string);
 
-    String *createdString = (String *)malloc(sizeof(String));
+    String createdString = {NULL, 0, true};
 
-    createdString->length = strlen(string);
-    createdString->characters = (char *)malloc(createdString->length * sizeof(char));
+    createdString.length = strlen(string);
+    createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(createdString.characters);
 
-    strcpy_s(createdString->characters, createdString->length * sizeof(char), string);
+    strcpy_s(createdString.characters, (createdString.length + 1) * sizeof(char), string);
+    createdString.isOwner = true;
 
     return createdString;
 }
 
-String *String_CreateSafe(char *string, size_t stringLength)
+String String_CreateReference(char *string)
 {
-    DebugAssertPointerNullCheck(string);
+    DebugAssertNullPointerCheck(string);
+    String createdString;
 
-    String *createdString = (String *)malloc(sizeof(String));
-
-    createdString->length = stringLength;
-    createdString->characters = (char *)malloc(createdString->length * sizeof(char));
-
-    strcpy_s(createdString->characters, createdString->length * sizeof(char), string);
-
+    createdString.length = strlen(string);
+    createdString.characters = string;
     return createdString;
 }
 
-void String_Destroy(String *string)
+void String_Destroy(String string)
 {
-    DebugAssertPointerNullCheck(string);
+    string.length = 0;
 
-    string->length = 0;
-
-    free(string->characters);
-    string->characters = NULL;
-
-    free(string);
-    string = NULL;
+    if (string.isOwner)
+    {
+        free(string.characters);
+        string.characters = NULL;
+    }
 }
 
-void String_Change(String *string, char *newString)
+void String_Change(String string, char *newString)
 {
-    DebugAssertPointerNullCheck(string);
-    DebugAssertPointerNullCheck(newString);
+    string.length = strlen(newString);
+    string.characters = (char *)realloc(string.characters, (string.length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(string.characters);
 
-    string->length = strlen(newString);
-    string->characters = (char *)realloc(string->characters, string->length);
-
-    strcpy_s(string->characters, string->length * sizeof(char), newString);
+    strcpy_s(string.characters, (string.length + 1) * sizeof(char), newString);
 }
 
-void String_ChangeSafe(String *string, char *newString, size_t newStringLength)
+void String_Concat(String string, String other)
 {
-    DebugAssertPointerNullCheck(string);
-    DebugAssertPointerNullCheck(newString);
+    string.length += other.length;
+    string.characters = (char *)realloc(string.characters, (string.length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(string.characters);
 
-    string->length = newStringLength;
-    string->characters = (char *)realloc(string->characters, string->length);
-
-    strcpy_s(string->characters, string->length * sizeof(char), newString);
+    strcat_s(string.characters, (string.length + 1) * sizeof(char), other.characters);
 }
 
-char String_GetChar(String *string, size_t index)
+int String_Compare(String string, String other)
 {
-    DebugAssertPointerNullCheck(string);
-    DebugAssert(index <= string->length, "Char index to get can not be less than the string length");
+    int result = strcmp(string.characters, other.characters);
 
-    return string->characters[index];
+    return result;
+}
+
+char String_GetChar(String string, size_t index)
+{
+    DebugAssert(index <= string.length, "Char index to get can not be less than the string length");
+
+    return string.characters[index];
 }
