@@ -98,42 +98,34 @@ long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, size_t sizeOfItem
     }
 }
 
-ListLinked *ListLinked_Create(size_t sizeOfItem)
+ListLinked ListLinked_Create(size_t sizeOfItem)
 {
-    ListLinked *list = (ListLinked *)malloc(sizeof(ListLinked));
-    DebugAssertNullPointerCheck(list);
-
-    list->size = 0;
-    list->sizeOfItem = sizeOfItem;
-    list->head = NULL;
+    ListLinked list;
+    list.size = 0;
+    list.sizeOfItem = sizeOfItem;
+    list.head = NULL;
 
     DebugInfo("ListLinked created with size of item: %zu", sizeOfItem);
     return list;
 }
 
-void ListLinked_Destroy(ListLinked *list)
+void ListLinked_Destroy(ListLinked list)
 {
-    DebugAssertNullPointerCheck(list);
-
-    if (list->head != NULL)
+    if (list.head != NULL)
     {
-        ListLinkedNode_DestroyAll(list->head);
+        ListLinkedNode_DestroyAll(list.head);
     }
 
-    list->head = NULL;
-
-    free(list);
-    list = NULL;
+    list.head = NULL;
 
     DebugInfo("ListLinked destroyed.");
 }
 
-void *ListLinked_Get(ListLinked *list, size_t index)
+void *ListLinked_Get(ListLinked list, size_t index)
 {
-    DebugAssertNullPointerCheck(list);
-    DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
+    DebugAssert(index < list.size, "Index out of range. List size : %du, index : %du", list.size, index);
 
-    ListLinkedNode *currentNode = list->head;
+    ListLinkedNode *currentNode = list.head;
 
     for (size_t i = 0; i < index; i++)
     {
@@ -143,42 +135,38 @@ void *ListLinked_Get(ListLinked *list, size_t index)
     return currentNode->data;
 }
 
-void ListLinked_Set(ListLinked *list, size_t index, const void *item)
+void ListLinked_Set(ListLinked list, size_t index, const void *item)
 {
-    DebugAssertNullPointerCheck(list);
-    DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
+    DebugAssert(index < list.size, "Index out of range. List size : %du, index : %du", list.size, index);
 
     ListLinkedNode *nodeToSet = ListLinked_Get(list, index);
-    memcpy(nodeToSet->data, item, list->sizeOfItem);
+    memcpy(nodeToSet->data, item, list.sizeOfItem);
 }
 
-void ListLinked_Add(ListLinked *list, const void *item)
+void ListLinked_Add(ListLinked list, const void *item)
 {
-    DebugAssertNullPointerCheck(list);
+    ListLinkedNode *newNode = ListLinkedNode_Create(list.sizeOfItem, item);
 
-    ListLinkedNode *newNode = ListLinkedNode_Create(list->sizeOfItem, item);
-
-    if (list->head == NULL)
+    if (list.head == NULL)
     {
-        list->head = newNode;
+        list.head = newNode;
     }
     else
     {
-        ListLinkedNode_Append(list->head, newNode);
+        ListLinkedNode_Append(list.head, newNode);
     }
 
-    list->size++;
+    list.size++;
 }
 
-void ListLinked_RemoveAtIndex(ListLinked *list, size_t index)
+void ListLinked_RemoveAtIndex(ListLinked list, size_t index)
 {
-    DebugAssertNullPointerCheck(list);
-    DebugAssert(index < list->size, "Index out of range. List size : %du, index : %du", list->size, index);
+    DebugAssert(index < list.size, "Index out of range. List size : %du, index : %du", list.size, index);
 
     if (index == 0)
     {
-        list->head = list->head->next;
-        ListLinkedNode_Destroy(list->head);
+        list.head = list.head->next;
+        ListLinkedNode_Destroy(list.head);
     }
     else
     {
@@ -187,41 +175,34 @@ void ListLinked_RemoveAtIndex(ListLinked *list, size_t index)
         ListLinkedNode_Destroy(previousNodeToRemove->next);
     }
 
-    list->size--;
+    list.size--;
 }
 
-void ListLinked_RemoveItem(ListLinked *list, const void *item)
+void ListLinked_RemoveItem(ListLinked list, const void *item)
 {
-    DebugAssertNullPointerCheck(list);
-
     ListLinked_RemoveAtIndex(list, (size_t)ListLinked_IndexOf(list, item));
 }
 
-void ListLinked_Clear(ListLinked *list)
+void ListLinked_Clear(ListLinked list)
 {
-    DebugAssertNullPointerCheck(list);
-
-    ListLinkedNode_DestroyAll(list->head);
+    ListLinkedNode_DestroyAll(list.head);
 }
 
-long long ListLinked_IndexOf(ListLinked *list, const void *item)
+long long ListLinked_IndexOf(ListLinked list, const void *item)
 {
-    DebugAssertNullPointerCheck(list);
-    DebugAssertNullPointerCheck(list->head);
+    DebugAssertNullPointerCheck(list.head);
 
-    return ListLinkedNode_GetIndexIfMatch(list->head, list->sizeOfItem, item, 0);
+    return ListLinkedNode_GetIndexIfMatch(list.head, list.sizeOfItem, item, 0);
 }
 
-size_t ListLinked_GetSize(ListLinked *list)
+size_t ListLinked_GetSize(ListLinked list)
 {
-    DebugAssertNullPointerCheck(list);
-
-    return list->size;
+    return list.size;
 }
 
-size_t ListLinked_GetSizeOfItem(ListLinked *list)
+size_t ListLinked_GetSizeOfItem(ListLinked list)
 {
-    DebugAssertNullPointerCheck(list);
+    DebugAssertNullPointerCheck(list.head);
 
-    return list->sizeOfItem;
+    return list.sizeOfItem;
 }

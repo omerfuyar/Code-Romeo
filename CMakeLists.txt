@@ -29,12 +29,13 @@ include_directories(${PROJECT_NAME}
     PRIVATE ${CMAKE_SOURCE_DIR}/include
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/dependencies/glad/include
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/dependencies/glfw/include
+    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/dependencies/cglm/include
+    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/dependencies/stb/include
 )
 
 # Source files setup
 file(GLOB_RECURSE PROJECT_SOURCE
     ${CMAKE_SOURCE_DIR}/dependencies/glad/src/*.c 
-    # glad requires compilation but glfw is handled by CMake
     ${CMAKE_SOURCE_DIR}/src/*.c
 )
 
@@ -46,8 +47,11 @@ add_executable(${PROJECT_NAME}
 add_subdirectory(dependencies/glfw)
 set_target_properties(glfw PROPERTIES COMPILE_FLAGS "-w")
 
+add_subdirectory(dependencies/cglm)
+set_target_properties(cglm PROPERTIES COMPILE_FLAGS "-w")
+
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE opengl32 gdi32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE opengl32 gdi32 cglm_headers glfw)
 elseif(APPLE)
     find_library(COCOA_LIBRARY Cocoa REQUIRED)
     find_library(OpenGL_LIBRARY OpenGL REQUIRED)
@@ -55,5 +59,5 @@ elseif(APPLE)
     find_library(CoreVideo_LIBRARY CoreVideo REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${COCOA_LIBRARY} ${OpenGL_LIBRARY} ${IOKit_LIBRARY} ${CoreVideo_LIBRARY})
 elseif(UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE m pthread dl)
+    target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl cglm_headers glfw)
 endif()

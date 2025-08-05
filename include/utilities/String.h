@@ -10,12 +10,12 @@ typedef struct String
     bool isOwner;
 } String;
 
-/// @brief Creates a new String object from a char array. Allocates its own memory and copies the string.
+/// @brief Creates a new String object from a char array. Allocates its own memory and copies the string. Can be used with dynamic strings.
 /// @param string Null terminated C-style string.
 /// @return Newly created String object holding a pointer to copy of the original string.
 String String_CreateCopy(char *string);
 
-/// @brief Creates a new String object from a char array. The created String object will use the original string's memory.
+/// @brief Creates a new String object from a char array. The created String object will use the original string's memory. Can be used with string literals.
 /// @param string Null terminated C-style string.
 /// @return Newly created String object holding a pointer to reference of the original string.
 String String_CreateReference(char *string);

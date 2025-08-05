@@ -18,6 +18,10 @@
 
 ### `GLFW` for media and OpenGL context management (included in the project)
 
+### `CGLM` for math library (included in the project)
+
+### `STB` for resource loading (included in the project)
+
 ### Commands to install all
 
 #### Linux
@@ -57,3 +61,8 @@ cmake .. -G "Ninja" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.c
 cmake --build .
 ```
 
+# Note to myself
+* glfw and cglm is included in the project with `add_subdirectory()` function in cmake file.
+* glad and stb is included in the project by adding the src and include directories to cmake.
+* do not forget to add include and src directories to cmake and vscode/ide settings.
+* only glad requires manual compilation for src files. other dependencies are handled by CMake.
