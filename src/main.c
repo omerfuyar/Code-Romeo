@@ -1,7 +1,7 @@
 #include "Global.h"
 #include "utilities/String.h"
-#include "glad/glad.h"
-#include "glfw/glfw3.h"
+#include <glad/glad.h>
+#include <glfw/glfw3.h>
 #include <cglm/cglm.h>
 
 static const char *vertex_shader_text =

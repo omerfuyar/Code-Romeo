@@ -45,6 +45,12 @@ winget install -e --id Ninja-build.Ninja
 
 ## Build
 
+### To clone the repository
+``` bash
+git clone --recurse-submodules https://github.com/omerfuyar/Code-Romeo.git
+cd Code-Romeo
+```
+
 ### Linux and MacOS
 ``` bash
 mkdir build
