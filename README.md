@@ -3,6 +3,7 @@
 * This project is a cross platform project to try out some new rendering libraries, techniques and design patterns in the C programming language.
 * I once tried out making a game engine in C++ but it was too complex and I wasn't knowing what I was doing. So I decided to try something similar in C. (I also don't like C++. I find it pretty powerful but too complex for my taste. Its also more fun to make your own stuff in C.)
 * This project do not have a structure like my previous projects (Core and App, Engine and Game). Instead I have focused on mostly doing one thing, just a game or whatever it is.
+* ReadMe sections for MacOS may not be right because I dont have a mac to test on it.
 
 ## Dependencies
 
@@ -26,7 +27,7 @@
 
 #### Linux
 ``` bash
-sudo apt install cmake clang ninja-build
+sudo apt install cmake clang ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libglfw3-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 ```
 
 #### MacOS
