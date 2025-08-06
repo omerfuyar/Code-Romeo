@@ -1,6 +1,4 @@
 #include "Global.h"
-#include <stdio.h>
-#include <time.h>
 
 #if PLATFORM_WINDOWS
 #include <windows.h>
@@ -15,19 +13,23 @@ char *ARENA_END = NULL;
 
 void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
-    struct timespec tempSpec = {0, 0};
-    struct tm timer = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
+    struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
     char buffer[16];
 
     timespec_get(&tempSpec, TIME_UTC);
-    localtime_s(&timer, &tempSpec.tv_sec);
+    LocalTime(&tempSpec.tv_sec, &timer);
     strftime(buffer, sizeof(buffer), DEBUG_TIME_FORMAT, &timer);
 
     if (DEBUG_FILE == NULL)
     {
         remove(DEBUG_FILE_NAME);
 
+#if defined(PLATFORM_WINDOWS)
         if (fopen_s(&DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
+#elif defined(PLATFORM_UNIX)
+        if ((DEBUG_FILE = fopen(DEBUG_FILE_NAME, "a")) == NULL)
+#endif
         {
             fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
             Terminate(-1); // todo error codes
@@ -35,7 +37,11 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", buffer, tempSpec.tv_nsec / 1000000);
     }
-    else if (fopen_s(&DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
+#if defined(PLATFORM_WINDOWS)
+    if (fopen_s(&DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
+#elif defined(PLATFORM_UNIX)
+    if ((DEBUG_FILE = fopen(DEBUG_FILE_NAME, "a")) == NULL)
+#endif
     {
         fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
         Terminate(-1); // todo error codes

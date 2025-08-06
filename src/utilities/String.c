@@ -11,7 +11,7 @@ String String_CreateCopy(char *string)
     createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(createdString.characters);
 
-    strcpy_s(createdString.characters, (createdString.length + 1) * sizeof(char), string);
+    StringCopy(createdString.characters, (createdString.length + 1) * sizeof(char), string);
     createdString.isOwner = true;
 
     return createdString;
@@ -44,7 +44,7 @@ void String_Change(String string, char *newString)
     string.characters = (char *)realloc(string.characters, (string.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string.characters);
 
-    strcpy_s(string.characters, (string.length + 1) * sizeof(char), newString);
+    StringCopy(string.characters, (string.length + 1) * sizeof(char), newString);
 }
 
 void String_Concat(String string, String other)
@@ -53,7 +53,7 @@ void String_Concat(String string, String other)
     string.characters = (char *)realloc(string.characters, (string.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string.characters);
 
-    strcat_s(string.characters, (string.length + 1) * sizeof(char), other.characters);
+    StringCopy(string.characters, (string.length + 1) * sizeof(char), other.characters);
 }
 
 int String_Compare(String string, String other)

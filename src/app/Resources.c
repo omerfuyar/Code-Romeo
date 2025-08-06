@@ -11,7 +11,7 @@ Resource *Resource_Create(String title, String path)
     resource->path = path;
 
     FILE *file = NULL;
-    fopen_s(&file, resource->path.characters, "r");
+    FileOpen(file, resource->path.characters, "r");
     DebugAssert(file != NULL, "File open failed for %s", resource->path.characters);
 
     char dataBuffer[RESOURCE_FILE_MAX_LINE_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT];
@@ -22,7 +22,7 @@ Resource *Resource_Create(String title, String path)
 
     while (fgets(lineBuffer, sizeof(lineBuffer), file))
     {
-        strcat_s(dataBuffer, sizeof(lineBuffer), lineBuffer);
+        StringConcat(dataBuffer, sizeof(lineBuffer), lineBuffer);
     }
 
     fclose(file);
@@ -32,7 +32,7 @@ Resource *Resource_Create(String title, String path)
     resource->data = (char *)malloc(resource->dataSize);
     DebugAssert(resource->data != NULL, "Memory allocation failed for resource data %s.", resource->path.characters);
 
-    strcpy_s(resource->data, resource->dataSize, dataBuffer);
+    StringCopy(resource->data, resource->dataSize, dataBuffer);
 
     return resource;
 }
@@ -46,7 +46,7 @@ void Resource_Destroy(Resource *resource)
     String_Destroy(resource->path);
 
     char tempTitle[TEMP_TITLE_BUFFER_SIZE];
-    strcpy_s(tempTitle, TEMP_TITLE_BUFFER_SIZE, resource->title.characters);
+    StringCopy(tempTitle, TEMP_TITLE_BUFFER_SIZE, resource->title.characters);
     String_Destroy(resource->title);
 
     free(resource->data);

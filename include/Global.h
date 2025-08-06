@@ -10,16 +10,17 @@
 #error "Unsupported platform."
 #endif
 
-#if PLATFORM_LINUX || PLATFORM_MACOS
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS)
 #define PLATFORM_UNIX 1
 #endif
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <time.h>
 #include <limits.h>
-
-#define TEMP_TITLE_BUFFER_SIZE 128
 
 #pragma region Math Constants
 // These constants have a suffix of '_M' to not conflict with any system variables or macros.
@@ -50,7 +51,21 @@
 
 #pragma endregion Constants
 
-#pragma region Functions
+#pragma region Functions And Macros
+
+#define TEMP_TITLE_BUFFER_SIZE 128
+
+#if defined(PLATFORM_WINDOWS)
+#define FileOpen(file, fileName, mode) fopen_s(&file, fileName, mode)
+#define StringCopy(destination, size, source) strcpy_s(destination, size, source)
+#define StringConcat(destination, size, source) strcat_s(destination, size, source)
+#define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
+#elif defined(PLATFORM_UNIX)
+#define FileOpen(file, fileName, mode) (file = fopen(fileName, mode))
+#define StringCopy(destination, size, source) strcpy(destination, source)
+#define StringConcat(destination, size, source) strcat(destination, source)
+#define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
+#endif
 
 /// @brief Logs a debug message to the debug log file.
 /// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
@@ -72,7 +87,7 @@ void *ArenaAllocate(size_t size);
 /// @param ptr A pointer to the memory block to free.
 void ArenaFree(void *ptr);
 
-#pragma endregion Functions
+#pragma endregion Functions And Macros
 
 #pragma region Debug Log
 
