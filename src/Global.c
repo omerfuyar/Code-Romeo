@@ -25,11 +25,7 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
     {
         remove(DEBUG_FILE_NAME);
 
-#if defined(PLATFORM_WINDOWS)
-        if (fopen_s(&DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
-#elif defined(PLATFORM_UNIX)
-        if ((DEBUG_FILE = fopen(DEBUG_FILE_NAME, "a")) == NULL)
-#endif
+        if (FileOpen(DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
         {
             fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
             Terminate(-1); // todo error codes
@@ -37,11 +33,7 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", buffer, tempSpec.tv_nsec / 1000000);
     }
-#if defined(PLATFORM_WINDOWS)
-    if (fopen_s(&DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
-#elif defined(PLATFORM_UNIX)
-    if ((DEBUG_FILE = fopen(DEBUG_FILE_NAME, "a")) == NULL)
-#endif
+    else if (FileOpen(DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
     {
         fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
         Terminate(-1); // todo error codes
@@ -65,8 +57,6 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
 void Terminate(int exitCode)
 {
-    DebugInfo("App terminated with exit code %d.", exitCode);
-
     exit(exitCode);
 }
 
