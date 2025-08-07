@@ -1,6 +1,4 @@
 #include "app/Resources.h"
-#include <stdio.h>
-#include <string.h>
 
 Resource *Resource_Create(String title, String path)
 {

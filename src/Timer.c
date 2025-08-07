@@ -1,5 +1,4 @@
 #include "utilities/Timer.h"
-#include <time.h>
 
 void TimePoint_Update(TimePoint *timePoint)
 {

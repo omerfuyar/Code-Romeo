@@ -13,7 +13,7 @@ typedef struct ListLinkedNode
 typedef struct ListLinked
 {
     ListLinkedNode *head;
-    size_t size;
+    size_t count;
     size_t sizeOfItem;
 } ListLinked;
 
@@ -24,14 +24,14 @@ ListLinked ListLinked_Create(size_t sizeOfItem);
 
 /// @brief Destroyer function for ListLinked. Frees all nodes and the list itself recursively.
 /// @param list ListLinked to destroy.
-void ListLinked_Destroy(ListLinked list);
+void ListLinked_Destroy(ListLinked *list);
 
 /// @brief Head getter function for ListLinked.
 /// @param list ListLinked to get the head node from.
 /// @return Pointer to the head node of the ListLinked.
 void *ListLinked_Head(ListLinked list);
 
-/// @brief Getter function for ListLinked. Retrieves the item at the specified index. Works only in range of size.
+/// @brief Getter function for ListLinked. Retrieves the item at the specified index. Works only in range of count.
 /// @param list ListLinked to get the item from.
 /// @param index Index of the item to retrieve.
 /// @return Pointer to the item at the given index. Should be cast before dereferencing.
@@ -60,7 +60,7 @@ void ListLinked_RemoveAtIndex(ListLinked list, size_t index);
 /// @return Pointer to the removed item. NULL if the item is not found in the list.
 void ListLinked_RemoveItem(ListLinked list, const void *item);
 
-/// @brief Clear function for ListLinked. Removes all nodes and resets the size to 0.
+/// @brief Clear function for ListLinked. Removes all nodes and resets the count to 0.
 /// @param list ListLinked to clear.
 void ListLinked_Clear(ListLinked list);
 
@@ -71,11 +71,11 @@ void ListLinked_Clear(ListLinked list);
 long long ListLinked_IndexOf(ListLinked list, const void *item);
 
 /// @brief Size getter for ListLinked.
-/// @param list ListLinked to get the size of.
+/// @param list ListLinked to get the count of.
 /// @return The number of items in the ListLinked.
 size_t ListLinked_GetSize(ListLinked list);
 
 /// @brief Size of item getter for ListLinked.
-/// @param list ListLinked to get the size of the item from.
-/// @return The size of the item stored in the ListLinked.
+/// @param list ListLinked to get the count of the item from.
+/// @return The count of the item stored in the ListLinked.
 size_t ListLinked_GetSizeOfItem(ListLinked list);

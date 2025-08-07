@@ -1,6 +1,6 @@
 #include "app/Renderer.h"
 
-void Renderer_RenderObject(Object *object)
+void Renderer_RenderObject(RendererObject *object)
 {
     DebugAssertNullPointerCheck(object);
 }

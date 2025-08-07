@@ -25,8 +25,6 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
     {
         remove(DEBUG_FILE_NAME);
 
-        fprintf(stdout, "Creating debug file: %s %d\n", DEBUG_FILE_NAME, FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"));
-
         if (!FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"))
         {
             fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
@@ -59,6 +57,8 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
 void Terminate(int exitCode)
 {
+    fprintf(stdout, "Terminating application with exit code: %d\n", exitCode);
+
     exit(exitCode);
 }
 
