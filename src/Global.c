@@ -25,7 +25,9 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
     {
         remove(DEBUG_FILE_NAME);
 
-        if (FileOpen(DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
+        fprintf(stdout, "Creating debug file: %s %d\n", DEBUG_FILE_NAME, FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"));
+
+        if (!FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"))
         {
             fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
             Terminate(-1); // todo error codes
@@ -33,7 +35,7 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", buffer, tempSpec.tv_nsec / 1000000);
     }
-    else if (FileOpen(DEBUG_FILE, DEBUG_FILE_NAME, "a") != 0)
+    else if (!FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"))
     {
         fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
         Terminate(-1); // todo error codes

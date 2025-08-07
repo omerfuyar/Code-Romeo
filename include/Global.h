@@ -57,11 +57,13 @@
 
 #if defined(PLATFORM_WINDOWS)
 #define FileOpen(filePtr, fileName, mode) fopen_s(&filePtr, fileName, mode)
+#define FileOpenBool(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define StringCopy(destination, size, source) strcpy_s(destination, size, source)
 #define StringConcat(destination, size, source) strcat_s(destination, size, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
 #elif defined(PLATFORM_UNIX)
 #define FileOpen(filePtr, fileName, mode) (filePtr = fopen(fileName, mode))
+#define FileOpenBool(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define StringCopy(destination, size, source) strcpy(destination, source)
 #define StringConcat(destination, size, source) strcat(destination, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
