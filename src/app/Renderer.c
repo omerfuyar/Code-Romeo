@@ -69,6 +69,8 @@ RendererDynamicObject RendererDynamicObject_Create(String name, Vertex *vertices
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    RendererDynamicObject_Update(object);
+
     return object;
 }
 
@@ -108,6 +110,8 @@ RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity)
 
     glGenVertexArrays(1, &batch.vao);
     glGenBuffers(1, &batch.vbo);
+
+    RendererBatch_Update(batch);
 
     return batch;
 }
@@ -277,6 +281,7 @@ void Renderer_RenderDynamicObject(RendererDynamicObject object)
 {
     glBindVertexArray(object.vao);
     glDrawArrays(GL_TRIANGLES, 0, object.vertices.count);
+    // glDrawElements(GL_TRIANGLES, object.vertices.count, GL_UNSIGNED_INT, 0);
 
     DebugInfo("Dynamic object %s rendered", object.name.characters);
 }
