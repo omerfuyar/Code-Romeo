@@ -26,33 +26,39 @@ String String_CreateReference(char *string)
     return createdString;
 }
 
-void String_Destroy(String string)
+void String_Destroy(String *string)
 {
-    string.length = 0;
+    DebugAssertNullPointerCheck(string);
 
-    if (string.isOwner)
+    string->length = 0;
+
+    if (string->isOwner)
     {
-        free(string.characters);
-        string.characters = NULL;
+        free(string->characters);
+        string->characters = NULL;
     }
 }
 
-void String_Change(String string, char *newString)
+void String_Change(String *string, char *newString)
 {
-    string.length = strlen(newString);
-    string.characters = (char *)realloc(string.characters, (string.length + 1) * sizeof(char));
-    DebugAssertNullPointerCheck(string.characters);
+    DebugAssertNullPointerCheck(string);
 
-    StringCopy(string.characters, (string.length + 1) * sizeof(char), newString);
+    string->length = strlen(newString);
+    string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(string->characters);
+
+    StringCopy(string->characters, (string->length + 1) * sizeof(char), newString);
 }
 
-void String_Concat(String string, String other)
+void String_Concat(String *string, String other)
 {
-    string.length += other.length;
-    string.characters = (char *)realloc(string.characters, (string.length + 1) * sizeof(char));
-    DebugAssertNullPointerCheck(string.characters);
+    DebugAssertNullPointerCheck(string);
 
-    StringCopy(string.characters, (string.length + 1) * sizeof(char), other.characters);
+    string->length += other.length;
+    string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(string->characters);
+
+    StringCopy(string->characters, (string->length + 1) * sizeof(char), other.characters);
 }
 
 int String_Compare(String string, String other)

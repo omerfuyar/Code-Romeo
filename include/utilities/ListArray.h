@@ -49,16 +49,26 @@ void ListArray_Set(ListArray list, size_t index, const void *item);
 /// @param item Item to add to ListArray.
 void ListArray_Add(ListArray *list, const void *item);
 
+/// @brief Adds a range of items to the ListArray.
+/// @param list ListArray to add items to.
+/// @param item Pointer to the first item to add.
+/// @param itemCount Number of items to add.
+void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount);
+
 /// @brief Remover function using index for ListArray. Removes the item at the given index. Uses memmove to shift all indices of items by -1 after the removed index.
 /// @param list ListArray to remove item from.
 /// @param index Index to remove item at.
-/// @return The removed item.
 void ListArray_RemoveAtIndex(ListArray *list, size_t index);
+
+/// @brief Remover function using range for ListArray. Removes items from starting index. Uses memmove to shift all indices of items by item count after the removed index.
+/// @param list ListArray to remove item from.
+/// @param index Index to start remove item at.
+/// @param itemCount Item count to remove.
+void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount);
 
 /// @brief Remover function using item pointer for ListArray. Removes the first appearance of the given item. Uses ListArray_RemoveAtIndex and ListArray_IndexOf.
 /// @param list ListArray to remove item from.
 /// @param item Item to find and remove.
-/// @return The removed item. NULL if the item is absent in the list.
 void ListArray_RemoveItem(ListArray *list, const void *item);
 
 /// @brief Pop function for ListArray. Removes the last item in the list and returns it.

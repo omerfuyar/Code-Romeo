@@ -22,17 +22,17 @@ String String_CreateReference(char *string);
 
 /// @brief Destroys a String object and frees its memory if it is a copy.
 /// @param string Pointer to the String object to destroy.
-void String_Destroy(String string);
+void String_Destroy(String *string);
 
 /// @brief Changes the contents of a String object.s
 /// @param string Pointer to the String object to change.
 /// @param newString Null terminated C-style string to copy.
-void String_Change(String string, char *newString);
+void String_Change(String *string, char *newString);
 
 /// @brief Concatenates two String objects. Changes the first String object to hold the concatenated result.
 /// @param string Pointer to the String object to concatenate to.
 /// @param other Pointer to the String object to concatenate from.
-void String_Concat(String string, String other);
+void String_Concat(String *string, String other);
 
 /// @brief Compares two String objects by subtracting their character arrays.
 /// @param string Pointer to the first String object.

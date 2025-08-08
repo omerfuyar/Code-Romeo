@@ -41,11 +41,11 @@ void Resource_Destroy(Resource *resource)
 
     resource->dataSize = 0;
 
-    String_Destroy(resource->path);
+    String_Destroy(&resource->path);
 
     char tempTitle[TEMP_TITLE_BUFFER_SIZE];
     StringCopy(tempTitle, TEMP_TITLE_BUFFER_SIZE, resource->title.characters);
-    String_Destroy(resource->title);
+    String_Destroy(&resource->title);
 
     free(resource->data);
     resource->data = NULL;
