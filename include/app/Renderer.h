@@ -25,7 +25,7 @@ typedef struct ObjectTransform
     Vector3 scale;
 } ObjectTransform;
 
-//! LAYOUT OF MEMBERS MUST MATCH WITH OPENGL ATTRIBUTES
+//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS
 /// @brief Represents a primal vertex in 3D space.
 typedef struct Vertex
 {

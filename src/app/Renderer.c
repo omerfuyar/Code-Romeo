@@ -40,13 +40,20 @@ void ObjectTransform_SetScale(ObjectTransform *transform, Vector3 scale)
 RendererDynamicObject RendererDynamicObject_Create(String name, Vertex *vertices, size_t vertexCount)
 {
     DebugAssertNullPointerCheck(vertices);
+
     RendererDynamicObject object;
 
     object.name = name;
     object.transform = (ObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
 
     object.vertices = ListArray_Create(sizeof(Vertex), vertexCount);
-    ListArray_AddRange(&object.vertices, &vertices, vertexCount);
+
+    ListArray_AddRange(&object.vertices, vertices, vertexCount);
+
+    // for (size_t i = 0; i < vertexCount; i++)
+    //{
+    //     ListArray_Add(&object.vertices, &vertices[i]);
+    // }
 
     glGenVertexArrays(1, &object.vao);
     glGenBuffers(1, &object.vbo);
@@ -91,7 +98,7 @@ void RendererDynamicObject_Update(RendererDynamicObject object)
     glBindVertexArray(object.vao);
     glBindBuffer(GL_ARRAY_BUFFER, object.vbo);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(object.vertices), &object.vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, object.vertices.sizeOfItem * object.vertices.count, (const void *)object.vertices.data, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -110,6 +117,24 @@ RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity)
 
     glGenVertexArrays(1, &batch.vao);
     glGenBuffers(1, &batch.vbo);
+
+    glBindVertexArray(batch.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, batch.vbo);
+
+    size_t offset = 0;
+
+    glVertexAttribPointer(VERTEX_MEMBER_POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offset);
+    glEnableVertexAttribArray(VERTEX_MEMBER_POSITION_INDEX);
+    offset += sizeof(Vector3);
+
+    glVertexAttribPointer(VERTEX_MEMBER_COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offset);
+    glEnableVertexAttribArray(VERTEX_MEMBER_COLOR_INDEX);
+    offset += sizeof(Vector4);
+
+    //! ... other attributes in vertex
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 
     RendererBatch_Update(batch);
 
@@ -133,7 +158,7 @@ void RendererBatch_Update(RendererBatch batch)
     glBindVertexArray(batch.vao);
     glBindBuffer(GL_ARRAY_BUFFER, batch.vbo);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(batch.vertices), &batch.vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, batch.vertices.sizeOfItem * batch.vertices.count, (const void *)batch.vertices.data, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -205,7 +230,7 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     char glslInfoLog[1024];
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL); //!
     glCompileShader(vertexShader);
 
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
@@ -263,10 +288,10 @@ void Renderer_StartRendering()
     }
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(MAIN_SHADER_PROGRAM);
 
-    DebugInfo("Rendering started");
+    // DebugInfo("Rendering started");
 }
 
 void Renderer_FinishRendering()
@@ -274,7 +299,7 @@ void Renderer_FinishRendering()
     glfwSwapBuffers(MAIN_WINDOW);
     glfwPollEvents();
 
-    DebugInfo("Rendering finished");
+    // DebugInfo("Rendering finished");
 }
 
 void Renderer_RenderDynamicObject(RendererDynamicObject object)
@@ -283,7 +308,7 @@ void Renderer_RenderDynamicObject(RendererDynamicObject object)
     glDrawArrays(GL_TRIANGLES, 0, object.vertices.count);
     // glDrawElements(GL_TRIANGLES, object.vertices.count, GL_UNSIGNED_INT, 0);
 
-    DebugInfo("Dynamic object %s rendered", object.name.characters);
+    // DebugInfo("Dynamic object %s rendered", object.name.characters);
 }
 
 void Renderer_RenderBatch(RendererBatch batch)

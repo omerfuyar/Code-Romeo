@@ -145,7 +145,7 @@ Vector2Int Vector2Int_Add(Vector2Int vector1, Vector2Int vector2)
 
 Vector2Int Vector2Int_Multiply(Vector2Int vector, float scalar)
 {
-    return (Vector2Int){(int)(vector.x * scalar), (int)(vector.y * scalar)};
+    return (Vector2Int){(int)((float)vector.x * scalar), (int)((float)vector.y * scalar)};
 }
 
 Vector2 Vector2_ToFloat(Vector2Int vector)
@@ -160,7 +160,7 @@ float Vector2Int_Magnitude(Vector2Int vector)
 
 float Vector2Int_Dot(Vector2Int vector1, Vector2Int vector2)
 {
-    return (vector1.x * vector2.x) + (vector1.y * vector2.y);
+    return (float)(vector1.x * vector2.x) + (float)(vector1.y * vector2.y);
 }
 
 #pragma endregion Vector2Int
@@ -174,7 +174,7 @@ Vector3Int Vector3Int_Add(Vector3Int vector1, Vector3Int vector2)
 
 Vector3Int Vector3Int_Multiply(Vector3Int vector, float scalar)
 {
-    return (Vector3Int){(int)(vector.x * scalar), (int)(vector.y * scalar), (int)(vector.z * scalar)};
+    return (Vector3Int){(int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar)};
 }
 
 Vector3 Vector3Int_ToFloat(Vector3Int vector)
@@ -189,7 +189,7 @@ float Vector3Int_Magnitude(Vector3Int vector)
 
 float Vector3Int_Dot(Vector3Int vector1, Vector3Int vector2)
 {
-    return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z);
+    return (float)(vector1.x * vector2.x) + (float)(vector1.y * vector2.y) + (float)(vector1.z * vector2.z);
 }
 
 #pragma endregion Vector3Int
@@ -203,7 +203,7 @@ Vector4Int Vector4Int_Add(Vector4Int vector1, Vector4Int vector2)
 
 Vector4Int Vector4Int_Multiply(Vector4Int vector, float scalar)
 {
-    return (Vector4Int){(int)(vector.x * scalar), (int)(vector.y * scalar), (int)(vector.z * scalar), (int)(vector.w * scalar)};
+    return (Vector4Int){(int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar), (int)((float)vector.w * scalar)};
 }
 
 Vector4 Vector4Int_ToFloat(Vector4Int vector)
@@ -218,7 +218,7 @@ float Vector4Int_Magnitude(Vector4Int vector)
 
 float Vector4Int_Dot(Vector4Int vector1, Vector4Int vector2)
 {
-    return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z) + (vector1.w * vector2.w);
+    return (float)(vector1.x * vector2.x) + (float)(vector1.y * vector2.y) + (float)(vector1.z * vector2.z) + (float)(vector1.w * vector2.w);
 }
 
 #pragma endregion Vector4Int
