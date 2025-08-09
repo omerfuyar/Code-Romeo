@@ -28,12 +28,23 @@ int main()
 {
     Renderer_Initialize(String_CreateCopy("test win"), NewVector2Int(720, 540), String_CreateCopy(vertexShaderSource), String_CreateCopy(fragmentShaderSource));
 
-    Vertex vertices[] = {
+    RendererMeshVertex verticesData[] = {
         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
         {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-        {{0.0f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}};
+        {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 1.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}};
 
-    RendererDynamicObject myObj = RendererDynamicObject_Create(String_CreateCopy("myObj"), vertices, 3);
+    RendererMeshIndex indicesData[] = {0, 1, 2, 2, 3, 0};
+
+    ListArray vertices = ListArray_Create(sizeof(RendererMeshVertex), 4);
+    ListArray indices = ListArray_Create(sizeof(RendererMeshIndex), 6);
+
+    ListArray_AddRange(&vertices, verticesData, 4);
+    ListArray_AddRange(&indices, indicesData, 6);
+
+    RendererMesh mesh = {vertices, indices};
+
+    RendererDynamicObject myObj = RendererDynamicObject_Create(String_CreateCopy("myObj"), mesh);
 
     while (true)
     {
@@ -44,6 +55,5 @@ int main()
         Renderer_FinishRendering();
     }
 
-    DebugInfo("Application terminated successfully.");
     return 0;
 }

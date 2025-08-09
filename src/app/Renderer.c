@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#define OPENGL_DRAW_TYPE GL_STATIC_DRAW
+
 GLFWwindow *MAIN_WINDOW = NULL;
 
 RendererShaderProgramHandle MAIN_SHADER_PROGRAM = 0;
@@ -13,67 +15,85 @@ void MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-#pragma region Object Transform
+#pragma region Renderer Object Transform
 
-void ObjectTransform_SetPosition(ObjectTransform *transform, Vector3 position)
+void ObjectTransform_SetPosition(RendererObjectTransform *transform, Vector3 position)
 {
     DebugAssertNullPointerCheck(transform);
     transform->position = position;
 }
 
-void ObjectTransform_SetRotation(ObjectTransform *transform, Vector3 rotation)
+void ObjectTransform_SetRotation(RendererObjectTransform *transform, Vector3 rotation)
 {
     DebugAssertNullPointerCheck(transform);
     transform->rotation = rotation;
 }
 
-void ObjectTransform_SetScale(ObjectTransform *transform, Vector3 scale)
+void ObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
 {
     DebugAssertNullPointerCheck(transform);
     transform->scale = scale;
 }
 
-#pragma endregion Object Transform
+#pragma endregion Renderer Object Transform
+
+#pragma region Renderer Mesh
+
+RendererMesh RendererMesh_Create(String objFileSource)
+{
+    RendererMesh mesh;
+
+    // todo import logic ...
+
+    mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), 31);
+    mesh.indices = ListArray_Create(sizeof(RendererMeshIndex), 31);
+    DebugAssertNullPointerCheck(objFileSource.characters);
+    return mesh;
+}
+
+void RendererMesh_Destroy(RendererMesh *mesh)
+{
+    DebugAssertNullPointerCheck(mesh);
+
+    ListArray_Destroy(&mesh->vertices);
+    ListArray_Destroy(&mesh->indices);
+}
+
+#pragma endregion Renderer Mesh
 
 #pragma region Renderer Dynamic Object
 
-RendererDynamicObject RendererDynamicObject_Create(String name, Vertex *vertices, size_t vertexCount)
+RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mesh)
 {
-    DebugAssertNullPointerCheck(vertices);
-
     RendererDynamicObject object;
 
     object.name = name;
-    object.transform = (ObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    object.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
 
-    object.vertices = ListArray_Create(sizeof(Vertex), vertexCount);
-
-    ListArray_AddRange(&object.vertices, vertices, vertexCount);
-
-    // for (size_t i = 0; i < vertexCount; i++)
-    //{
-    //     ListArray_Add(&object.vertices, &vertices[i]);
-    // }
+    object.mesh = mesh;
 
     glGenVertexArrays(1, &object.vao);
     glGenBuffers(1, &object.vbo);
+    glGenBuffers(1, &object.ibo);
 
     glBindVertexArray(object.vao);
     glBindBuffer(GL_ARRAY_BUFFER, object.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object.ibo);
 
     size_t offset = 0;
 
-    glVertexAttribPointer(VERTEX_MEMBER_POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offset);
+    glVertexAttribPointer(VERTEX_MEMBER_POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
     glEnableVertexAttribArray(VERTEX_MEMBER_POSITION_INDEX);
     offset += sizeof(Vector3);
 
-    glVertexAttribPointer(VERTEX_MEMBER_COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offset);
+    glVertexAttribPointer(VERTEX_MEMBER_COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
     glEnableVertexAttribArray(VERTEX_MEMBER_COLOR_INDEX);
     offset += sizeof(Vector4);
 
     //! ... other attributes in vertex
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     RendererDynamicObject_Update(object);
@@ -85,55 +105,71 @@ void RendererDynamicObject_Destroy(RendererDynamicObject *object)
 {
     DebugAssertNullPointerCheck(object);
 
+    object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+
     String_Destroy(&object->name);
 
     glDeleteBuffers(1, &object->vbo);
+    glDeleteBuffers(1, &object->ibo);
     glDeleteVertexArrays(1, &object->vao);
 
-    ListArray_Destroy(&object->vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    RendererMesh_Destroy(&object->mesh);
+
+    object = NULL;
 }
 
 void RendererDynamicObject_Update(RendererDynamicObject object)
 {
     glBindVertexArray(object.vao);
     glBindBuffer(GL_ARRAY_BUFFER, object.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object.ibo);
 
-    glBufferData(GL_ARRAY_BUFFER, object.vertices.sizeOfItem * object.vertices.count, (const void *)object.vertices.data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, object.mesh.vertices.sizeOfItem * object.mesh.vertices.count, object.mesh.vertices.data, OPENGL_DRAW_TYPE);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, object.mesh.indices.sizeOfItem * object.mesh.indices.count, object.mesh.indices.data, OPENGL_DRAW_TYPE);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 #pragma endregion Renderer Dynamic Object
 
 #pragma region Renderer Batch
 
-RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity)
+RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, size_t initialIndexCapacity)
 {
     RendererBatch batch;
 
     batch.name = name;
-    batch.vertices = ListArray_Create(sizeof(Vertex), initialVertexCapacity);
+    batch.mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), initialVertexCapacity);
+    batch.mesh.indices = ListArray_Create(sizeof(RendererMeshIndex), initialIndexCapacity);
 
     glGenVertexArrays(1, &batch.vao);
     glGenBuffers(1, &batch.vbo);
+    glGenBuffers(1, &batch.ibo);
 
     glBindVertexArray(batch.vao);
     glBindBuffer(GL_ARRAY_BUFFER, batch.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batch.ibo);
 
     size_t offset = 0;
 
-    glVertexAttribPointer(VERTEX_MEMBER_POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offset);
+    glVertexAttribPointer(VERTEX_MEMBER_POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
     glEnableVertexAttribArray(VERTEX_MEMBER_POSITION_INDEX);
     offset += sizeof(Vector3);
 
-    glVertexAttribPointer(VERTEX_MEMBER_COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offset);
+    glVertexAttribPointer(VERTEX_MEMBER_COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
     glEnableVertexAttribArray(VERTEX_MEMBER_COLOR_INDEX);
     offset += sizeof(Vector4);
 
     //! ... other attributes in vertex
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     RendererBatch_Update(batch);
@@ -149,39 +185,52 @@ void RendererBatch_Destroy(RendererBatch *batch)
 
     glDeleteVertexArrays(1, &batch->vao);
     glDeleteBuffers(1, &batch->vbo);
+    glDeleteBuffers(1, &batch->ibo);
 
-    ListArray_Destroy(&batch->vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    RendererMesh_Destroy(&batch->mesh);
+
+    batch = NULL;
 }
 
 void RendererBatch_Update(RendererBatch batch)
 {
     glBindVertexArray(batch.vao);
     glBindBuffer(GL_ARRAY_BUFFER, batch.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batch.ibo);
 
-    glBufferData(GL_ARRAY_BUFFER, batch.vertices.sizeOfItem * batch.vertices.count, (const void *)batch.vertices.data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, batch.mesh.vertices.sizeOfItem * batch.mesh.vertices.count, batch.mesh.vertices.data, OPENGL_DRAW_TYPE);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch.mesh.indices.sizeOfItem * batch.mesh.indices.count, batch.mesh.indices.data, OPENGL_DRAW_TYPE);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 #pragma endregion Renderer Batch
 
 #pragma region Renderer Static Object
 
-RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *batch, Vertex *vertices, size_t vertexCount)
+RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *batch, RendererMesh mesh)
 {
     DebugAssertNullPointerCheck(batch);
-    DebugAssertNullPointerCheck(vertices);
 
     RendererStaticObject object;
 
     object.name = name;
-    object.transform = (ObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    object.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
 
     object.batch = batch;
-    object.vertexCountInBatch = vertexCount;
-    object.vertexOffsetInBatch = object.batch->vertices.count;
-    ListArray_AddRange(&object.batch->vertices, vertices, vertexCount);
+    object.vertexCountInBatch = mesh.vertices.count;
+    object.vertexOffsetInBatch = object.batch->mesh.vertices.count;
+    object.indexCountInBatch = mesh.indices.count;
+    object.indexOffsetInBatch = object.batch->mesh.indices.count;
+
+    ListArray_AddRange(&object.batch->mesh.vertices, mesh.vertices.data, mesh.vertices.count);
+    ListArray_AddRange(&object.batch->mesh.indices, mesh.indices.data, mesh.indices.count);
 
     return object;
 }
@@ -190,12 +239,20 @@ void RendererStaticObject_Destroy(RendererStaticObject *object)
 {
     DebugAssertNullPointerCheck(object);
 
+    object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+
     String_Destroy(&object->name);
 
-    ListArray_RemoveRange(&object->batch->vertices, object->vertexOffsetInBatch, object->vertexCountInBatch);
+    ListArray_RemoveRange(&object->batch->mesh.vertices, object->vertexOffsetInBatch, object->vertexCountInBatch);
+    ListArray_RemoveRange(&object->batch->mesh.indices, object->indexOffsetInBatch, object->indexCountInBatch);
 
+    object->batch = NULL;
     object->vertexCountInBatch = 0;
     object->vertexOffsetInBatch = 0;
+    object->indexCountInBatch = 0;
+    object->indexOffsetInBatch = 0;
+
+    object = NULL;
 }
 
 #pragma endregion Renderer Static Object
@@ -305,8 +362,10 @@ void Renderer_FinishRendering()
 void Renderer_RenderDynamicObject(RendererDynamicObject object)
 {
     glBindVertexArray(object.vao);
-    glDrawArrays(GL_TRIANGLES, 0, object.vertices.count);
-    // glDrawElements(GL_TRIANGLES, object.vertices.count, GL_UNSIGNED_INT, 0);
+
+    glDrawElements(GL_TRIANGLES, object.mesh.indices.count, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
 
     // DebugInfo("Dynamic object %s rendered", object.name.characters);
 }
@@ -314,7 +373,11 @@ void Renderer_RenderDynamicObject(RendererDynamicObject object)
 void Renderer_RenderBatch(RendererBatch batch)
 {
     glBindVertexArray(batch.vao);
-    glDrawArrays(GL_TRIANGLES, 0, batch.vertices.count);
+
+    glDrawElements(GL_TRIANGLES, batch.mesh.indices.count, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
+    // DebugInfo("Batch %s rendered", batch.name.characters);
 }
 
 #pragma endregion Renderer

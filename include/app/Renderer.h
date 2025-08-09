@@ -16,58 +16,71 @@ typedef unsigned int RendererVBOHandle;
 typedef unsigned int RendererShaderHandle;
 typedef unsigned int RendererShaderProgramHandle;
 typedef unsigned int RendererTextureHandle;
+typedef unsigned int RendererMeshIndex;
 
 /// @brief Represents the transformation (position, rotation, scale) of an object in 3D space.
-typedef struct ObjectTransform
+typedef struct RendererObjectTransform
 {
     Vector3 position;
     Vector3 rotation;
     Vector3 scale;
-} ObjectTransform;
+} RendererObjectTransform;
 
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS
 /// @brief Represents a primal vertex in 3D space.
-typedef struct Vertex
+typedef struct RendererMeshVertex
 {
     Vector3 position;
     Vector4 color;
-} Vertex;
+} RendererMeshVertex;
 
 #define VERTEX_MEMBER_POSITION_INDEX 0
 #define VERTEX_MEMBER_COLOR_INDEX 1
+
+/// @brief A model mesh structure that holds all necessary data to represent a 3D mesh.
+typedef struct RendererMesh
+{
+    ListArray vertices; // RendererMeshVertex
+    ListArray indices;  // RendererMeshIndex
+} RendererMesh;
 
 /// @brief A dynamic render object that have its own vertex array object (VAO) and vertex buffer object (VBO)
 typedef struct RendererDynamicObject
 {
     String name;
-    ObjectTransform transform;
-    ListArray vertices;
+    RendererObjectTransform transform;
+    RendererMesh mesh;
     RendererVAOHandle vao;
     RendererVBOHandle vbo;
+    RendererVBOHandle ibo;
 } RendererDynamicObject;
 
-/// @brief A batch of static render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The batch is resizable but static object's vertices are not.
+/// @brief A batch of static render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The batch is resizable but static object's vertices are not because it holds one big mesh for all static objects.
 typedef struct RendererBatch
 {
     String name;
-    ListArray vertices;
+    // todo find a solution, fix this
+    RendererMesh mesh; // RendererMesh
     RendererVAOHandle vao;
     RendererVBOHandle vbo;
+    RendererVBOHandle ibo;
 } RendererBatch;
 
 /// @brief A static render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the batch. Must be used with RendererBatch.
 typedef struct RendererStaticObject
 {
     String name;
-    ObjectTransform transform;
+    RendererObjectTransform transform;
     RendererBatch *batch;
     size_t vertexOffsetInBatch;
     size_t vertexCountInBatch;
+    size_t indexOffsetInBatch;
+    size_t indexCountInBatch;
 } RendererStaticObject;
 
 // typedef enum RendererShaderType
 //{
-//     Vertex,
+//     MeshVertex,
 //     Fragment,
 //     Compute,
 //     Geometry
@@ -81,33 +94,45 @@ typedef struct RendererStaticObject
 
 #pragma endregion typedefs
 
-#pragma region Object Transform
+#pragma region Renderer Object Transform
 
 /// @brief Sets the position of the object transform.
 /// @param transform Pointer to the object transform.
 /// @param position New position for the object.
-void ObjectTransform_SetPosition(ObjectTransform *transform, Vector3 position);
+void ObjectTransform_SetPosition(RendererObjectTransform *transform, Vector3 position);
 
 /// @brief Sets the rotation of the object transform.
 /// @param transform Pointer to the object transform.
 /// @param rotation New rotation for the object.
-void ObjectTransform_SetRotation(ObjectTransform *transform, Vector3 rotation);
+void ObjectTransform_SetRotation(RendererObjectTransform *transform, Vector3 rotation);
 
 /// @brief Sets the scale of the object transform.
 /// @param transform Pointer to the object transform.
 /// @param scale New scale for the object.
-void ObjectTransform_SetScale(ObjectTransform *transform, Vector3 scale);
+void ObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale);
 
-#pragma endregion Object Transform
+#pragma endregion Renderer Object Transform
+
+#pragma region Renderer Mesh
+
+/// @brief
+/// @param objFile
+/// @return
+RendererMesh RendererMesh_Create(String objFileSource);
+
+/// @brief
+/// @param mesh
+void RendererMesh_Destroy(RendererMesh *mesh);
+
+#pragma endregion Renderer Mesh
 
 #pragma region Renderer Dynamic Object
 
 /// @brief Creates a dynamic render object with its own VAO and VBO.
 /// @param name Name of the dynamic render object.
-/// @param vertices Array of vertices for the dynamic render object.
-/// @param vertexCount Number of vertices in the array.
+/// @param mesh Mesh data of the object.
 /// @return Created dynamic render object.
-RendererDynamicObject RendererDynamicObject_Create(String name, Vertex *vertices, size_t vertexCount);
+RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mesh);
 
 /// @brief Destroyer function for dynamic render object
 /// @param object Object to destroy
@@ -124,8 +149,9 @@ void RendererDynamicObject_Update(RendererDynamicObject object);
 /// @brief Creates a batch of static render objects. A vertex allocator for static objects.
 /// @param name Name of the batch.
 /// @param initialVertexCapacity Initial capacity for the vertex array.
+/// @param initialIndexCapacity Initial capacity for the index array.
 /// @return Created batch of static render objects.
-RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity);
+RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, size_t initialIndexCapacity);
 
 /// @brief Destroyer function for object batch
 /// @param batch Batch to destroy
@@ -142,10 +168,9 @@ void RendererBatch_Update(RendererBatch batch);
 /// @brief Creates a static render object that shares its VAO and VBO with other objects in the batch.
 /// @param name Name of the static render object.
 /// @param batch Pointer to the batch that the static object belongs to.
-/// @param vertices Array of vertices for the static render object.
-/// @param vertexCount Number of vertices in the array.
+/// @param mesh Mesh data of the object.
 /// @return Created static render object.
-RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *batch, Vertex *vertices, size_t vertexCount);
+RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *batch, RendererMesh mesh);
 
 /// @brief Destroyer function for static render object
 /// @param object Object to destroy
