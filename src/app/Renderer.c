@@ -42,10 +42,10 @@ void ObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
 
 RendererMesh RendererMesh_Create(String objFileSource)
 {
-    RendererMesh mesh;
+    RendererMesh mesh = {0};
 
     size_t lineCount = 0;
-    String lines[RESOURCE_FILE_MAX_LINE_COUNT];
+    String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
     String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
 
     mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), lineCount / 4);
@@ -54,7 +54,7 @@ RendererMesh RendererMesh_Create(String objFileSource)
     for (size_t i = 0; i < lineCount; i++)
     {
         size_t tokenCount = 0;
-        String tokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT];
+        String tokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
         String_Tokenize(lines[i], scl(" "), &tokenCount, tokens, sizeof(tokens));
 
         String firstToken = tokens[0];
@@ -111,7 +111,7 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
 RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mesh)
 {
-    RendererDynamicObject object;
+    RendererDynamicObject object = {0};
 
     object.name = name;
     object.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
@@ -188,7 +188,7 @@ void RendererDynamicObject_Update(RendererDynamicObject object)
 
 RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, size_t initialIndexCapacity)
 {
-    RendererBatch batch;
+    RendererBatch batch = {0};
 
     batch.name = name;
     batch.mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), initialVertexCapacity);
@@ -218,8 +218,7 @@ RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, si
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    RendererBatch_Update(batch);
-
+    DebugInfo("RendererBatch created with name: %s, initial vertex capacity: %zu, initial index capacity: %zu", batch.name.characters, initialVertexCapacity, initialIndexCapacity);
     return batch;
 }
 
@@ -264,7 +263,7 @@ RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *bat
 {
     DebugAssertNullPointerCheck(batch);
 
-    RendererStaticObject object;
+    RendererStaticObject object = {0};
 
     object.name = name;
     object.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
@@ -275,9 +274,21 @@ RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *bat
     object.indexCountInBatch = mesh.indices.count;
     object.indexOffsetInBatch = object.batch->mesh.indices.count;
 
+    DebugInfo("batch vertex count %d, batch vertex capacity %d", object.batch->mesh.vertices.count, object.batch->mesh.vertices.capacity);
+    DebugInfo("batch index count %d, batch index capacity %d", object.batch->mesh.indices.count, object.batch->mesh.indices.capacity);
+
     ListArray_AddRange(&object.batch->mesh.vertices, mesh.vertices.data, mesh.vertices.count);
     ListArray_AddRange(&object.batch->mesh.indices, mesh.indices.data, mesh.indices.count);
 
+    DebugInfo("batch vertex count %d, batch vertex capacity %d", object.batch->mesh.vertices.count, object.batch->mesh.vertices.capacity);
+    DebugInfo("batch index count %d, batch index capacity %d", object.batch->mesh.indices.count, object.batch->mesh.indices.capacity);
+
+    DebugInfo("mesh vertex count %d, mesh vertex capacity %d", mesh.vertices.count, mesh.vertices.capacity);
+    DebugInfo("mesh index count %d, mesh index capacity %d", mesh.indices.count, mesh.indices.capacity);
+
+    RendererBatch_Update(*object.batch);
+
+    DebugInfo("Static object %s created with vertex count: %zu, index count: %zu", object.name.characters, object.vertexCountInBatch, object.indexCountInBatch);
     return object;
 }
 
@@ -329,8 +340,8 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    GLint glslHasCompiled;
-    char glslInfoLog[1024];
+    GLint glslHasCompiled = 0;
+    char glslInfoLog[1024] = {0};
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL); //!

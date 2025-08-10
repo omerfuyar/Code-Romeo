@@ -3,10 +3,10 @@
 #include "Global.h"
 
 // The resize multiplier used when the ListArray size reached to the capacity when adding new item
-#define ARRAY_LIST_RESIZE_MULTIPLIER 2
+#define ARRAY_LIST_RESIZE_MULTIPLIER 2.0
 
 // The limit for resizing the ListArray when it's size is less than 1/x of the capacity
-#define ARRAY_LIST_MIN_DECIMAL_LIMIT 4
+#define ARRAY_LIST_MIN_DECIMAL_LIMIT 4.0
 
 /// @brief A dynamic array list implementation. Can be used in any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct ListArray

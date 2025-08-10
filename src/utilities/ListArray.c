@@ -73,8 +73,8 @@ void ListArray_Add(ListArray *list, const void *item)
 
     while (list->count + 1 > list->capacity)
     {
-        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list->capacity, list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
-        ListArray_Resize(list, list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
+        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
     memcpy(targetLocation, item, list->sizeOfItem);
@@ -92,8 +92,8 @@ void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)
 
     while (list->count + itemCount > list->capacity)
     {
-        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list->capacity, list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
-        ListArray_Resize(list, list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER);
+        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
     memcpy(targetLocation, item, list->sizeOfItem * itemCount);
@@ -106,10 +106,10 @@ void ListArray_RemoveAtIndex(ListArray *list, size_t index)
     DebugAssertNullPointerCheck(list);
     DebugAssert(index < list->count, "Index out of range. List size : %zu, index : %zu", list->count, index);
 
-    if (list->count - 1 > 0 && list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - 1 < list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT)
+    if (list->count - 1 > 0 && (double)list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - 1 < (size_t)((double)list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT))
     {
-        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
-        ListArray_Resize(list, list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
+        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
     void *targetLocation = ListArray_Get(*list, index);
@@ -132,10 +132,10 @@ void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount)
     DebugAssert(index + itemCount < list->count, "Index out of range. List size : %zu, index : %zu", list->count, index);
     DebugAssert(itemCount > 0, "Item count to remove must be greater than 0.");
 
-    if (list->count - itemCount > 0 && list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - itemCount < list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT)
+    if (list->count - itemCount > 0 && (double)list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - itemCount < (size_t)((double)list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT))
     {
-        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
-        ListArray_Resize(list, list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER);
+        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
     void *targetLocation = ListArray_Get(*list, index);

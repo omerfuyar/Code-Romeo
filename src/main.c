@@ -15,13 +15,16 @@ int main()
 
     RendererMesh myMesh = RendererMesh_Create(maxwellResource.data);
 
-    RendererDynamicObject myObj = RendererDynamicObject_Create(scl("myObj"), myMesh);
+    RendererBatch myBatch = RendererBatch_Create(scl("My Batch"), 1000, 1000);
+
+    RendererStaticObject myObj = RendererStaticObject_Create(scl("myObj"), &myBatch, myMesh);
+    DebugAssertNullPointerCheck(&myObj);
 
     while (true)
     {
         Renderer_StartRendering();
 
-        Renderer_RenderDynamicObject(myObj);
+        Renderer_RenderBatch(myBatch);
 
         Renderer_FinishRendering();
     }
