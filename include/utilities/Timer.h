@@ -27,24 +27,10 @@ typedef struct Timer
 /// @param timePoint Time Point to update with the current time.
 void TimePoint_Update(TimePoint *timePoint);
 
-/// @brief Converts the Time Point to milliseconds.
-/// @param timePoint Time Point to convert.
-/// @return Time in milliseconds since the epoch.
-time_t TimePoint_ToMilliseconds(TimePoint *timePoint);
-
-/// @brief Creates a new timer on the stack.
+/// @brief Creates a new timer.
 /// @param title Label for the timer.
 /// @return Timer instance.
-Timer Timer_CreateStack(String title);
-
-/// @brief Creates a new timer on the heap.
-/// @param title Label for the timer.
-/// @return Pointer to the created timer.
-Timer *Timer_CreateHeap(String title);
-
-/// @brief Destroys the timer and frees any associated resources.
-/// @param timer Timer to destroy.
-void Timer_DestroyHeap(Timer *timer);
+Timer Timer_Create(String title);
 
 /// @brief Starts the timer, updating its start time to the current time.
 /// @param timer Timer to start.

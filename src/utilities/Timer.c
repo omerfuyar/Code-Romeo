@@ -11,12 +11,7 @@ void TimePoint_Update(TimePoint *timePoint)
     timePoint->nanoseconds = currentTime.tv_nsec;
 }
 
-time_t TimePoint_ToMilliseconds(TimePoint *timePoint)
-{
-    return timePoint->seconds * 1000 + timePoint->nanoseconds / 1000000;
-}
-
-Timer Timer_CreateStack(String title)
+Timer Timer_Create(String title)
 {
     Timer timer;
     timer.title = title;
@@ -26,36 +21,6 @@ Timer Timer_CreateStack(String title)
     timer.endTime = TIMEPOINT_NULL;
 
     return timer;
-}
-
-Timer *Timer_CreateHeap(String title)
-{
-    Timer *timer = (Timer *)malloc(sizeof(Timer));
-
-    if (timer == NULL)
-    {
-        DebugError("Memory allocation failed for Timer.");
-        return NULL;
-    }
-
-    timer->title = title;
-    timer->isRunning = false;
-
-    timer->startTime = TIMEPOINT_NULL;
-    timer->endTime = TIMEPOINT_NULL;
-
-    return timer;
-}
-
-void Timer_DestroyHeap(Timer *timer)
-{
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
-    free(timer);
-
-    timer = NULL;
-
-    DebugInfo("Timer destroyed successfully.");
 }
 
 void Timer_Start(Timer *timer)

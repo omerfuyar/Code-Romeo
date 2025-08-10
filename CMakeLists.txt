@@ -61,3 +61,18 @@ elseif(APPLE)
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl cglm_headers glfw)
 endif()
+
+# Copy resources to build directory
+set(PROJECT_RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
+set(PROJECT_BUILD_RESOURCE_DIR "${CMAKE_BINARY_DIR}/resources")
+if(EXISTS ${PROJECT_RESOURCE_DIR})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_RESOURCE_DIR}"
+        "${PROJECT_BUILD_RESOURCE_DIR}"
+        COMMENT "Copying resources to build directory"
+    )
+    message(INFO "Project resource directory (${PROJECT_RESOURCE_DIR}) found and copied (${PROJECT_BUILD_RESOURCE_DIR}).")
+else()
+    message(WARNING "Project resource directory not found: ${PROJECT_RESOURCE_DIR}")
+endif()

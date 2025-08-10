@@ -1,4 +1,5 @@
 #include "app/Renderer.h"
+#include "app/Resources.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -43,11 +44,56 @@ RendererMesh RendererMesh_Create(String objFileSource)
 {
     RendererMesh mesh;
 
-    // todo import logic ...
+    size_t lineCount = 0;
+    String lines[RESOURCE_FILE_MAX_LINE_COUNT];
+    String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
 
-    mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), 31);
-    mesh.indices = ListArray_Create(sizeof(RendererMeshIndex), 31);
-    DebugAssertNullPointerCheck(objFileSource.characters);
+    mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), lineCount / 4);
+    mesh.indices = ListArray_Create(sizeof(RendererMeshIndex), lineCount / 4);
+
+    for (size_t i = 0; i < lineCount; i++)
+    {
+        size_t tokenCount = 0;
+        String tokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT];
+        String_Tokenize(lines[i], scl(" "), &tokenCount, tokens, sizeof(tokens));
+
+        String firstToken = tokens[0];
+
+        if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
+        {
+            RendererMeshVertex vertex = {{String_ToFloat(tokens[1]) / 100,
+                                          String_ToFloat(tokens[2]) / 100,
+                                          String_ToFloat(tokens[3]) / 100},
+                                         {String_ToFloat(tokens[1]) / 10,
+                                          String_ToFloat(tokens[2]) / 10,
+                                          String_ToFloat(tokens[3]) / 10,
+                                          1.0f}};
+            ListArray_Add(&mesh.vertices, &vertex);
+        }
+        else if (String_Compare(firstToken, scl("vt")) == 0) // vt 0.073128 0.431854
+        {
+            // Process texture coordinate data
+        }
+        else if (String_Compare(firstToken, scl("vn")) == 0) // vn -0.0233 0.1253 -0.9918
+        {
+            // Process normal vector data
+        }
+        else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                String indices[3]; // 15/15/24
+                String_Tokenize(tokens[j + 1], scl("/"), NULL, indices, 3);
+
+                unsigned int index = (unsigned int)String_ToInt(indices[0]);
+
+                ListArray_Add(&mesh.indices, &index);
+            }
+        }
+    }
+
+    DebugInfo("Mesh created with %zu vertices and %zu indices", mesh.vertices.count, mesh.indices.count);
+
     return mesh;
 }
 

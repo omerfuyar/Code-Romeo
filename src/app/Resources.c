@@ -1,36 +1,41 @@
 #include "app/Resources.h"
+#include "utilities/Timer.h"
 
-Resource *Resource_Create(String title, String path)
+Resource Resource_Create(String title, String path)
 {
-    Resource *resource = (Resource *)malloc(sizeof(Resource));
-    DebugAssertNullPointerCheck(resource);
+    Resource resource;
 
-    resource->title = title;
-    resource->path = path;
+    resource.title = title;
+    resource.path = String_CreateCopy(path.characters, path.length);
+    String_ConcatBegin(&resource.path, scl(RESOURCE_DIRECTORY));
 
     FILE *file = NULL;
-    FileOpen(file, resource->path.characters, "r");
-    DebugAssert(file != NULL, "File open failed for %s", resource->path.characters);
+    FileOpen(file, resource.path.characters, "r");
+    DebugAssert(file != NULL, "File open failed for %s", resource.path.characters);
 
-    char dataBuffer[RESOURCE_FILE_MAX_LINE_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT];
-    char lineBuffer[RESOURCE_FILE_MAX_LINE_COUNT];
+    char *dataBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT);
+    DebugAssertNullPointerCheck(dataBuffer);
+    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
+    DebugAssertNullPointerCheck(lineBuffer);
 
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
 
-    while (fgets(lineBuffer, sizeof(lineBuffer), file))
+    Timer timer = Timer_Create(scl("Resource Loading"));
+    Timer_Start(&timer);
+    while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
     {
-        StringConcat(dataBuffer, sizeof(lineBuffer), lineBuffer);
+        StringConcat(dataBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT, lineBuffer);
     }
+    Timer_Stop(&timer);
+    DebugInfo("Resource '%s' loaded in %f seconds.", resource.title.characters, (double)Timer_GetElapsedNanoseconds(&timer) / 1000000000.0);
 
     fclose(file);
 
-    resource->dataSize = strlen(dataBuffer) + 1;
+    resource.data = String_CreateCopy(dataBuffer, strlen(dataBuffer));
 
-    resource->data = (char *)malloc(resource->dataSize);
-    DebugAssert(resource->data != NULL, "Memory allocation failed for resource data %s.", resource->path.characters);
-
-    StringCopy(resource->data, resource->dataSize, dataBuffer);
+    free(dataBuffer);
+    free(lineBuffer);
 
     return resource;
 }
@@ -39,19 +44,13 @@ void Resource_Destroy(Resource *resource)
 {
     DebugAssertNullPointerCheck(resource);
 
-    resource->dataSize = 0;
-
-    String_Destroy(&resource->path);
-
     char tempTitle[TEMP_TITLE_BUFFER_SIZE];
     StringCopy(tempTitle, TEMP_TITLE_BUFFER_SIZE, resource->title.characters);
     String_Destroy(&resource->title);
 
-    free(resource->data);
-    resource->data = NULL;
+    String_Destroy(&resource->path);
 
-    free(resource);
-    resource = NULL;
+    String_Destroy(&resource->data);
 
     DebugInfo("Resource '%s' destroyed successfully.", tempTitle);
 }

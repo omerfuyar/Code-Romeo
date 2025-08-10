@@ -42,7 +42,7 @@ void ListArray_Resize(ListArray *list, size_t newCapacity)
         list->count = newCapacity;
     }
 
-    DebugWarning("ListArray resized from %zu to %zu", list->capacity, newCapacity);
+    DebugInfo("ListArray resized from %zu to %zu", list->capacity, newCapacity);
 }
 
 void *ListArray_Get(ListArray list, size_t index)
