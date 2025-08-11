@@ -94,6 +94,34 @@ typedef struct RendererStaticObject
 
 #pragma endregion typedefs
 
+#pragma region Renderer
+
+/// @brief Initializer for renderer. Initializes OpenGL and GLFW. Sets options. Creates main window. Should be called before any renderer function.
+/// @param title Window title.
+/// @param windowSize Window size.
+/// @param vertexShaderSource Source code of the main vertex shader.
+/// @param fragmentShaderSource Source code of the main fragment shader.
+void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource);
+
+/// @brief Terminator for renderer.
+void Renderer_Terminate();
+
+/// @brief Should be called before using rendering functions.
+void Renderer_StartRendering();
+
+/// @brief Should be called after using rendering functions.
+void Renderer_FinishRendering();
+
+/// @brief Renders a dynamic object.
+/// @param object The dynamic object to render.
+void Renderer_RenderDynamicObject(RendererDynamicObject object);
+
+/// @brief Renders a batch of static objects.
+/// @param batch The batch of static objects to render.
+void Renderer_RenderBatch(RendererBatch batch);
+
+#pragma endregion Renderer
+
 #pragma region Renderer Object Transform
 
 /// @brief Sets the position of the object transform.
@@ -177,31 +205,3 @@ RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *bat
 void RendererStaticObject_Destroy(RendererStaticObject *object);
 
 #pragma endregion Renderer Static Object
-
-#pragma region Renderer
-
-/// @brief Initializer for renderer. Initializes OpenGL and GLFW. Sets options. Creates main window.
-/// @param title Window title.
-/// @param windowSize Window size.
-/// @param vertexShaderSource Source code of the main vertex shader.
-/// @param fragmentShaderSource Source code of the main fragment shader.
-void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource);
-
-/// @brief Terminator for renderer.
-void Renderer_Terminate();
-
-/// @brief Should be called before using rendering functions.
-void Renderer_StartRendering();
-
-/// @brief Should be called after using rendering functions.
-void Renderer_FinishRendering();
-
-/// @brief Renders a dynamic object.
-/// @param object The dynamic object to render.
-void Renderer_RenderDynamicObject(RendererDynamicObject object);
-
-/// @brief Renders a batch of static objects.
-/// @param batch The batch of static objects to render.
-void Renderer_RenderBatch(RendererBatch batch);
-
-#pragma endregion Renderer

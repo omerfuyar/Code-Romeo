@@ -103,6 +103,8 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
     ListArray_Destroy(&mesh->vertices);
     ListArray_Destroy(&mesh->indices);
+
+    DebugInfo("Mesh destroyed with %zu vertices and %zu indices", mesh->vertices.count, mesh->indices.count);
 }
 
 #pragma endregion Renderer Mesh
@@ -144,12 +146,17 @@ RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mes
 
     RendererDynamicObject_Update(object);
 
+    DebugInfo("Renderer Dynamic Object created with name: %s", object.name.characters);
+
     return object;
 }
 
 void RendererDynamicObject_Destroy(RendererDynamicObject *object)
 {
     DebugAssertNullPointerCheck(object);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, object->name.characters);
 
     object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
 
@@ -166,6 +173,8 @@ void RendererDynamicObject_Destroy(RendererDynamicObject *object)
     RendererMesh_Destroy(&object->mesh);
 
     object = NULL;
+
+    DebugInfo("Renderer Dynamic Object destroyed with name: %s", tempTitle);
 }
 
 void RendererDynamicObject_Update(RendererDynamicObject object)
@@ -218,13 +227,17 @@ RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, si
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    DebugInfo("RendererBatch created with name: %s, initial vertex capacity: %zu, initial index capacity: %zu", batch.name.characters, initialVertexCapacity, initialIndexCapacity);
+    DebugInfo("Renderer Batch created with name: %s, initial vertex capacity: %zu, initial index capacity: %zu", batch.name.characters, batch.mesh.vertices.capacity, batch.mesh.indices.capacity);
+
     return batch;
 }
 
 void RendererBatch_Destroy(RendererBatch *batch)
 {
     DebugAssertNullPointerCheck(batch);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, batch->name.characters);
 
     String_Destroy(&batch->name);
 
@@ -239,6 +252,8 @@ void RendererBatch_Destroy(RendererBatch *batch)
     RendererMesh_Destroy(&batch->mesh);
 
     batch = NULL;
+
+    DebugInfo("Renderer Batch destroyed with name: %s, vertices: %zu, indices: %zu", tempTitle, batch->mesh.vertices.count, batch->mesh.indices.count);
 }
 
 void RendererBatch_Update(RendererBatch batch)
@@ -274,9 +289,6 @@ RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *bat
     object.indexCountInBatch = mesh.indices.count;
     object.indexOffsetInBatch = object.batch->mesh.indices.count;
 
-    DebugInfo("batch vertex count %d, batch vertex capacity %d", object.batch->mesh.vertices.count, object.batch->mesh.vertices.capacity);
-    DebugInfo("batch index count %d, batch index capacity %d", object.batch->mesh.indices.count, object.batch->mesh.indices.capacity);
-
     ListArray_AddRange(&object.batch->mesh.vertices, mesh.vertices.data, mesh.vertices.count);
     ListArray_AddRange(&object.batch->mesh.indices, mesh.indices.data, mesh.indices.count);
 
@@ -288,13 +300,17 @@ RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *bat
 
     RendererBatch_Update(*object.batch);
 
-    DebugInfo("Static object %s created with vertex count: %zu, index count: %zu", object.name.characters, object.vertexCountInBatch, object.indexCountInBatch);
+    DebugInfo("Renderer Static Object created with name: %s", object.name.characters);
+
     return object;
 }
 
 void RendererStaticObject_Destroy(RendererStaticObject *object)
 {
     DebugAssertNullPointerCheck(object);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, object->name.characters);
 
     object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
 
@@ -310,6 +326,8 @@ void RendererStaticObject_Destroy(RendererStaticObject *object)
     object->indexOffsetInBatch = 0;
 
     object = NULL;
+
+    DebugInfo("Renderer Dynamic Object destroyed with name: %s", tempTitle);
 }
 
 #pragma endregion Renderer Static Object

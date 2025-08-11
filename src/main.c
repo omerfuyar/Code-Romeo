@@ -7,9 +7,11 @@
 
 int main()
 {
-    Resource vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders/vertex.glsl"));
-    Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders/fragment.glsl"));
-    Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models/maxwell.obj"));
+    Resource_Initialize();
+
+    Resource vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders\\vertex.glsl"));
+    Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders\\fragment.glsl"));
+    Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models\\maxwell.obj"));
 
     Renderer_Initialize(scl("Juliette"), NewVector2Int(720, 540), vertexShaderResource.data, fragmentShaderResource.data);
 

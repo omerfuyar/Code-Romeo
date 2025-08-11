@@ -6,7 +6,12 @@
 #define RESOURCE_FILE_LINE_MAX_TOKEN_COUNT 64
 #define RESOURCE_FILE_LINE_MAX_CHAR_COUNT 512
 #define RESOURCE_FILE_MAX_LINE_COUNT 2048
-#define RESOURCE_DIRECTORY "resources/"
+
+#if PLATFORM_WINDOWS
+#define RESOURCE_PATH "resources\\"
+#elif PLATFORM_UNIX
+#define RESOURCE_PATH "resources/"
+#endif
 
 typedef struct Resource
 {
@@ -14,6 +19,9 @@ typedef struct Resource
     String path;
     String data;
 } Resource;
+
+/// @brief Initializer for resources. Initializes file path and other settings. Should be called before any resource function.
+void Resource_Initialize();
 
 /// @brief Creates a new resource. Looks for a resources folder in executable directory.
 /// @param title The title of the resource.
@@ -24,3 +32,7 @@ Resource Resource_Create(String title, String path);
 /// @brief Destroys a resource.
 /// @param resource The resource to destroy.
 void Resource_Destroy(Resource *resource);
+
+/// @brief Gets the file directory of the current executable
+/// @return A reference string which includes the executable path. Does not necessary to destroy later.
+String Resource_GetExePath();

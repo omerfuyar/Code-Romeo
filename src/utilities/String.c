@@ -11,7 +11,7 @@ String String_CreateCopy(char *string, size_t length)
     DebugAssertNullPointerCheck(createdString.characters);
 
     MemoryCopy(createdString.characters, (createdString.length + 1) * sizeof(char), string);
-    createdString.characters[length] = '\0';
+    createdString.characters[createdString.length] = '\0';
     createdString.isOwner = true;
 
     return createdString;
@@ -58,7 +58,7 @@ void String_Destroy(String *string)
     }
 }
 
-void String_ChangeEnd(String *string, char *newString, size_t newLength)
+void String_Change(String *string, char *newString, size_t newLength)
 {
     DebugAssertNullPointerCheck(string);
     DebugAssert(string->isOwner, "Cannot modify a referenced string");
@@ -67,7 +67,22 @@ void String_ChangeEnd(String *string, char *newString, size_t newLength)
     string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
 
-    StringCopy(string->characters, (string->length + 1) * sizeof(char), newString);
+    MemoryCopy(string->characters, (string->length + 1) * sizeof(char), newString);
+    string->characters[string->length] = '\0';
+}
+
+void String_ConcatEnd(String *string, String other)
+{
+    DebugAssertNullPointerCheck(string);
+    DebugAssert(string->isOwner, "Cannot modify a referenced string");
+
+    size_t oldLength = string->length;
+    string->length += other.length;
+    string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(string->characters);
+
+    MemoryCopy(string->characters + oldLength, (other.length + 1) * sizeof(char), other.characters);
+    string->characters[string->length] = '\0';
 }
 
 void String_ConcatBegin(String *string, String other)
@@ -75,16 +90,16 @@ void String_ConcatBegin(String *string, String other)
     DebugAssertNullPointerCheck(string);
     DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
-    String buffer = String_CreateCopy(string->characters, string->length);
+    char *newLocation = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(newLocation);
 
+    MemoryCopy(newLocation + other.length, (string->length + 1) * sizeof(char), string->characters);
+
+    string->characters = newLocation;
     string->length += other.length;
-    string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
-    DebugAssertNullPointerCheck(string->characters);
+    string->characters[string->length] = '\0';
 
-    StringCopy(string->characters, (other.length + 1) * sizeof(char), other.characters);
-    StringCopy(string->characters + other.length, (buffer.length + 1) * sizeof(char), buffer.characters);
-
-    String_Destroy(&buffer);
+    MemoryCopy(string->characters, other.length * sizeof(char), other.characters);
 }
 
 int String_Compare(String string, String other)
