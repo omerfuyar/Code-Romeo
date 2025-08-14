@@ -1,6 +1,6 @@
 #include "Global.h"
-#include "app/Renderer.h"
-#include "app/Resources.h"
+#include "tools/Renderer.h"
+#include "tools/Resources.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -15,10 +15,11 @@ int main()
 
     Renderer_Initialize(scl("Juliette"), NewVector2Int(720, 540), vertexShaderResource.data, fragmentShaderResource.data);
 
-    RendererMesh myMesh = RendererMesh_Create(maxwellResource.data);
+    RendererMesh myMesh = RendererMesh_CreateOBJ(maxwellResource.data);
 
     RendererBatch myBatch = RendererBatch_Create(scl("My Batch"), 1000, 1000);
 
+    // RendererDynamicObject myObj = RendererDynamicObject_Create(scl("myObj"), myMesh);
     RendererStaticObject myObj = RendererStaticObject_Create(scl("myObj"), &myBatch, myMesh);
     DebugAssertNullPointerCheck(&myObj);
 
@@ -26,6 +27,7 @@ int main()
     {
         Renderer_StartRendering();
 
+        // Renderer_RenderDynamicObject(myObj);
         Renderer_RenderBatch(myBatch);
 
         Renderer_FinishRendering();

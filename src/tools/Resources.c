@@ -1,4 +1,4 @@
-#include "app/Resources.h"
+#include "tools/Resources.h"
 #include "utilities/Timer.h"
 
 #if PLATFORM_WINDOWS
@@ -61,14 +61,14 @@ Resource Resource_Create(String title, String path)
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
 
-    Timer timer = Timer_Create(scl("Resource Loading"));
+    Timer timer = Timer_Create("Resource Loading");
     Timer_Start(&timer);
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
     {
         StringConcat(dataBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT, lineBuffer);
     }
     Timer_Stop(&timer);
-    DebugInfo("Resource '%s' loaded in %f seconds.", resource.title.characters, (double)Timer_GetElapsedNanoseconds(&timer) / 1000000000.0);
+    DebugInfo("Resource '%s' loaded in %f seconds.", resource.title.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
 
     fclose(file);
 

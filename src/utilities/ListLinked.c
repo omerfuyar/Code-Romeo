@@ -97,19 +97,23 @@ long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, size_t sizeOfItem
     }
 }
 
-ListLinked ListLinked_Create(size_t sizeOfItem)
+ListLinked ListLinked_Create(size_t sizeOfItem, char *nameOfType)
 {
     ListLinked list;
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
+    list.nameOfType = nameOfType;
 
-    DebugInfo("ListLinked created with count of item: %zu", sizeOfItem);
+    DebugInfo("ListLinked '%s' created with size of item: %zu", nameOfType, sizeOfItem);
     return list;
 }
 
 void ListLinked_Destroy(ListLinked *list)
 {
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, list->nameOfType);
+
     if (list->head != NULL)
     {
         ListLinkedNode_DestroyAll(list->head);
@@ -117,7 +121,7 @@ void ListLinked_Destroy(ListLinked *list)
 
     list->head = NULL;
 
-    DebugInfo("ListLinked destroyed.");
+    DebugInfo("ListLinked '%s' destroyed.", tempTitle);
 }
 
 void *ListLinked_Get(ListLinked list, size_t index)

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Global.h"
-#include "utilities/String.h"
 
 #pragma region typedefs
 
@@ -17,7 +16,7 @@ typedef struct TimePoint
 /// @brief Represents a timer that can be used for measuring elapsed time. Should be used with helper functions.
 typedef struct Timer
 {
-    String title;
+    char *title;
     TimePoint startTime;
     TimePoint endTime;
     bool isRunning;
@@ -28,9 +27,9 @@ typedef struct Timer
 void TimePoint_Update(TimePoint *timePoint);
 
 /// @brief Creates a new timer.
-/// @param title Label for the timer.
+/// @param title Label for the timer. Null terminated.
 /// @return Timer instance.
-Timer Timer_Create(String title);
+Timer Timer_Create(char *title);
 
 /// @brief Starts the timer, updating its start time to the current time.
 /// @param timer Timer to start.
@@ -47,9 +46,9 @@ void Timer_Reset(Timer *timer);
 /// @brief Gets the elapsed time of the timer. Does not stop the timer or update its end time. So the user must stop the timer before using.
 /// @param timer Timer to get elapsed time from.
 /// @return Elapsed time of the timer.
-TimePoint Timer_GetElapsedTime(Timer *timer);
+TimePoint Timer_GetElapsedTime(Timer timer);
 
 /// @brief Gets the elapsed time of the timer in nanoseconds. Does not stop the timer or update its end time. So the user must stop the timer before using.
 /// @param timer Timer to get elapsed time from.
 /// @return Elapsed time of the timer in nanoseconds.
-time_t Timer_GetElapsedNanoseconds(Timer *timer);
+time_t Timer_GetElapsedNanoseconds(Timer timer);

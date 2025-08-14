@@ -31,20 +31,6 @@ String String_CreateReference(char *string, size_t length)
     return createdString;
 }
 
-String String_CreateLiteral(char *string)
-{
-    DebugAssertNullPointerCheck(string);
-
-    String createdString;
-
-    createdString.length = strlen(string);
-    createdString.characters = string;
-
-    createdString.isOwner = false;
-
-    return createdString;
-}
-
 void String_Destroy(String *string)
 {
     DebugAssertNullPointerCheck(string);
@@ -76,12 +62,11 @@ void String_ConcatEnd(String *string, String other)
     DebugAssertNullPointerCheck(string);
     DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
-    size_t oldLength = string->length;
-    string->length += other.length;
-    string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
+    string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + oldLength, (other.length + 1) * sizeof(char), other.characters);
+    MemoryCopy(string->characters + string->length, (other.length + 1) * sizeof(char), other.characters);
+    string->length += other.length;
     string->characters[string->length] = '\0';
 }
 
@@ -90,16 +75,18 @@ void String_ConcatBegin(String *string, String other)
     DebugAssertNullPointerCheck(string);
     DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
-    char *newLocation = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
-    DebugAssertNullPointerCheck(newLocation);
+    String buffer = String_CreateCopy(string->characters, string->length);
 
-    MemoryCopy(newLocation + other.length, (string->length + 1) * sizeof(char), string->characters);
+    string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(string->characters);
 
-    string->characters = newLocation;
+    MemoryCopy(string->characters + other.length, (string->length + 1) * sizeof(char), buffer.characters);
+    MemoryCopy(string->characters, other.length * sizeof(char), other.characters);
+
     string->length += other.length;
     string->characters[string->length] = '\0';
 
-    MemoryCopy(string->characters, other.length * sizeof(char), other.characters);
+    String_Destroy(&buffer);
 }
 
 int String_Compare(String string, String other)

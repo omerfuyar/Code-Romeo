@@ -3,7 +3,6 @@
 #include "Global.h"
 #include "utilities/String.h"
 #include "utilities/ListArray.h"
-#include "utilities/ListArrayDynamic.h"
 #include "utilities/Vectors.h"
 
 #define OPENGL_VERSION_MAJOR 3
@@ -13,6 +12,7 @@
 
 typedef unsigned int RendererVAOHandle;
 typedef unsigned int RendererVBOHandle;
+typedef unsigned int RendererIBOHandle;
 typedef unsigned int RendererShaderHandle;
 typedef unsigned int RendererShaderProgramHandle;
 typedef unsigned int RendererTextureHandle;
@@ -52,18 +52,17 @@ typedef struct RendererDynamicObject
     RendererMesh mesh;
     RendererVAOHandle vao;
     RendererVBOHandle vbo;
-    RendererVBOHandle ibo;
+    RendererIBOHandle ibo;
 } RendererDynamicObject;
 
 /// @brief A batch of static render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The batch is resizable but static object's vertices are not because it holds one big mesh for all static objects.
 typedef struct RendererBatch
 {
     String name;
-    // todo find a solution, fix this
     RendererMesh mesh; // RendererMesh
     RendererVAOHandle vao;
     RendererVBOHandle vbo;
-    RendererVBOHandle ibo;
+    RendererIBOHandle ibo;
 } RendererBatch;
 
 /// @brief A static render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the batch. Must be used with RendererBatch.
@@ -143,13 +142,24 @@ void ObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
 
 #pragma region Renderer Mesh
 
-/// @brief
-/// @param objFile
-/// @return
-RendererMesh RendererMesh_Create(String objFileSource);
+/// @brief Creates a mesh from an OBJ file source.
+/// @param objFileSource Source code of the OBJ file.
+/// @return Created mesh with vertices and indices.
+RendererMesh RendererMesh_CreateOBJ(String objFileSource);
 
-/// @brief
-/// @param mesh
+/// @brief Creates an empty mesh with no vertices or indices.
+/// @param initialVertexCapacity Initial capacity for the vertex array.
+/// @param initialIndexCapacity Initial capacity for the index array.
+/// @return Created empty mesh.
+RendererMesh RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity);
+
+/// @brief Creates a copy of the given mesh with its own memory.
+/// @param mesh Mesh to copy.
+/// @return Copied new mesh.
+RendererMesh RendererMesh_Copy(RendererMesh mesh);
+
+/// @brief Destroyer function for renderer mesh.
+/// @param mesh Mesh to destroy.
 void RendererMesh_Destroy(RendererMesh *mesh);
 
 #pragma endregion Renderer Mesh
@@ -162,8 +172,8 @@ void RendererMesh_Destroy(RendererMesh *mesh);
 /// @return Created dynamic render object.
 RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mesh);
 
-/// @brief Destroyer function for dynamic render object
-/// @param object Object to destroy
+/// @brief Destroyer function for dynamic render object.
+/// @param object Object to destroy.
 void RendererDynamicObject_Destroy(RendererDynamicObject *object);
 
 /// @brief Update function for dynamic renderer object. Updates its data to OpenGL context.

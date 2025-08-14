@@ -1,5 +1,6 @@
-#include "app/Renderer.h"
-#include "app/Resources.h"
+#include "tools/Renderer.h"
+#include "tools/Resources.h"
+#include "utilities/Timer.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -7,7 +8,7 @@
 #define OPENGL_DRAW_TYPE GL_STATIC_DRAW
 
 GLFWwindow *MAIN_WINDOW = NULL;
-
+Timer *RENDERER_TIMER = NULL;
 RendererShaderProgramHandle MAIN_SHADER_PROGRAM = 0;
 
 void MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
@@ -40,7 +41,7 @@ void ObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
 
 #pragma region Renderer Mesh
 
-RendererMesh RendererMesh_Create(String objFileSource)
+RendererMesh RendererMesh_CreateOBJ(String objFileSource)
 {
     RendererMesh mesh = {0};
 
@@ -48,8 +49,8 @@ RendererMesh RendererMesh_Create(String objFileSource)
     String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
     String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
 
-    mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), lineCount / 4);
-    mesh.indices = ListArray_Create(sizeof(RendererMeshIndex), lineCount / 4);
+    mesh.vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), lineCount / 4);
+    mesh.indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), lineCount / 4);
 
     for (size_t i = 0; i < lineCount; i++)
     {
@@ -68,6 +69,7 @@ RendererMesh RendererMesh_Create(String objFileSource)
                                           String_ToFloat(tokens[2]) / 10,
                                           String_ToFloat(tokens[3]) / 10,
                                           1.0f}};
+
             ListArray_Add(&mesh.vertices, &vertex);
         }
         else if (String_Compare(firstToken, scl("vt")) == 0) // vt 0.073128 0.431854
@@ -97,6 +99,26 @@ RendererMesh RendererMesh_Create(String objFileSource)
     return mesh;
 }
 
+RendererMesh RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity)
+{
+    RendererMesh mesh = {0};
+
+    mesh.vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), initialVertexCapacity);
+    mesh.indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
+
+    return mesh;
+}
+
+RendererMesh RendererMesh_Copy(RendererMesh mesh)
+{
+    RendererMesh copiedMesh = {0};
+
+    copiedMesh.vertices = ListArray_Copy(mesh.vertices);
+    copiedMesh.indices = ListArray_Copy(mesh.indices);
+
+    return copiedMesh;
+}
+
 void RendererMesh_Destroy(RendererMesh *mesh)
 {
     DebugAssertNullPointerCheck(mesh);
@@ -117,8 +139,7 @@ RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mes
 
     object.name = name;
     object.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
-
-    object.mesh = mesh;
+    object.mesh = RendererMesh_Copy(mesh);
 
     glGenVertexArrays(1, &object.vao);
     glGenBuffers(1, &object.vbo);
@@ -200,8 +221,7 @@ RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, si
     RendererBatch batch = {0};
 
     batch.name = name;
-    batch.mesh.vertices = ListArray_Create(sizeof(RendererMeshVertex), initialVertexCapacity);
-    batch.mesh.indices = ListArray_Create(sizeof(RendererMeshIndex), initialIndexCapacity);
+    batch.mesh = RendererMesh_CreateEmpty(initialVertexCapacity, initialIndexCapacity);
 
     glGenVertexArrays(1, &batch.vao);
     glGenBuffers(1, &batch.vbo);
@@ -291,12 +311,6 @@ RendererStaticObject RendererStaticObject_Create(String name, RendererBatch *bat
 
     ListArray_AddRange(&object.batch->mesh.vertices, mesh.vertices.data, mesh.vertices.count);
     ListArray_AddRange(&object.batch->mesh.indices, mesh.indices.data, mesh.indices.count);
-
-    DebugInfo("batch vertex count %d, batch vertex capacity %d", object.batch->mesh.vertices.count, object.batch->mesh.vertices.capacity);
-    DebugInfo("batch index count %d, batch index capacity %d", object.batch->mesh.indices.count, object.batch->mesh.indices.capacity);
-
-    DebugInfo("mesh vertex count %d, mesh vertex capacity %d", mesh.vertices.count, mesh.vertices.capacity);
-    DebugInfo("mesh index count %d, mesh index capacity %d", mesh.indices.count, mesh.indices.capacity);
 
     RendererBatch_Update(*object.batch);
 
@@ -401,6 +415,9 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    RENDERER_TIMER = (Timer *)malloc(sizeof(Timer));
+    *RENDERER_TIMER = Timer_Create("Renderer Timer");
+
     DebugInfo("Renderer initialized successfully.");
 }
 
@@ -413,6 +430,8 @@ void Renderer_Terminate()
 
 void Renderer_StartRendering()
 {
+    Timer_Start(RENDERER_TIMER);
+
     if (glfwWindowShouldClose(MAIN_WINDOW))
     {
         DebugInfo("Main window close input received");
@@ -432,6 +451,8 @@ void Renderer_FinishRendering()
     glfwPollEvents();
 
     // DebugInfo("Rendering finished");
+    Timer_Stop(RENDERER_TIMER);
+    DebugInfo("Frame time: %f milliseconds", (float)Timer_GetElapsedNanoseconds(*RENDERER_TIMER) / 1000000.0f);
 }
 
 void Renderer_RenderDynamicObject(RendererDynamicObject object)
@@ -442,7 +463,7 @@ void Renderer_RenderDynamicObject(RendererDynamicObject object)
 
     glBindVertexArray(0);
 
-    // DebugInfo("Dynamic object %s rendered", object.name.characters);
+    // DebugInfo("Dynamic object '%s' rendered", object.name.characters);
 }
 
 void Renderer_RenderBatch(RendererBatch batch)
@@ -452,7 +473,8 @@ void Renderer_RenderBatch(RendererBatch batch)
     glDrawElements(GL_TRIANGLES, batch.mesh.indices.count, GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
-    // DebugInfo("Batch %s rendered", batch.name.characters);
+
+    // DebugInfo("Batch '%s' rendered", batch.name.characters);
 }
 
 #pragma endregion Renderer
