@@ -5,14 +5,23 @@
 #include "utilities/ListArray.h"
 #include "utilities/Vectors.h"
 
+#include "cglm/cglm.h"
+
 #define OPENGL_VERSION_MAJOR 3
 #define OPENGL_VERSION_MINOR 3
+
+#define VERTEX_MEMBER_POSITION_INDEX 0
+#define VERTEX_MEMBER_COLOR_INDEX 1
+
+extern float RENDERER_DELTA_TIME;
 
 #pragma region typedefs
 
 typedef unsigned int RendererVAOHandle;
 typedef unsigned int RendererVBOHandle;
 typedef unsigned int RendererIBOHandle;
+typedef unsigned int RendererUniformHandle;
+typedef unsigned int RendererUBOHandle;
 typedef unsigned int RendererShaderHandle;
 typedef unsigned int RendererShaderProgramHandle;
 typedef unsigned int RendererTextureHandle;
@@ -34,15 +43,21 @@ typedef struct RendererMeshVertex
     Vector4 color;
 } RendererMeshVertex;
 
-#define VERTEX_MEMBER_POSITION_INDEX 0
-#define VERTEX_MEMBER_COLOR_INDEX 1
-
 /// @brief A model mesh structure that holds all necessary data to represent a 3D mesh.
 typedef struct RendererMesh
 {
+    size_t id;
     ListArray vertices; // RendererMeshVertex
     ListArray indices;  // RendererMeshIndex
 } RendererMesh;
+
+/// @brief The camera object for the renderer.
+typedef struct RendererCamera
+{
+    String name;
+    float fov;
+    RendererObjectTransform transform;
+} RendererCamera;
 
 /// @brief A dynamic render object that have its own vertex array object (VAO) and vertex buffer object (VBO)
 typedef struct RendererDynamicObject
@@ -53,9 +68,11 @@ typedef struct RendererDynamicObject
     RendererVAOHandle vao;
     RendererVBOHandle vbo;
     RendererIBOHandle ibo;
+    RendererUniformHandle mvpHandle;
+    mat4 mvpMatrix;
 } RendererDynamicObject;
 
-/// @brief A batch of static render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The batch is resizable but static object's vertices are not because it holds one big mesh for all static objects.
+/// @brief A batch of static render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The batch is resizable but static object's vertices or indices are not because it holds one big mesh for all static objects. Batch is only updatable all at once.
 typedef struct RendererBatch
 {
     String name;
@@ -63,9 +80,10 @@ typedef struct RendererBatch
     RendererVAOHandle vao;
     RendererVBOHandle vbo;
     RendererIBOHandle ibo;
+    RendererUBOHandle uboMVP;
 } RendererBatch;
 
-/// @brief A static render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the batch. Must be used with RendererBatch.
+/// @brief A static render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the batch. Must be used with RendererBatch. Not updatable on it's own.
 typedef struct RendererStaticObject
 {
     String name;
@@ -100,7 +118,9 @@ typedef struct RendererStaticObject
 /// @param windowSize Window size.
 /// @param vertexShaderSource Source code of the main vertex shader.
 /// @param fragmentShaderSource Source code of the main fragment shader.
-void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource);
+/// @param mainCamera Pointer to the main camera object.
+/// @param vSync Whether to enable vertical synchronization.
+void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, RendererCamera *mainCamera, bool vSync);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();
@@ -110,6 +130,10 @@ void Renderer_StartRendering();
 
 /// @brief Should be called after using rendering functions.
 void Renderer_FinishRendering();
+
+/// @brief Sets the main camera for the renderer.
+/// @param camera Pointer to the camera object to set as the main camera.
+void Renderer_SetMainCamera(RendererCamera *camera);
 
 /// @brief Renders a dynamic object.
 /// @param object The dynamic object to render.
@@ -163,6 +187,20 @@ RendererMesh RendererMesh_Copy(RendererMesh mesh);
 void RendererMesh_Destroy(RendererMesh *mesh);
 
 #pragma endregion Renderer Mesh
+
+#pragma region Renderer Camera Object
+
+/// @brief Creates a camera object to control the view.
+/// @param name Name of the camera.
+/// @param fov Field of view of the camera.
+/// @return Created camera object.
+RendererCamera RendererCamera_Create(String name, float fov);
+
+/// @brief Destroys a camera object.
+/// @param camera Camera object to destroy.
+void RendererCamera_Destroy(RendererCamera *camera);
+
+#pragma endregion Renderer Camera Object
 
 #pragma region Renderer Dynamic Object
 

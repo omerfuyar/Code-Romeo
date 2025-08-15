@@ -7,11 +7,16 @@
 
 #define OPENGL_DRAW_TYPE GL_STATIC_DRAW
 
-GLFWwindow *MAIN_WINDOW = NULL;
-Timer *RENDERER_TIMER = NULL;
-RendererShaderProgramHandle MAIN_SHADER_PROGRAM = 0;
+GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
+RendererCamera *RENDERER_MAIN_CAMERA = NULL;
 
-void MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
+size_t RENDERER_MESH_ID_INDEX = 0;
+float RENDERER_DELTA_TIME = 0.0f;
+Timer RENDERER_TIMER = {0};
+String RENDERER_MAIN_WINDOW_TITLE = {0};
+RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
+
+void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
 {
     DebugAssertNullPointerCheck(window);
     glViewport(0, 0, width, height);
@@ -44,6 +49,8 @@ void ObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
 RendererMesh RendererMesh_CreateOBJ(String objFileSource)
 {
     RendererMesh mesh = {0};
+
+    mesh.id = ++RENDERER_MESH_ID_INDEX;
 
     size_t lineCount = 0;
     String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
@@ -103,8 +110,12 @@ RendererMesh RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initi
 {
     RendererMesh mesh = {0};
 
+    mesh.id = ++RENDERER_MESH_ID_INDEX;
+
     mesh.vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), initialVertexCapacity);
     mesh.indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
+
+    DebugInfo("Empty mesh created with %zu vertex and %zu index capacity", mesh.vertices.capacity, mesh.indices.capacity);
 
     return mesh;
 }
@@ -113,8 +124,12 @@ RendererMesh RendererMesh_Copy(RendererMesh mesh)
 {
     RendererMesh copiedMesh = {0};
 
+    copiedMesh.id = ++RENDERER_MESH_ID_INDEX;
+
     copiedMesh.vertices = ListArray_Copy(mesh.vertices);
     copiedMesh.indices = ListArray_Copy(mesh.indices);
+
+    DebugInfo("Renderer mesh copied with %zu vertices and %zu indices", mesh.vertices.count, mesh.indices.count);
 
     return copiedMesh;
 }
@@ -123,6 +138,8 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 {
     DebugAssertNullPointerCheck(mesh);
 
+    mesh->id = 0;
+
     ListArray_Destroy(&mesh->vertices);
     ListArray_Destroy(&mesh->indices);
 
@@ -130,6 +147,32 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 }
 
 #pragma endregion Renderer Mesh
+
+#pragma region Renderer Camera Object
+
+RendererCamera RendererCamera_Create(String name, float fov)
+{
+    RendererCamera camera = {0};
+
+    camera.name = name;
+    camera.fov = fov;
+    camera.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+
+    return camera;
+}
+
+void RendererCamera_Destroy(RendererCamera *camera)
+{
+    DebugAssertNullPointerCheck(camera);
+
+    String_Destroy(&camera->name);
+    camera->fov = -1.0f;
+    camera->transform = (RendererObjectTransform){0};
+
+    DebugInfo("Renderer Camera Object destroyed");
+}
+
+#pragma endregion Renderer Camera Object
 
 #pragma region Renderer Dynamic Object
 
@@ -148,6 +191,8 @@ RendererDynamicObject RendererDynamicObject_Create(String name, RendererMesh mes
     glBindVertexArray(object.vao);
     glBindBuffer(GL_ARRAY_BUFFER, object.vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object.ibo);
+
+    object.mvpHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "MVP");
 
     size_t offset = 0;
 
@@ -190,6 +235,8 @@ void RendererDynamicObject_Destroy(RendererDynamicObject *object)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    object->mvpHandle = 0;
 
     RendererMesh_Destroy(&object->mesh);
 
@@ -246,6 +293,8 @@ RendererBatch RendererBatch_Create(String name, size_t initialVertexCapacity, si
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    RendererBatch_Update(batch);
 
     DebugInfo("Renderer Batch created with name: %s, initial vertex capacity: %zu, initial index capacity: %zu", batch.name.characters, batch.mesh.vertices.capacity, batch.mesh.indices.capacity);
 
@@ -348,7 +397,7 @@ void RendererStaticObject_Destroy(RendererStaticObject *object)
 
 #pragma region Renderer
 
-void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource)
+void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, RendererCamera *mainCamera, bool vSync)
 {
     DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
@@ -357,11 +406,12 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     DebugInfo("GLFW initialized successfully.");
 
-    MAIN_WINDOW = glfwCreateWindow(windowSize.x, windowSize.y, title.characters, NULL, NULL);
-    DebugAssertNullPointerCheck(MAIN_WINDOW);
+    RENDERER_MAIN_WINDOW = glfwCreateWindow(windowSize.x, windowSize.y, title.characters, NULL, NULL);
+    DebugAssertNullPointerCheck(RENDERER_MAIN_WINDOW);
 
-    glfwMakeContextCurrent(MAIN_WINDOW);
-    glfwSetFramebufferSizeCallback(MAIN_WINDOW, MAIN_WINDOW_RESIZE_CALLBACK);
+    glfwMakeContextCurrent(RENDERER_MAIN_WINDOW);
+
+    glfwSetFramebufferSizeCallback(RENDERER_MAIN_WINDOW, RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
     DebugInfo("Main window created successfully.");
 
     DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
@@ -371,6 +421,7 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glfwSwapInterval(vSync);
 
     GLint glslHasCompiled = 0;
     char glslInfoLog[1024] = {0};
@@ -399,15 +450,15 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     }
     DebugInfo("Fragment shader compiled successfully.");
 
-    MAIN_SHADER_PROGRAM = glCreateProgram();
-    glAttachShader(MAIN_SHADER_PROGRAM, vertexShader);
-    glAttachShader(MAIN_SHADER_PROGRAM, fragmentShader);
-    glLinkProgram(MAIN_SHADER_PROGRAM);
+    RENDERER_MAIN_SHADER_PROGRAM = glCreateProgram();
+    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, vertexShader);
+    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, fragmentShader);
+    glLinkProgram(RENDERER_MAIN_SHADER_PROGRAM);
 
-    glGetProgramiv(MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
+    glGetProgramiv(RENDERER_MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
     if (glslHasCompiled == GL_FALSE)
     {
-        glGetProgramInfoLog(MAIN_SHADER_PROGRAM, 1024, NULL, glslInfoLog);
+        glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, 1024, NULL, glslInfoLog);
         DebugError("Shader program linking failed: %s", glslInfoLog);
     }
     DebugInfo("Shader program linked successfully.");
@@ -415,24 +466,27 @@ void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShade
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    RENDERER_TIMER = (Timer *)malloc(sizeof(Timer));
-    *RENDERER_TIMER = Timer_Create("Renderer Timer");
+    RENDERER_TIMER = Timer_Create("Renderer Timer");
+
+    RENDERER_MAIN_WINDOW_TITLE = title;
+
+    RENDERER_MAIN_CAMERA = mainCamera;
 
     DebugInfo("Renderer initialized successfully.");
 }
 
 void Renderer_Terminate()
 {
-    glDeleteProgram(MAIN_SHADER_PROGRAM);
-    glfwDestroyWindow(MAIN_WINDOW);
+    glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
+    glfwDestroyWindow(RENDERER_MAIN_WINDOW);
     glfwTerminate();
 }
 
 void Renderer_StartRendering()
 {
-    Timer_Start(RENDERER_TIMER);
+    Timer_Start(&RENDERER_TIMER);
 
-    if (glfwWindowShouldClose(MAIN_WINDOW))
+    if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW))
     {
         DebugInfo("Main window close input received");
         Terminate(0);
@@ -440,25 +494,37 @@ void Renderer_StartRendering()
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(MAIN_SHADER_PROGRAM);
+    glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
 
     // DebugInfo("Rendering started");
 }
 
 void Renderer_FinishRendering()
 {
-    glfwSwapBuffers(MAIN_WINDOW);
+    glfwSwapBuffers(RENDERER_MAIN_WINDOW);
     glfwPollEvents();
 
     // DebugInfo("Rendering finished");
-    Timer_Stop(RENDERER_TIMER);
-    DebugInfo("Frame time: %f milliseconds", (float)Timer_GetElapsedNanoseconds(*RENDERER_TIMER) / 1000000.0f);
+    Timer_Stop(&RENDERER_TIMER);
+    RENDERER_DELTA_TIME = (float)Timer_GetElapsedNanoseconds(RENDERER_TIMER) / 1000000000.0f;
+
+    char titleBuffer[TEMP_BUFFER_SIZE];
+    snprintf(titleBuffer, sizeof(titleBuffer), "%s | FPS: %d | Delta Time: %f", RENDERER_MAIN_WINDOW_TITLE.characters, (int)(1 / RENDERER_DELTA_TIME), RENDERER_DELTA_TIME);
+    glfwSetWindowTitle(RENDERER_MAIN_WINDOW, titleBuffer);
+
+    // DebugInfo("Frame time: %f milliseconds", (float)Timer_GetElapsedNanoseconds(*RENDERER_TIMER) / 1000000.0f);
+}
+
+void Renderer_SetMainCamera(RendererCamera *camera)
+{
+    RENDERER_MAIN_CAMERA = camera;
 }
 
 void Renderer_RenderDynamicObject(RendererDynamicObject object)
 {
     glBindVertexArray(object.vao);
 
+    glUniformMatrix4fv(object.mvpHandle, 1, GL_FALSE, object.mvpMatrix);
     glDrawElements(GL_TRIANGLES, object.mesh.indices.count, GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
@@ -470,6 +536,7 @@ void Renderer_RenderBatch(RendererBatch batch)
 {
     glBindVertexArray(batch.vao);
 
+    // todo ubo send
     glDrawElements(GL_TRIANGLES, batch.mesh.indices.count, GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
