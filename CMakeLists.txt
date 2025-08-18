@@ -59,8 +59,10 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCE})
 
 # Sanitizers
 if(ENABLE_ASAN)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    target_compile_options(${PROJECT_NAME} PRIVATE clang_rt.asan-x86_64 -fno-omit-frame-pointer)
+    #target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    target_link_options(${PROJECT_NAME} PRIVATE clang_rt.asan-x86_64)
+    #target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
     message(STATUS "Target '${PROJECT_NAME}' will be built with sanitizers: address")
 endif()
 
@@ -71,11 +73,14 @@ if(ENABLE_UBSAN)
 endif()
     
 target_compile_options(${PROJECT_NAME} PRIVATE ${WARNING_FLAGS})
+
 if (ENABLE_WERROR)
     target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
 endif()
 
-add_compile_options(-g -fstack-protector-strong)
+if(NOT ENABLE_ASAN AND NOT ENABLE_UBSAN)
+    add_compile_options(-g -fstack-protector-strong)
+endif()
 
 # Dependencies
 add_subdirectory(dependencies/glfw)

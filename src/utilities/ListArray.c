@@ -100,7 +100,7 @@ void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)
 
     while (list->count + itemCount > list->capacity)
     {
-        DebugWarning("ListArray '%s' is full. Resizing it from %zu to %zu.", list->nameOfType, list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
+        DebugWarning("ListArray '%s' is full. Resizing it...", list->nameOfType);
         ListArray_Resize(list, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 

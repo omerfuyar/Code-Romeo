@@ -13,29 +13,29 @@ int main()
     Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders\\fragment.glsl"));
     Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models\\maxwell.obj"));
 
-    RendererCamera mainCamera = RendererCamera_Create(scl("Main Camera"), 90.0f);
-
     Renderer_Initialize(scl("Juliette"),
                         NewVector2Int(720, 540),
                         vertexShaderResource.data,
                         fragmentShaderResource.data,
-                        &mainCamera,
                         true);
+
+    RendererCamera mainCamera = RendererCamera_Create(scl("Main Camera"));
+    RendererCamera_Configure(&mainCamera, true, 90);
 
     RendererMesh myMesh = RendererMesh_CreateOBJ(maxwellResource.data);
 
-    // RendererBatch myBatch = RendererBatch_Create(scl("My Batch"), 1000, 1000);
+    RendererScene myScene = RendererScene_Create(scl("My Scene"), &mainCamera, 10, 1000, 1000);
 
-    RendererDynamicObject myObj = RendererDynamicObject_Create(scl("myObj"), myMesh);
-    // RendererStaticObject myObj = RendererStaticObject_Create(scl("myObj"), &myBatch, myMesh);
-    DebugAssertNullPointerCheck(&myObj);
+    RendererObject myObj = RendererObject_Create(scl("myObj"), &myScene, myMesh);
 
     while (true)
     {
         Renderer_StartRendering();
 
-        Renderer_RenderDynamicObject(myObj);
-        // Renderer_RenderBatch(myBatch);
+        RendererObject_Update(&myObj);
+        RendererCamera_Update(&mainCamera);
+        RendererScene_Update(&myScene);
+        Renderer_RenderScene(&myScene);
 
         Renderer_FinishRendering();
     }
