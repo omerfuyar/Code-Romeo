@@ -89,7 +89,7 @@ void String_ConcatBegin(String *string, String other)
 
 int String_Compare(String string, String other)
 {
-    int result = strncmp(string.characters, other.characters, min(string.length, other.length));
+    int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
 
     return result;
 }

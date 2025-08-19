@@ -55,6 +55,9 @@
 
 #define TEMP_TITLE_BUFFER_SIZE 128
 
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
+
 #if defined(PLATFORM_WINDOWS)
 #define FileOpen(filePtr, fileName, mode) fopen_s(&filePtr, fileName, mode)
 #define FileOpenBool(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
