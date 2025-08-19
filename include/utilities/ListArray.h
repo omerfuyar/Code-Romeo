@@ -15,17 +15,24 @@ typedef struct ListArray
     size_t capacity;
     size_t count;
     size_t sizeOfItem;
+    char *nameOfType;
 } ListArray;
 
 /// @brief Creator function for ListArray.
+/// @param nameOfType Name of the type stored in the list.
 /// @param sizeOfItem Size of the item type to store in.
 /// @param initialCapacity How many items can hold in this ListArray. Can be resized later on.
 /// @return The created ListArray struct
-ListArray ListArray_Create(size_t sizeOfItem, size_t initialCapacity);
+ListArray ListArray_Create(char *nameOfType, size_t sizeOfItem, size_t initialCapacity);
 
 /// @brief Destroyer function for ListArray.
 /// @param list ListArray to destroy.
 void ListArray_Destroy(ListArray *list);
+
+/// @brief Creates a copy of the given ListArray with its own data.
+/// @param list ListArray to copy.
+/// @return The copy ListArray
+ListArray ListArray_Copy(ListArray list);
 
 /// @brief Resize function for ListArray. Can enlarge or trunc the ListArray.
 /// @param list ListArray to resize.

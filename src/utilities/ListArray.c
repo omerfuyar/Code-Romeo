@@ -1,21 +1,25 @@
 #include "utilities/ListArray.h"
 
-ListArray ListArray_Create(size_t sizeOfItem, size_t initialCapacity)
+ListArray ListArray_Create(char *nameOfType, size_t sizeOfItem, size_t initialCapacity)
 {
     ListArray list;
     list.capacity = initialCapacity;
     list.sizeOfItem = sizeOfItem;
+    list.nameOfType = nameOfType;
     list.count = 0;
     list.data = (void *)malloc(initialCapacity * sizeOfItem);
     DebugAssertNullPointerCheck(list.data);
 
-    DebugInfo("ListArray created with initial capacity: %zu, size of item: %zu", initialCapacity, sizeOfItem);
+    DebugInfo("ListArray '%s' created with initial capacity: %zu, size of item: %zu", nameOfType, initialCapacity, sizeOfItem);
     return list;
 }
 
 void ListArray_Destroy(ListArray *list)
 {
     DebugAssertNullPointerCheck(list);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, list->data);
 
     free(list->data);
     list->data = NULL;
@@ -24,7 +28,18 @@ void ListArray_Destroy(ListArray *list)
     list->count = 0;
     list->sizeOfItem = 0;
 
-    DebugInfo("ListArray destroyed.");
+    DebugInfo("ListArray %s destroyed.", tempTitle);
+}
+
+ListArray ListArray_Copy(ListArray list)
+{
+    ListArray copiedList = ListArray_Create(list.nameOfType, list.sizeOfItem, list.capacity);
+
+    ListArray_AddRange(&copiedList, list.data, list.count);
+
+    DebugInfo("ListArray '%s' copied. count: %zu, capacity: %zu", list.nameOfType, list.count, list.capacity);
+
+    return copiedList;
 }
 
 void ListArray_Resize(ListArray *list, size_t newCapacity)
@@ -35,14 +50,10 @@ void ListArray_Resize(ListArray *list, size_t newCapacity)
     DebugAssertNullPointerCheck(newData);
 
     list->data = newData;
+
+    DebugInfo("ListArray '%s' resized from %zu to %zu", list->nameOfType, list->capacity, newCapacity);
+
     list->capacity = newCapacity;
-
-    if (list->count > newCapacity)
-    {
-        list->count = newCapacity;
-    }
-
-    DebugInfo("ListArray resized from %zu to %zu", list->capacity, newCapacity);
 }
 
 void *ListArray_Get(ListArray list, size_t index)
@@ -68,16 +79,16 @@ void ListArray_Add(ListArray *list, const void *item)
 {
     DebugAssertNullPointerCheck(list);
 
-    void *targetLocation = (void *)((char *)list->data + list->count * list->sizeOfItem);
-    DebugAssertNullPointerCheck(targetLocation);
-
     while (list->count + 1 > list->capacity)
     {
-        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
+        DebugWarning("ListArray '%s' is full. Resizing it from %zu to %zu.", list->nameOfType, list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
-    memcpy(targetLocation, item, list->sizeOfItem);
+    void *targetLocation = (void *)((char *)list->data + list->count * list->sizeOfItem);
+    DebugAssertNullPointerCheck(targetLocation);
+
+    MemoryCopy(targetLocation, list->sizeOfItem, item);
 
     list->count++;
 }
@@ -87,16 +98,16 @@ void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)
     DebugAssertNullPointerCheck(list);
     DebugAssert(itemCount > 0, "Item count to add must be greater than 0.");
 
-    void *targetLocation = (void *)((char *)list->data + list->count * list->sizeOfItem);
-    DebugAssertNullPointerCheck(targetLocation);
-
     while (list->count + itemCount > list->capacity)
     {
-        DebugWarning("ListArray is full. Resizing it from %zu to %zu.", list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
+        DebugWarning("ListArray '%s' is full. Resizing it...", list->nameOfType);
         ListArray_Resize(list, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
-    memcpy(targetLocation, item, list->sizeOfItem * itemCount);
+    void *targetLocation = (void *)((char *)list->data + list->count * list->sizeOfItem);
+    DebugAssertNullPointerCheck(targetLocation);
+
+    MemoryCopy(targetLocation, list->sizeOfItem, item);
 
     list->count += itemCount;
 }
@@ -108,7 +119,7 @@ void ListArray_RemoveAtIndex(ListArray *list, size_t index)
 
     if (list->count - 1 > 0 && (double)list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - 1 < (size_t)((double)list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT))
     {
-        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
+        DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
@@ -134,7 +145,7 @@ void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount)
 
     if (list->count - itemCount > 0 && (double)list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - itemCount < (size_t)((double)list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT))
     {
-        DebugWarning("ListArray is less than 1/%d full. Resizing it from %zu to %zu.", ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
+        DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, ARRAY_LIST_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity / ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
@@ -157,7 +168,7 @@ void ListArray_RemoveItem(ListArray *list, const void *item)
     long long itemIndex = ListArray_IndexOf(*list, item);
     if (itemIndex == -1)
     {
-        DebugWarning("Item not found in ListArray. Cannot remove.");
+        DebugWarning("Item not found in ListArray '%s'. Cannot remove.", list->nameOfType);
         return;
     }
 
@@ -197,6 +208,6 @@ long long ListArray_IndexOf(ListArray list, const void *item)
         }
     }
 
-    DebugWarning("Item not found in ListArray. Returning -1.");
+    DebugWarning("Item not found in ListArray '%s'. Returning -1.", list.nameOfType);
     return -1;
 }

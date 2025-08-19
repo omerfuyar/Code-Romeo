@@ -56,7 +56,7 @@ cd Code-Romeo
 ``` bash
 mkdir build
 cd build
-cmake .. -G Ninja -DCMAKE_C_COMPILER=clang
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build .
 ```
 
@@ -64,7 +64,7 @@ cmake --build .
 ``` powershell
 mkdir build
 cd build
-cmake .. -G "Ninja" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang
+cmake .. -G "Ninja"
 cmake --build .
 ```
 

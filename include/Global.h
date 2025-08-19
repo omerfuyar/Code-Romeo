@@ -2,16 +2,24 @@
 
 #if defined(_WIN32)
 #define PLATFORM_WINDOWS 1
+#define PLATFORM_LINUX 0
+#define PLATFORM_MACOS 0
 #elif defined(__linux__)
 #define PLATFORM_LINUX 1
+#define PLATFORM_WINDOWS 0
+#define PLATFORM_MACOS 0
 #elif defined(__APPLE__) && defined(__MACH__)
 #define PLATFORM_MACOS 1
+#define PLATFORM_WINDOWS 0
+#define PLATFORM_LINUX 0
 #else
 #error "Unsupported platform."
 #endif
 
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS)
+#if PLATFORM_LINUX || PLATFORM_MACOS
 #define PLATFORM_UNIX 1
+#else
+#define PLATFORM_UNIX 0
 #endif
 
 #include <stdlib.h>
@@ -53,7 +61,7 @@
 
 #pragma region Functions And Macros
 
-#define TEMP_TITLE_BUFFER_SIZE 128
+#define TEMP_BUFFER_SIZE 128
 
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
@@ -62,14 +70,12 @@
 #define FileOpen(filePtr, fileName, mode) fopen_s(&filePtr, fileName, mode)
 #define FileOpenBool(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
-#define StringCopy(destination, size, source) strcpy_s(destination, size, source)
 #define StringConcat(destination, size, source) strcat_s(destination, size, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
 #elif defined(PLATFORM_UNIX)
 #define FileOpen(filePtr, fileName, mode) (filePtr = fopen(fileName, mode))
 #define FileOpenBool(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define MemoryCopy(destination, source, size) (destination, source, size)
-#define StringCopy(destination, size, source) strcpy(destination, source)
 #define StringConcat(destination, size, source) strcat(destination, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 #endif

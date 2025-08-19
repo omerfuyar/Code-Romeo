@@ -11,7 +11,7 @@ void TimePoint_Update(TimePoint *timePoint)
     timePoint->nanoseconds = currentTime.tv_nsec;
 }
 
-Timer Timer_Create(String title)
+Timer Timer_Create(char *title)
 {
     Timer timer;
     timer.title = title;
@@ -29,7 +29,7 @@ void Timer_Start(Timer *timer)
 
     if (timer->isRunning)
     {
-        DebugWarning("Timer is already running. Cannot start.");
+        DebugWarning("Timer '%s' is already running. Cannot start.", timer->title);
         return;
     }
 
@@ -44,7 +44,7 @@ void Timer_Stop(Timer *timer)
 
     if (!timer->isRunning)
     {
-        DebugWarning("Timer is not running. Cannot stop.");
+        DebugWarning("Timer '%s' is not running. Cannot stop.", timer->title);
         return;
     }
 
@@ -60,13 +60,11 @@ void Timer_Reset(Timer *timer)
     timer->startTime = timer->endTime;
 }
 
-TimePoint Timer_GetElapsedTime(Timer *timer)
+TimePoint Timer_GetElapsedTime(Timer timer)
 {
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
     TimePoint elapsedTime;
-    elapsedTime.seconds = timer->endTime.seconds - timer->startTime.seconds;
-    elapsedTime.nanoseconds = timer->endTime.nanoseconds - timer->startTime.nanoseconds;
+    elapsedTime.seconds = timer.endTime.seconds - timer.startTime.seconds;
+    elapsedTime.nanoseconds = timer.endTime.nanoseconds - timer.startTime.nanoseconds;
 
     if (elapsedTime.nanoseconds < 0)
     {
@@ -77,10 +75,8 @@ TimePoint Timer_GetElapsedTime(Timer *timer)
     return elapsedTime;
 }
 
-time_t Timer_GetElapsedNanoseconds(Timer *timer)
+time_t Timer_GetElapsedNanoseconds(Timer timer)
 {
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
     TimePoint elapsedTime = Timer_GetElapsedTime(timer);
     return elapsedTime.seconds * 1000000000 + elapsedTime.nanoseconds;
 }

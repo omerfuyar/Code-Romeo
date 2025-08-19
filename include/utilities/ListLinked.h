@@ -15,12 +15,14 @@ typedef struct ListLinked
     ListLinkedNode *head;
     size_t count;
     size_t sizeOfItem;
+    char *nameOfType;
 } ListLinked;
 
 /// @brief Creator function for ListLinked.
 /// @param sizeOfItem Size of the item type to store in the list.
+/// @param nameOfType Name of the item type to store in the list.
 /// @return The created ListLinked struct.
-ListLinked ListLinked_Create(size_t sizeOfItem);
+ListLinked ListLinked_Create(size_t sizeOfItem, char *nameOfType);
 
 /// @brief Destroyer function for ListLinked. Frees all nodes and the list itself recursively.
 /// @param list ListLinked to destroy.

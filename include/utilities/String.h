@@ -26,10 +26,8 @@ String String_CreateReference(char *string, size_t length);
 
 /// @brief Creates a new String object from a string literal. The created String object will use the original string's memory.
 /// @param string Null terminated C-style string literal.
-/// @return Newly created String object holding a pointer to reference of the original string.
-String String_CreateLiteral(char *string);
-
-#define scl(string) String_CreateLiteral(string)
+#define scl(string) \
+    (String) { .characters = string, .length = strlen(string), .isOwner = false }
 
 /// @brief Destroys a String object and frees its memory if it is a copy.
 /// @param string Pointer to the String object to destroy.
