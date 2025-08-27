@@ -5,7 +5,18 @@
 * This project do not have a structure like my previous projects (Core and App, Engine and Game). Instead I have focused on mostly doing one thing, just a game or whatever it is.
 * ReadMe sections for MacOS may not be right because I dont have a mac to test on it.
 
+## To clone the repository
+``` bash
+git clone --recurse-submodules https://github.com/omerfuyar/Code-Romeo.git
+cd Code-Romeo
+```
+
 ## Dependencies
+
+### Note
+
+* Library dependencies of the project is included and handled all by cmake. So user is not responsible for getting packages for runtime.
+* GLFW and CGLM are subdirectories (which cloned with the clone command at the top) are compiled statically and linked to the main application. Other dependencies are just files and they may or may not be edited by me 😁
 
 ### `C23` standard
 
@@ -14,6 +25,8 @@
 ### `Ninja` for the build system generator
 
 ### `Clang` for the preferred compiler
+
+* You can select your compiler as you want but I am using clang and it works best for this project. I don't even test other compilers.
 
 ### `OpenGL and GLAD` for OpenGL rendering (included in the project)
 
@@ -27,36 +40,28 @@
 
 #### Linux
 ``` bash
-sudo apt install cmake clang ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libglfw3-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+sudo apt install cmake snap ninja-build  libwayland-dev libxkbcommon-dev wayland-protocols libglfw3-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev clang
 ```
 
 #### MacOS
 ``` bash
-brew install cmake clang ninja
+brew install cmake ninja clang
 ```
 
-### Windows
-Download and install `CMake` from the [official site](https://cmake.org/download/) (in binary distributions section)
-
-Download and install `LLVM` from the [official site](https://releases.llvm.org/download.html) (Enable the option "Add LLVM to system PATH" during installation)
-
+#### Windows
 ``` powershell
-winget install -e --id Ninja-build.Ninja
+winget install -e --id Ninja-build.Ninja 
+winget install -e --id Kitware.CMake
+winget install -e --id LLVM.LLVM
 ```
 
 ## Build
-
-### To clone the repository
-``` bash
-git clone --recurse-submodules https://github.com/omerfuyar/Code-Romeo.git
-cd Code-Romeo
-```
 
 ### Linux and MacOS
 ``` bash
 mkdir build
 cd build
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Release
 cmake --build .
 ```
 
@@ -64,12 +69,6 @@ cmake --build .
 ``` powershell
 mkdir build
 cd build
-cmake .. -G "Ninja"
+cmake .. -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Release
 cmake --build .
 ```
-
-# Note to myself
-* glfw and cglm is included in the project with `add_subdirectory()` function in cmake file.
-* glad and stb is included in the project by adding the src and include directories to cmake.
-* do not forget to add include and src directories to cmake and vscode/ide settings.
-* only glad requires manual compilation for src files. other dependencies are handled by CMake.

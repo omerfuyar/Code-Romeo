@@ -2,13 +2,14 @@
 # CMAKE_SOURCE_DIR : The directory where the top-level CMakeLists.txt file is located
 # CMAKE_CURRENT_SOURCE_DIR : The directory of the current CMakeLists.txt file
 
-cmake_minimum_required(VERSION 3.25)
+# CMake configurations
+cmake_minimum_required(VERSION 3.22)
 
 # Project
 project(Code-Romeo C)
 
 set(CMAKE_C_STANDARD 23)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD_REQUIRED OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -16,29 +17,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/arc)
 
-# Options
-option(ENABLE_ASAN  "Enable AddressSanitizer"                          OFF)
-option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer"                OFF)
-option(ENABLE_WERROR "Treat warnings as errors (project sources only)" ON)
-
-if(NOT CMAKE_C_COMPILER)
-    find_program(CLANG_PATH clang)
-    if(CLANG_PATH)
-        set(CMAKE_C_COMPILER clang CACHE STRING "C compiler" FORCE)
-        message(STATUS "Setting C compiler to: ${CMAKE_C_COMPILER}")
-    else()
-        message(FATAL_ERROR "clang compiler not found, but is preferred by this project.")
-    endif()
-endif()
-
 message(STATUS "Using C compiler: ${CMAKE_C_COMPILER}")
-
-# Compiler Arguments
-set(WARNING_FLAGS
-    -Wall -Wextra -Wshadow -Wpedantic -Wconversion
-    -Wnull-dereference -Wunused-result
-    -Wno-gnu-zero-variadic-macro-arguments
-)
 
 # Includes
 include_directories(${PROJECT_NAME}
@@ -51,56 +30,36 @@ include_directories(${PROJECT_NAME}
 
 # Sources
 file(GLOB_RECURSE PROJECT_SOURCE
-    ${CMAKE_SOURCE_DIR}/dependencies/glad/src/*.c
-    ${CMAKE_SOURCE_DIR}/src/*.c
+    PRIVATE ${CMAKE_SOURCE_DIR}/src/*.c
+    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/dependencies/glad/src/*.c
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE})
 
-# Sanitizers
-if(ENABLE_ASAN)
-    target_compile_options(${PROJECT_NAME} PRIVATE clang_rt.asan-x86_64 -fno-omit-frame-pointer)
-    #target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    target_link_options(${PROJECT_NAME} PRIVATE clang_rt.asan-x86_64)
-    #target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
-    message(STATUS "Target '${PROJECT_NAME}' will be built with sanitizers: address")
-endif()
+# Compiler Arguments
+set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wshadow -Wpedantic -Wconversion -Wnull-dereference -Wunused-result -Wno-strict-prototypes -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument -fstack-protector-strong -Werror")
 
-if(ENABLE_UBSAN)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -fno-omit-frame-pointer)
-    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined)
-    message(STATUS "Target '${PROJECT_NAME}' will be built with sanitizers: undefined")
-endif()
-    
-target_compile_options(${PROJECT_NAME} PRIVATE ${WARNING_FLAGS})
-
-if (ENABLE_WERROR)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
-endif()
-
-if(NOT ENABLE_ASAN AND NOT ENABLE_UBSAN)
-    add_compile_options(-g -fstack-protector-strong)
-endif()
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # Dependencies
-add_subdirectory(dependencies/glfw)
-add_subdirectory(dependencies/cglm)
+add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/glfw)
+add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/cglm)
 
 target_compile_options(glfw PRIVATE -w)
 target_compile_options(cglm PRIVATE -w)
 
 # Linking
 if (WIN32)    
-    target_link_libraries(${PROJECT_NAME} PRIVATE opengl32 gdi32 cglm_headers glfw ucrt)
+    target_link_libraries(${PROJECT_NAME} PRIVATE opengl32 gdi32 cglm glfw)
 elseif(APPLE)
     find_library(COCOA_LIBRARY Cocoa REQUIRED)
     find_library(OpenGL_LIBRARY OpenGL REQUIRED)
     find_library(IOKit_LIBRARY IOKit REQUIRED)
     find_library(CoreVideo_LIBRARY CoreVideo REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE
-        ${COCOA_LIBRARY} ${OpenGL_LIBRARY} ${IOKit_LIBRARY} ${CoreVideo_LIBRARY} cglm_headers glfw)
+        ${COCOA_LIBRARY} ${OpenGL_LIBRARY} ${IOKit_LIBRARY} ${CoreVideo_LIBRARY} cglm glfw)
 elseif(UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl cglm_headers glfw)
+    target_link_libraries(${PROJECT_NAME} PRIVATE dl cglm glfw)
 endif()
 
 # Resource copy
@@ -115,5 +74,5 @@ if (EXISTS ${PROJECT_RESOURCE_DIR})
     )
     message(STATUS "Project resource directory copied to: ${PROJECT_BUILD_RESOURCE_DIR}")
 else()
-    message(WARNING "Project resource directory not found: ${PROJECT_RESOURCE_DIR}")
+    message(FATAL_ERROR "Project resource directory not found: ${PROJECT_RESOURCE_DIR}")
 endif()

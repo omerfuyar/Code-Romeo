@@ -53,10 +53,8 @@ Resource Resource_Create(String title, String path)
     FileOpen(file, resource.path.characters, "r");
     DebugAssert(file != NULL, "File open failed for %s", resource.path.characters);
 
-    char *dataBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT);
-    DebugAssertNullPointerCheck(dataBuffer);
-    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
-    DebugAssertNullPointerCheck(lineBuffer);
+    char dataBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT];
+    char lineBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT];
 
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
@@ -73,9 +71,6 @@ Resource Resource_Create(String title, String path)
     fclose(file);
 
     resource.data = String_CreateCopy(dataBuffer, strlen(dataBuffer));
-
-    free(dataBuffer);
-    free(lineBuffer);
 
     return resource;
 }

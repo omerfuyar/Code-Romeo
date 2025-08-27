@@ -8,6 +8,13 @@
 
 #define OPENGL_DRAW_TYPE GL_STATIC_DRAW
 
+#define DebugCheckRenderer()                                               \
+    do                                                                     \
+    {                                                                      \
+        GLenum glError = glGetError();                                     \
+        DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
+    } while (0)
+
 GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
 
 size_t RENDERER_MESH_ID_INDEX = 0;
@@ -120,12 +127,12 @@ void Renderer_StartRendering()
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
-
-    DebugInfo("Rendering started");
 }
 
 void Renderer_FinishRendering()
 {
+    DebugCheckRenderer();
+
     glfwSwapBuffers(RENDERER_MAIN_WINDOW);
     glfwPollEvents();
 
@@ -134,10 +141,10 @@ void Renderer_FinishRendering()
     RENDERER_DELTA_TIME = (float)Timer_GetElapsedNanoseconds(RENDERER_TIMER) / 1000000000.0f;
 
     char titleBuffer[TEMP_BUFFER_SIZE];
-    snprintf(titleBuffer, sizeof(titleBuffer), "%s | FPS: %d | Delta Time: %f", RENDERER_MAIN_WINDOW_TITLE.characters, (int)(1 / RENDERER_DELTA_TIME), RENDERER_DELTA_TIME);
+    snprintf(titleBuffer, sizeof(titleBuffer), "%s | FPS: %d | Frame Time: %f ms", RENDERER_MAIN_WINDOW_TITLE.characters, (int)(1 / RENDERER_DELTA_TIME), RENDERER_DELTA_TIME * 1000);
     glfwSetWindowTitle(RENDERER_MAIN_WINDOW, titleBuffer);
 
-    DebugInfo("Frame time: %f milliseconds", RENDERER_DELTA_TIME * 1000);
+    DebugInfo("Rendering finished : FPS: %d | Frame Time: %f ms", (int)(1 / RENDERER_DELTA_TIME), RENDERER_DELTA_TIME * 1000);
 }
 
 void Renderer_RenderScene(RendererScene *scene)
@@ -145,7 +152,7 @@ void Renderer_RenderScene(RendererScene *scene)
     glBindVertexArray(scene->vao);
 
     // todo find out how to update per model data with buffer or use multiple draw calls
-    glDrawElementsInstanced(GL_TRIANGLES, scene->mesh.indices.count, GL_UNSIGNED_INT, scene->mesh.indices.data, scene->modelMatrices.count);
+    glDrawElementsInstanced(GL_TRIANGLES, (int)scene->mesh.indices.count, GL_UNSIGNED_INT, scene->mesh.indices.data, (int)scene->modelMatrices.count);
 
     glBindVertexArray(0);
 
@@ -458,13 +465,13 @@ void RendererScene_Update(RendererScene *scene)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
     glBindBuffer(GL_UNIFORM_BUFFER, scene->uboModelMatrices);
 
-    glBufferData(GL_ARRAY_BUFFER, scene->mesh.vertices.sizeOfItem * scene->mesh.vertices.count, scene->mesh.vertices.data, OPENGL_DRAW_TYPE);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, scene->mesh.indices.sizeOfItem * scene->mesh.indices.count, scene->mesh.indices.data, OPENGL_DRAW_TYPE);
+    glBufferData(GL_ARRAY_BUFFER, (long long)(scene->mesh.vertices.sizeOfItem * scene->mesh.vertices.count), scene->mesh.vertices.data, OPENGL_DRAW_TYPE);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long long)(scene->mesh.indices.sizeOfItem * scene->mesh.indices.count), scene->mesh.indices.data, OPENGL_DRAW_TYPE);
 
-    glBufferData(GL_UNIFORM_BUFFER, scene->modelMatrices.sizeOfItem * (2 + scene->modelMatrices.count), scene->modelMatrices.data, OPENGL_DRAW_TYPE);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, scene->modelMatrices.sizeOfItem, &scene->camera->projectionMatrix);                                                         // projection matrix
-    glBufferSubData(GL_UNIFORM_BUFFER, scene->modelMatrices.sizeOfItem, scene->modelMatrices.sizeOfItem, &scene->camera->viewMatrix);                                 // view matrix
-    glBufferSubData(GL_UNIFORM_BUFFER, scene->modelMatrices.sizeOfItem * 2, scene->modelMatrices.sizeOfItem * scene->modelMatrices.count, scene->modelMatrices.data); // model matrices
+    glBufferData(GL_UNIFORM_BUFFER, (long long)(scene->modelMatrices.sizeOfItem * (2 + scene->modelMatrices.count)), scene->modelMatrices.data, OPENGL_DRAW_TYPE);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, (long long)scene->modelMatrices.sizeOfItem, &scene->camera->projectionMatrix);                                                                      // projection matrix
+    glBufferSubData(GL_UNIFORM_BUFFER, (long long)scene->modelMatrices.sizeOfItem, (long long)scene->modelMatrices.sizeOfItem, &scene->camera->viewMatrix);                                   // view matrix
+    glBufferSubData(GL_UNIFORM_BUFFER, (long long)scene->modelMatrices.sizeOfItem * 2, (long long)(scene->modelMatrices.sizeOfItem * scene->modelMatrices.count), scene->modelMatrices.data); // model matrices
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

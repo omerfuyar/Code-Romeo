@@ -41,6 +41,9 @@ bld/
 [Bb]uild/
 [Bb]uilds/
 
+# Zig files
+.zig-cache
+
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 .vscode/

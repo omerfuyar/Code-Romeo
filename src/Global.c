@@ -1,5 +1,7 @@
 #include "Global.h"
 
+#include "tools/Resources.h"
+
 #if PLATFORM_WINDOWS
 #include <windows.h>
 #elif PLATFORM_UNIX
@@ -7,9 +9,7 @@
 #endif
 
 FILE *DEBUG_FILE = NULL;
-
-char *ARENA_POINTER = NULL;
-char *ARENA_END = NULL;
+String DEBUG_FILE_NAME_STR = {0};
 
 void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
@@ -23,19 +23,22 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
     if (DEBUG_FILE == NULL)
     {
-        remove(DEBUG_FILE_NAME);
+        DEBUG_FILE_NAME_STR = String_CreateCopy(Resource_GetExePath().characters, Resource_GetExePath().length);
+        String_ConcatEnd(&DEBUG_FILE_NAME_STR, scl(DEBUG_FILE_NAME));
 
-        if (!FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"))
+        remove(DEBUG_FILE_NAME_STR.characters);
+
+        if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR.characters, "a"))
         {
-            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
+            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             Terminate(-1); // todo error codes
         }
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", buffer, tempSpec.tv_nsec / 1000000);
     }
-    else if (!FileOpenBool(DEBUG_FILE, DEBUG_FILE_NAME, "a"))
+    else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR.characters, "a"))
     {
-        fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME);
+        fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR.characters);
         Terminate(-1); // todo error codes
     }
 
@@ -60,38 +63,4 @@ void Terminate(int exitCode)
     fprintf(stdout, "Terminating application with exit code: %d\n", exitCode);
 
     exit(exitCode);
-}
-
-void *ArenaAllocate(size_t size)
-{
-    char *ptr = NULL;
-
-    if (ARENA_POINTER == NULL)
-    {
-        ptr = (char *)malloc(size);
-
-        ARENA_POINTER = ptr;
-        ARENA_END = ptr + size;
-    }
-    else if (ARENA_POINTER + size <= ARENA_END)
-    {
-        ptr = ARENA_POINTER;
-        ARENA_POINTER += size;
-    }
-    else
-    {
-        return NULL;
-    }
-
-    return (void *)ptr;
-}
-
-void ArenaFree(void *ptr)
-{
-    DebugAssertNullPointerCheck(ptr);
-
-    free(ptr);
-
-    ARENA_POINTER = NULL;
-    ARENA_END = NULL;
 }

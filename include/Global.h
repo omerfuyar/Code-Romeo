@@ -67,14 +67,12 @@
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
 #if defined(PLATFORM_WINDOWS)
-#define FileOpen(filePtr, fileName, mode) fopen_s(&filePtr, fileName, mode)
-#define FileOpenBool(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
+#define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
 #define StringConcat(destination, size, source) strcat_s(destination, size, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
 #elif defined(PLATFORM_UNIX)
-#define FileOpen(filePtr, fileName, mode) (filePtr = fopen(fileName, mode))
-#define FileOpenBool(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
+#define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define MemoryCopy(destination, source, size) (destination, source, size)
 #define StringConcat(destination, size, source) strcat(destination, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
@@ -91,15 +89,6 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 /// @brief Terminates and closes necessary utilities and exits the program.
 /// @param exitCode The code to pass to exit() function.
 void Terminate(int exitCode);
-
-/// @brief Allocates memory from the arena. Then must be freed with ArenaFree. Does not uses debug functions to leave it to the user. Must be used only one at the same time.
-/// @param size The size of the memory block to allocate.
-/// @return A pointer to the allocated memory, or NULL if the allocation failed.
-void *ArenaAllocate(size_t size);
-
-/// @brief Frees memory allocated from the arena.
-/// @param ptr A pointer to the memory block to free.
-void ArenaFree(void *ptr);
 
 #pragma endregion Functions And Macros
 
