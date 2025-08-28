@@ -38,7 +38,7 @@ void Resource_Initialize()
 
     String_ConcatEnd(&EXECUTABLE_DIRECTORY_PATH, pathDelimeter);
 
-    DebugInfo("Executable path detected : %s", EXECUTABLE_DIRECTORY_PATH.characters);
+    DebugInfo("Executable path detected : '%s'", EXECUTABLE_DIRECTORY_PATH.characters);
 }
 
 Resource Resource_Create(String title, String path)
@@ -53,8 +53,10 @@ Resource Resource_Create(String title, String path)
     FileOpen(file, resource.path.characters, "r");
     DebugAssert(file != NULL, "File open failed for %s", resource.path.characters);
 
-    char dataBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT];
-    char lineBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT];
+    char *dataBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT);
+    DebugAssertNullPointerCheck(dataBuffer);
+    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
+    DebugAssertNullPointerCheck(lineBuffer);
 
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
@@ -71,6 +73,9 @@ Resource Resource_Create(String title, String path)
     fclose(file);
 
     resource.data = String_CreateCopy(dataBuffer, strlen(dataBuffer));
+
+    free(dataBuffer);
+    free(lineBuffer);
 
     return resource;
 }

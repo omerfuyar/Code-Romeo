@@ -130,7 +130,7 @@ typedef struct RendererObject
 /// @param fragmentShaderSource Source code of the main fragment shader.
 /// @param mainCamera Pointer to the main camera object.
 /// @param vSync Whether to enable vertical synchronization.
-void Renderer_Initialize(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync);
+void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();

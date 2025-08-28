@@ -30,7 +30,7 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
         if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR.characters, "a"))
         {
-            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
+            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR.characters);
             Terminate(-1); // todo error codes
         }
 
