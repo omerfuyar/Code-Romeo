@@ -51,7 +51,7 @@ void *ListArray_Get(ListArray list, size_t index);
 /// @param item New item at index.
 void ListArray_Set(ListArray list, size_t index, const void *item);
 
-/// @brief Adder function for ListArray. Sets the last last index to given item. Uses memcpy to copy the item to the last.
+/// @brief Adder function for ListArray. Copies {sizeOfItem} amount of data from parameter {item} to the end of the array. Uses memcpy.
 /// @param list ListArray to add item.
 /// @param item Item to add to ListArray.
 void ListArray_Add(ListArray *list, const void *item);

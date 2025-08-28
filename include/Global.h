@@ -142,7 +142,7 @@ void Terminate(int exitCode);
 #endif
 
 #if DEBUG_ASSERT_ENABLED == false
-#define DebugAssert(condition, format, ...)
+#define DebugAssert(condition, format, ...) condition
 #else
 #define DebugAssert(condition, format, ...)                                                     \
     do                                                                                          \

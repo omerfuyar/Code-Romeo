@@ -1,25 +1,30 @@
 #pragma once
 
 #include "Global.h"
+
 #include "utilities/String.h"
 #include "utilities/ListArray.h"
 #include "utilities/Vectors.h"
 
 #include "cglm/mat4.h"
 
-#define OPENGL_VERSION_MAJOR 3
-#define OPENGL_VERSION_MINOR 3
+#define RENDERER_OPENGL_VERSION_MAJOR 3
+#define RENDERER_OPENGL_VERSION_MINOR 3
+#define RENDERER_OPENGL_CLEAR_COLOR 0.1f, 0.1f, 0.1f, 1.0f
 
 #define RENDERER_VBO_POSITION_BINDING 0
 #define RENDERER_VBO_COLOR_BINDING 1
 
 #define RENDERER_UBO_MATRICES_BINDING 0
 
-#define RENDERER_CAMERA_NEAR_CLIP_PLANE 0.1f
-#define RENDERER_CAMERA_FAR_CLIP_PLANE 100.0f
+#define RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE true
+#define RENDERER_CAMERA_DEFAULT_FOV 90.0f
+#define RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE 10.0f
+#define RENDERER_CAMERA_DEFAULT_NEAR_CLIP_PLANE 0.1f
+#define RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE 100.0f
 #define RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER 1000.0f
 
-#define RENDERER_SCENE_MAX_OBJECT_COUNT 1000
+#define RENDERER_BATCH_MAX_OBJECT_COUNT 256
 
 extern float RENDERER_DELTA_TIME;
 
@@ -28,14 +33,15 @@ extern float RENDERER_DELTA_TIME;
 typedef unsigned int RendererShaderHandle;
 typedef unsigned int RendererShaderProgramHandle;
 typedef unsigned int RendererTextureHandle;
-typedef unsigned int RendererUniformHandle;
+typedef int RendererUniformHandle;
 
 typedef unsigned int RendererVAOHandle;
 typedef unsigned int RendererVBOHandle;
 typedef unsigned int RendererIBOHandle;
-typedef unsigned int RendererUBOHandle;
 
 typedef unsigned int RendererMeshIndex;
+
+typedef struct RendererScene RendererScene;
 
 /// @brief Represents the transformation (position, rotation, scale) of an object in 3D space.
 typedef struct RendererObjectTransform
@@ -56,7 +62,6 @@ typedef struct RendererMeshVertex
 /// @brief A model mesh structure that holds all necessary data to represent a 3D mesh.
 typedef struct RendererMesh
 {
-    size_t id;
     ListArray vertices; // RendererMeshVertex
     ListArray indices;  // RendererMeshIndex
 } RendererMesh;
@@ -65,59 +70,53 @@ typedef struct RendererMesh
 typedef struct RendererCamera
 {
     String name;
-    bool isPerspective;
-    float fov;
-    float orthographicSize;
     RendererObjectTransform transform;
-    mat4 viewMatrix;
+    RendererScene *scene;
+
+    bool isPerspective;
+    float size; // fov if perspective, orthographic size if orthographic
+    float nearClipPlane;
+    float farClipPlane;
+
     mat4 projectionMatrix;
+    mat4 viewMatrix;
 } RendererCamera;
 
 /// @brief A scene of render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The scene is resizable but object's vertices or indices are not because it holds one big mesh for all objects. Scene is only updatable all at once.
 typedef struct RendererScene
 {
     String name;
-    RendererMesh mesh;
     RendererCamera *camera;
-    ListArray modelMatrices; // mat4
+    ListArray batches; // RendererBatch*
 
     RendererVAOHandle vao;
     RendererVBOHandle vboModelVertices;
     RendererIBOHandle iboModelIndices;
-    RendererUBOHandle uboModelMatrices; //! updated per frame. Contains projection and view matrices for camera and all other model matrices. Must match with uniform block in the vertex shader.
 
-    RendererUniformHandle matricesBlockHandle;
+    RendererUniformHandle projectionMatrixHandle;
+    RendererUniformHandle viewMatrixHandle;
+    RendererUniformHandle modelMatricesHandle;
 } RendererScene;
+
+typedef struct RendererBatch
+{
+    String name;
+    RendererMesh *mesh;
+    RendererScene *scene;
+
+    ListArray objectMatrices; // mat4, data should be continuous
+
+    size_t batchOffsetInScene;
+} RendererBatch;
 
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
 typedef struct RendererObject
 {
     String name;
     RendererObjectTransform transform;
-    RendererScene *scene;
-
-    size_t vertexOffsetInScene;
-    size_t vertexCountInScene;
-
-    size_t indexOffsetInScene;
-    size_t indexCountInScene;
-
-    size_t matrixOffsetInScene;
+    RendererBatch *batch;
+    size_t matrixOffsetInBatch;
 } RendererObject;
-
-// typedef enum RendererShaderType
-//{
-//     MeshVertex,
-//     Fragment,
-//     Compute,
-//     Geometry
-// } RendererShaderType;
-//
-// typedef struct RendererShader
-//{
-//     RendererShaderType type;
-//     RendererShaderHandle shader;
-// } RendererShader;
 
 #pragma endregion typedefs
 
@@ -176,18 +175,13 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 /// @brief Creates a mesh from an OBJ file source.
 /// @param objFileSource Source code of the OBJ file.
 /// @return Created mesh with vertices and indices.
-RendererMesh RendererMesh_CreateOBJ(String objFileSource);
+RendererMesh *RendererMesh_CreateOBJ(String objFileSource);
 
 /// @brief Creates an empty mesh with no vertices or indices.
 /// @param initialVertexCapacity Initial capacity for the vertex array.
 /// @param initialIndexCapacity Initial capacity for the index array.
 /// @return Created empty mesh.
-RendererMesh RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity);
-
-/// @brief Creates a copy of the given mesh with its own memory.
-/// @param mesh Mesh to copy.
-/// @return Copied new mesh.
-RendererMesh RendererMesh_Copy(RendererMesh mesh);
+RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity);
 
 /// @brief Destroyer function for renderer mesh.
 /// @param mesh Mesh to destroy.
@@ -195,40 +189,13 @@ void RendererMesh_Destroy(RendererMesh *mesh);
 
 #pragma endregion Renderer Mesh
 
-#pragma region Renderer Camera
-
-/// @brief Creates a camera object to control the view.
-/// @param name Name of the camera.
-/// @param fov Field of view of the camera.
-/// @return Created camera object.
-RendererCamera RendererCamera_Create(String name);
-
-/// @brief Destroys a camera object.
-/// @param camera Camera object to destroy.
-void RendererCamera_Destroy(RendererCamera *camera);
-
-/// @brief Configure the renderer camera.
-/// @param camera Camera to configure
-/// @param isPerspective Set the camera perspective or orthographic.
-/// @param value fov if perspective, orthographicSize if orthographic.
-void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float value);
-
-/// @brief Updates the camera's properties to render.
-/// @param camera Camera to update
-void RendererCamera_Update(RendererCamera *camera);
-
-#pragma endregion Renderer Camera
-
 #pragma region Renderer Scene
 
 /// @brief Creates a scene of render objects. A vertex allocator for objects.
 /// @param name Name of the scene.
-/// @param camera The main camera of the scene.
-/// @param initialObjectCapacity Initial capacity for the model matrix array
-/// @param initialVertexCapacity Initial capacity for the vertex array.
-/// @param initialIndexCapacity Initial capacity for the index array.
+/// @param initialBatchCapacity The initial capacity of the batch list in scene.
 /// @return Created scene of render objects.
-RendererScene RendererScene_Create(String name, RendererCamera *camera, size_t initialObjectCapacity, size_t initialVertexCapacity, size_t initialIndexCapacity);
+RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity);
 
 /// @brief Destroyer function for object scene
 /// @param scene Scene to destroy
@@ -239,20 +206,57 @@ void RendererScene_Destroy(RendererScene *scene);
 /// @param camera Camera object to set as the main camera.
 void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera);
 
-/// @brief Update function for renderer scene. Updates its data to OpenGL context.
-/// @param scene Scene to update data.
-void RendererScene_Update(RendererScene *scene);
-
 #pragma endregion Renderer Scene
+
+#pragma region Renderer Batch
+
+/// @brief Creates renderer batch to store objects that are using the same mesh. Changes the scene.
+/// @param name Name of the batch.
+/// @param scene Pointer to the scene that the batch is belong to.
+/// @param mesh Pointer to the mesh that the batch is using.
+/// @param initialObjectCapacity The initial capacity for objects inside batch.
+/// @return The created batch.
+RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererMesh *mesh, size_t initialObjectCapacity);
+
+/// @brief Destroys the renderer batch and frees its resources.
+/// @param batch Batch to destroy.
+void RendererBatch_Destroy(RendererBatch *batch);
+
+#pragma endregion Renderer Batch
+
+#pragma region Renderer Camera
+
+/// @brief Creates a camera object to control the view. Changes the scene.
+/// @param name Name of the camera.
+/// @param scene Scene to attach camera.
+/// @return Created camera object.
+RendererCamera *RendererCamera_Create(String name, RendererScene *scene);
+
+/// @brief Destroys a camera object.
+/// @param camera Camera object to destroy.
+void RendererCamera_Destroy(RendererCamera *camera);
+
+/// @brief Configure the renderer camera.
+/// @param camera Camera to configure
+/// @param isPerspective Set the camera perspective or orthographic.
+/// @param value fov if perspective, orthographicSize if orthographic.
+/// @param nearClipPlane Near clipping plane for the camera.
+/// @param farClipPlane Far clipping plane for the camera.
+void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane);
+
+/// @brief Updates the camera's properties to render.
+/// @param camera Camera to update
+void RendererCamera_Update(RendererCamera *camera);
+
+#pragma endregion Renderer Camera
 
 #pragma region Renderer Object
 
-/// @brief Creates a render object that shares its VAO and VBO with other objects in the scene.
+/// @brief Creates a render object that shares its VAO and VBO with other objects in the scene. Changes the batch.
 /// @param name Name of the render object.
-/// @param scene Pointer to the scene that the object belongs to.
-/// @param mesh Mesh data of the object.
+/// @param batch Pointer to the batch that the object belongs to.
 /// @return Created render object.
-RendererObject RendererObject_Create(String name, RendererScene *scene, RendererMesh mesh);
+RendererObject *RendererObject_Create(String name, RendererBatch *batch);
 
 /// @brief Destroyer function for render object
 /// @param object Object to destroy

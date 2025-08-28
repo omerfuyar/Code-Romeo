@@ -9,9 +9,10 @@ int main()
 {
     Resource_Initialize();
 
+    // todo make resources pointers/handles
     Resource vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders\\vertex.glsl"));
     Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders\\fragment.glsl"));
-    // Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models\\maxwell.obj"));
+    Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models\\maxwell.obj"));
 
     Renderer_CreateContext(scl("Juliette"),
                            NewVector2Int(720, 540),
@@ -19,23 +20,24 @@ int main()
                            fragmentShaderResource.data,
                            false);
 
-    RendererCamera mainCamera = RendererCamera_Create(scl("Main Camera"));
-    RendererCamera_Configure(&mainCamera, true, 90);
+    RendererScene *myScene = RendererScene_Create(scl("My Scene"), 5);
 
-    // RendererMesh myMesh = RendererMesh_CreateOBJ(maxwellResource.data);
+    RendererCamera *mainCamera = RendererCamera_Create(scl("Main Camera"), myScene);
 
-    // RendererScene myScene = RendererScene_Create(scl("My Scene"), &mainCamera, 10, 1000, 1000);
+    RendererMesh *myMesh = RendererMesh_CreateOBJ(maxwellResource.data);
 
-    // RendererObject myObj = RendererObject_Create(scl("myObj"), &myScene, myMesh);
+    RendererBatch *myBatch = RendererBatch_Create(scl("myBatch"), myScene, myMesh, 10);
+
+    RendererObject *myObj = RendererObject_Create(scl("myObj"), myBatch);
 
     while (true)
     {
         Renderer_StartRendering();
 
-        // RendererObject_Update(&myObj);
-        // RendererCamera_Update(&mainCamera);
-        // RendererScene_Update(&myScene);
-        // Renderer_RenderScene(&myScene);
+        RendererObject_Update(myObj);
+        RendererObjectTransform_SetRotation(&mainCamera->transform, Vector3_Add(mainCamera->transform.rotation, NewVector3(1, 1, 1)));
+        RendererCamera_Update(mainCamera);
+        Renderer_RenderScene(myScene);
 
         Renderer_FinishRendering();
     }

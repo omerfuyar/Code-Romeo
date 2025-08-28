@@ -17,7 +17,6 @@
 
 GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
 
-size_t RENDERER_MESH_ID_INDEX = 0;
 float RENDERER_DELTA_TIME = 0.0f;
 Timer RENDERER_TIMER = {0};
 String RENDERER_MAIN_WINDOW_TITLE = {0};
@@ -35,8 +34,8 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
 {
     DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OPENGL_VERSION_MAJOR);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OPENGL_VERSION_MINOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, RENDERER_OPENGL_VERSION_MAJOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, RENDERER_OPENGL_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     DebugInfo("GLFW initialized successfully.");
 
@@ -61,7 +60,7 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
     char glslInfoLog[1024] = {0};
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL); //!
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
     glCompileShader(vertexShader);
 
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
@@ -93,7 +92,7 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
     if (glslHasCompiled == GL_FALSE)
     {
         glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, 1024, NULL, glslInfoLog);
-        DebugError("Shader program linking failed: %s", glslInfoLog);
+        DebugError("Shader program linking failed:\n%s", glslInfoLog);
     }
     DebugInfo("Shader program linked successfully.");
 
@@ -124,15 +123,13 @@ void Renderer_StartRendering()
         Terminate(0);
     }
 
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
 }
 
 void Renderer_FinishRendering()
 {
-    DebugCheckRenderer();
-
     glfwSwapBuffers(RENDERER_MAIN_WINDOW);
     glfwPollEvents();
 
@@ -150,11 +147,44 @@ void Renderer_FinishRendering()
 void Renderer_RenderScene(RendererScene *scene)
 {
     glBindVertexArray(scene->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
 
-    // todo find out how to update per model data with buffer or use multiple draw calls
-    glDrawElementsInstanced(GL_TRIANGLES, (int)scene->mesh.indices.count, GL_UNSIGNED_INT, scene->mesh.indices.data, (int)scene->modelMatrices.count);
+    // todo fix
+    glUniformMatrix4fv(scene->projectionMatrixHandle, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
+    glUniformMatrix4fv(scene->viewMatrixHandle, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
+
+    for (size_t i = 0; i < scene->batches.count; i++)
+    {
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
+
+        glUniformMatrix4fv(scene->modelMatricesHandle,
+                           batch->objectMatrices.count,
+                           GL_FALSE,
+                           batch->objectMatrices.data);
+
+        glBufferData(GL_ARRAY_BUFFER,
+                     (long long)(batch->mesh->vertices.sizeOfItem * batch->mesh->vertices.count),
+                     batch->mesh->vertices.data,
+                     OPENGL_DRAW_TYPE);
+
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     (long long)(batch->mesh->indices.sizeOfItem * batch->mesh->indices.count),
+                     batch->mesh->indices.data,
+                     OPENGL_DRAW_TYPE);
+
+        glDrawElementsInstanced(GL_TRIANGLES,
+                                batch->mesh->indices.count,
+                                GL_UNSIGNED_INT,
+                                0,
+                                batch->objectMatrices.count);
+
+        DebugCheckRenderer();
+    }
 
     glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // DebugInfo("Scene '%s' rendered", scene.name.characters);
 }
@@ -166,23 +196,29 @@ void Renderer_RenderScene(RendererScene *scene)
 void RendererObjectTransform_SetPosition(RendererObjectTransform *transform, Vector3 position)
 {
     DebugAssertNullPointerCheck(transform);
+
     transform->position = position;
 }
 
 void RendererObjectTransform_SetRotation(RendererObjectTransform *transform, Vector3 rotation)
 {
     DebugAssertNullPointerCheck(transform);
+
     transform->rotation = rotation;
 }
 
 void RendererObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
 {
     DebugAssertNullPointerCheck(transform);
+
     transform->scale = scale;
 }
 
 void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, mat4 *matrix)
 {
+    DebugAssertNullPointerCheck(transform);
+    DebugAssertNullPointerCheck(matrix);
+
     glm_mat4_identity((vec4 *)matrix);
 
     glm_translate((vec4 *)matrix, (vec3){transform->position.x, transform->position.y, transform->position.z});
@@ -198,18 +234,13 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma region Renderer Mesh
 
-RendererMesh RendererMesh_CreateOBJ(String objFileSource)
+RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
 {
-    RendererMesh mesh = {0};
-
-    mesh.id = ++RENDERER_MESH_ID_INDEX;
-
     size_t lineCount = 0;
     String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
     String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
 
-    mesh.vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), lineCount / 4);
-    mesh.indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), lineCount / 4);
+    RendererMesh *mesh = RendererMesh_CreateEmpty(lineCount, lineCount);
 
     for (size_t i = 0; i < lineCount; i++)
     {
@@ -229,7 +260,7 @@ RendererMesh RendererMesh_CreateOBJ(String objFileSource)
                                           String_ToFloat(tokens[3]) / 10,
                                           1.0f}};
 
-            ListArray_Add(&mesh.vertices, &vertex);
+            ListArray_Add(&mesh->vertices, &vertex);
         }
         else if (String_Compare(firstToken, scl("vt")) == 0) // vt 0.073128 0.431854
         {
@@ -248,70 +279,197 @@ RendererMesh RendererMesh_CreateOBJ(String objFileSource)
 
                 unsigned int index = (unsigned int)String_ToInt(indices[0]);
 
-                ListArray_Add(&mesh.indices, &index);
+                ListArray_Add(&mesh->indices, &index);
             }
         }
     }
 
-    DebugInfo("Mesh created with %zu vertices and %zu indices", mesh.vertices.count, mesh.indices.count);
+    DebugInfo("Mesh created with %zu vertices and %zu indices", mesh->vertices.count, mesh->indices.count);
 
     return mesh;
 }
 
-RendererMesh RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity)
+RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity)
 {
-    RendererMesh mesh = {0};
+    RendererMesh *mesh = malloc(sizeof(RendererMesh));
+    DebugAssertNullPointerCheck(mesh);
 
-    mesh.id = ++RENDERER_MESH_ID_INDEX;
-
-    mesh.vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), initialVertexCapacity);
-    mesh.indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
-
-    DebugInfo("Empty mesh created with %zu vertex and %zu index capacity", mesh.vertices.capacity, mesh.indices.capacity);
+    mesh->vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), initialVertexCapacity);
+    mesh->indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
 
     return mesh;
-}
-
-RendererMesh RendererMesh_Copy(RendererMesh mesh)
-{
-    RendererMesh copiedMesh = {0};
-
-    copiedMesh.id = ++RENDERER_MESH_ID_INDEX;
-
-    copiedMesh.vertices = ListArray_Copy(mesh.vertices);
-    copiedMesh.indices = ListArray_Copy(mesh.indices);
-
-    DebugInfo("Renderer mesh copied with %zu vertices and %zu indices", mesh.vertices.count, mesh.indices.count);
-
-    return copiedMesh;
 }
 
 void RendererMesh_Destroy(RendererMesh *mesh)
 {
     DebugAssertNullPointerCheck(mesh);
 
-    mesh->id = 0;
-
     ListArray_Destroy(&mesh->vertices);
     ListArray_Destroy(&mesh->indices);
+
+    free(mesh);
+    mesh = NULL;
 
     DebugInfo("Mesh destroyed with %zu vertices and %zu indices", mesh->vertices.count, mesh->indices.count);
 }
 
 #pragma endregion Renderer Mesh
 
-#pragma region Renderer Camera Object
+#pragma region Renderer Scene
 
-RendererCamera RendererCamera_Create(String name)
+RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
 {
-    RendererCamera camera = {0};
+    RendererScene *scene = malloc(sizeof(RendererScene));
+    DebugAssertNullPointerCheck(scene);
 
-    camera.name = name;
-    camera.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
-    camera.isPerspective = true;
-    camera.fov = 90.0f;
+    scene->name = name;
+    scene->camera = NULL;
+    scene->batches = ListArray_Create("Renderer Batch Pointer", sizeof(RendererBatch *), initialBatchCapacity);
 
-    RendererCamera_Update(&camera);
+    glGenVertexArrays(1, &scene->vao);
+    glGenBuffers(1, &scene->vboModelVertices);
+    glGenBuffers(1, &scene->iboModelIndices);
+
+    glBindVertexArray(scene->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
+
+    size_t offset = 0;
+
+    glVertexAttribPointer(RENDERER_VBO_POSITION_BINDING, 3, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_VBO_POSITION_BINDING);
+    offset += sizeof(Vector3);
+
+    glVertexAttribPointer(RENDERER_VBO_COLOR_BINDING, 4, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_VBO_COLOR_BINDING);
+    offset += sizeof(Vector4);
+
+    //! ... other attributes in vertex
+
+    scene->projectionMatrixHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "projectionMatrix");
+    scene->viewMatrixHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "viewMatrix");
+    scene->modelMatricesHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "modelMatrices");
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindVertexArray(0);
+
+    DebugInfo("Renderer Scene '%s' created.", scene->name.characters);
+
+    return scene;
+}
+
+void RendererScene_Destroy(RendererScene *scene)
+{
+    DebugAssertNullPointerCheck(scene);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, scene->name.characters);
+
+    String_Destroy(&scene->name);
+    scene->camera = NULL;
+    ListArray_Destroy(&scene->batches);
+
+    glDeleteVertexArrays(1, &scene->vao);
+    glDeleteBuffers(1, &scene->vboModelVertices);
+    glDeleteBuffers(1, &scene->iboModelIndices);
+
+    scene->vao = 0;
+    scene->vboModelVertices = 0;
+    scene->iboModelIndices = 0;
+
+    scene->projectionMatrixHandle = 0;
+    scene->viewMatrixHandle = 0;
+    scene->modelMatricesHandle = 0;
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    free(scene);
+    scene = NULL;
+
+    DebugInfo("Renderer Scene '%s' destroyed.", tempTitle);
+}
+
+void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera)
+{
+    DebugAssertNullPointerCheck(scene);
+    DebugAssertNullPointerCheck(camera);
+
+    scene->camera = camera;
+}
+
+#pragma endregion Renderer Scene
+
+#pragma region Renderer Batch
+
+RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererMesh *mesh, size_t initialObjectCapacity)
+{
+    RendererBatch *batch = malloc(sizeof(RendererBatch));
+    DebugAssertNullPointerCheck(batch);
+
+    batch->name = name;
+    batch->mesh = mesh;
+    batch->scene = scene;
+    batch->objectMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
+
+    ListArray_Add(&scene->batches, &batch);
+
+    DebugInfo("Renderer Batch '%s' destroyed.", batch->name.characters);
+
+    return batch;
+}
+
+void RendererBatch_Destroy(RendererBatch *batch)
+{
+    DebugAssertNullPointerCheck(batch);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, sizeof(tempTitle), batch->name.characters);
+
+    ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
+    for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
+    {
+        RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(batch->scene->batches, i);
+        nextBatch->batchOffsetInScene--;
+    }
+
+    String_Destroy(&batch->name);
+    batch->mesh = NULL;
+
+    ListArray_Destroy(&batch->objectMatrices);
+
+    free(batch);
+    batch = NULL;
+
+    DebugInfo("Renderer Batch '%s' destroyed.", tempTitle);
+}
+
+#pragma endregion Renderer Batch
+
+#pragma region Renderer Camera
+
+RendererCamera *RendererCamera_Create(String name, RendererScene *scene)
+{
+    RendererCamera *camera = malloc(sizeof(RendererCamera));
+    DebugAssertNullPointerCheck(camera);
+
+    camera->name = name;
+    camera->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    camera->scene = scene;
+
+    camera->isPerspective = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE;
+    camera->size = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE ? RENDERER_CAMERA_DEFAULT_FOV : RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE;
+
+    camera->nearClipPlane = RENDERER_CAMERA_DEFAULT_NEAR_CLIP_PLANE;
+    camera->farClipPlane = RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE;
+
+    glm_mat4_identity((vec4 *)&camera->projectionMatrix);
+    glm_mat4_identity((vec4 *)&camera->viewMatrix);
+
+    DebugInfo("Renderer Camera '%s' created.", camera->name.characters);
 
     return camera;
 }
@@ -320,29 +478,37 @@ void RendererCamera_Destroy(RendererCamera *camera)
 {
     DebugAssertNullPointerCheck(camera);
 
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, camera->name.characters);
+
     String_Destroy(&camera->name);
-    camera->fov = -1.0f;
     camera->transform = (RendererObjectTransform){0};
 
-    DebugInfo("Renderer Camera Object destroyed");
+    camera->size = -1.0f;
+
+    glm_mat4_identity((vec4 *)&camera->projectionMatrix);
+    glm_mat4_identity((vec4 *)&camera->viewMatrix);
+
+    free(camera);
+    camera = NULL;
+
+    DebugInfo("Renderer Camera '%s' Object destroyed", tempTitle);
 }
 
-void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float value)
+void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane)
 {
-    camera->isPerspective = isPerspective;
+    DebugAssertNullPointerCheck(camera);
 
-    if (camera->isPerspective)
-    {
-        camera->fov = value;
-    }
-    else
-    {
-        camera->orthographicSize = value;
-    }
+    camera->isPerspective = isPerspective;
+    camera->size = value;
+    camera->nearClipPlane = nearClipPlane;
+    camera->farClipPlane = farClipPlane;
 }
 
 void RendererCamera_Update(RendererCamera *camera)
 {
+    DebugAssertNullPointerCheck(camera);
+
     glm_mat4_identity((vec4 *)&camera->viewMatrix);
 
     Vector3 direction = NewVector3(cosf(camera->transform.rotation.x) * cosf(camera->transform.rotation.y),
@@ -360,154 +526,38 @@ void RendererCamera_Update(RendererCamera *camera)
 
     if (camera->isPerspective)
     {
-        glm_perspective(camera->fov, (float)(mode->width / mode->height), RENDERER_CAMERA_NEAR_CLIP_PLANE, RENDERER_CAMERA_FAR_CLIP_PLANE, (vec4 *)&camera->projectionMatrix);
+        glm_perspective(camera->size, (float)(mode->width / mode->height), camera->nearClipPlane, camera->farClipPlane, (vec4 *)&camera->projectionMatrix);
     }
     else
     {
-        float sizeX = (float)mode->width * camera->orthographicSize / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        float sizeY = (float)mode->height * camera->orthographicSize / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        glm_ortho(-sizeX, sizeX, -sizeY, sizeY, RENDERER_CAMERA_NEAR_CLIP_PLANE, RENDERER_CAMERA_FAR_CLIP_PLANE, (vec4 *)&camera->projectionMatrix);
+        float sizeX = (float)mode->width * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeY = (float)mode->height * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        glm_ortho(-sizeX, sizeX, -sizeY, sizeY, camera->nearClipPlane, camera->farClipPlane, (vec4 *)&camera->projectionMatrix);
     }
 
-    DebugInfo("Renderer Camera '%s' updated", camera->name.characters);
+    // DebugInfo("Renderer Camera '%s' updated", camera->name.characters);
 }
 
-#pragma endregion Renderer Camera Object
-
-#pragma region Renderer Scene
-
-RendererScene RendererScene_Create(String name, RendererCamera *camera, size_t initialObjectCapacity, size_t initialVertexCapacity, size_t initialIndexCapacity)
-{
-    RendererScene scene = {0};
-
-    scene.name = name;
-    scene.camera = camera;
-    scene.mesh = RendererMesh_CreateEmpty(initialVertexCapacity, initialIndexCapacity);
-    scene.modelMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
-
-    glGenVertexArrays(1, &scene.vao);
-    glGenBuffers(1, &scene.vboModelVertices);
-    glGenBuffers(1, &scene.iboModelIndices);
-    glGenBuffers(1, &scene.uboModelMatrices);
-
-    glBindVertexArray(scene.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, scene.vboModelVertices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene.iboModelIndices);
-    glBindBuffer(GL_UNIFORM_BUFFER, scene.uboModelMatrices);
-
-    size_t offset = 0;
-
-    glVertexAttribPointer(RENDERER_VBO_POSITION_BINDING, 3, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
-    glEnableVertexAttribArray(RENDERER_VBO_POSITION_BINDING);
-    offset += sizeof(Vector3);
-
-    glVertexAttribPointer(RENDERER_VBO_COLOR_BINDING, 4, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
-    glEnableVertexAttribArray(RENDERER_VBO_COLOR_BINDING);
-    offset += sizeof(Vector4);
-
-    //! ... other attributes in vertex
-
-    // scene.modelIndexHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "modelIndex");
-    scene.matricesBlockHandle = glGetUniformBlockIndex(RENDERER_MAIN_SHADER_PROGRAM, "matrices");
-    glUniformBlockBinding(RENDERER_MAIN_SHADER_PROGRAM, scene.matricesBlockHandle, RENDERER_UBO_MATRICES_BINDING);
-    // glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices);
-    glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindVertexArray(0);
-
-    RendererScene_Update(&scene);
-
-    DebugInfo("Renderer Scene created with name: %s, initial object capacity: %zu, initial vertex capacity: %zu, initial index capacity: %zu",
-              scene.name.characters, scene.modelMatrices.capacity, scene.mesh.vertices.capacity, scene.mesh.indices.capacity);
-
-    return scene;
-}
-
-void RendererScene_Destroy(RendererScene *scene)
-{
-    DebugAssertNullPointerCheck(scene);
-
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, scene->name.characters);
-
-    String_Destroy(&scene->name);
-
-    glDeleteVertexArrays(1, &scene->vao);
-    glDeleteBuffers(1, &scene->vboModelVertices);
-    glDeleteBuffers(1, &scene->iboModelIndices);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    RendererMesh_Destroy(&scene->mesh);
-
-    scene = NULL;
-
-    DebugInfo("Renderer Scene destroyed with name: %s, vertices: %zu, indices: %zu", tempTitle, scene->mesh.vertices.count, scene->mesh.indices.count);
-}
-
-void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera)
-{
-    DebugAssertNullPointerCheck(scene);
-    DebugAssertNullPointerCheck(camera);
-
-    scene->camera = camera;
-}
-
-void RendererScene_Update(RendererScene *scene)
-{
-    glBindVertexArray(scene->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
-    glBindBuffer(GL_UNIFORM_BUFFER, scene->uboModelMatrices);
-
-    glBufferData(GL_ARRAY_BUFFER, (long long)(scene->mesh.vertices.sizeOfItem * scene->mesh.vertices.count), scene->mesh.vertices.data, OPENGL_DRAW_TYPE);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long long)(scene->mesh.indices.sizeOfItem * scene->mesh.indices.count), scene->mesh.indices.data, OPENGL_DRAW_TYPE);
-
-    glBufferData(GL_UNIFORM_BUFFER, (long long)(scene->modelMatrices.sizeOfItem * (2 + scene->modelMatrices.count)), scene->modelMatrices.data, OPENGL_DRAW_TYPE);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, (long long)scene->modelMatrices.sizeOfItem, &scene->camera->projectionMatrix);                                                                      // projection matrix
-    glBufferSubData(GL_UNIFORM_BUFFER, (long long)scene->modelMatrices.sizeOfItem, (long long)scene->modelMatrices.sizeOfItem, &scene->camera->viewMatrix);                                   // view matrix
-    glBufferSubData(GL_UNIFORM_BUFFER, (long long)scene->modelMatrices.sizeOfItem * 2, (long long)(scene->modelMatrices.sizeOfItem * scene->modelMatrices.count), scene->modelMatrices.data); // model matrices
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    DebugInfo("Renderer Scene '%s' updated", scene->name.characters);
-}
-
-#pragma endregion Renderer Scene
+#pragma endregion Renderer Camera
 
 #pragma region Renderer Object
 
-RendererObject RendererObject_Create(String name, RendererScene *scene, RendererMesh mesh)
+RendererObject *RendererObject_Create(String name, RendererBatch *batch)
 {
-    DebugAssertNullPointerCheck(scene);
+    DebugAssertNullPointerCheck(batch);
 
-    RendererObject object = {0};
+    RendererObject *object = (RendererObject *)malloc(sizeof(RendererObject));
+    DebugAssertNullPointerCheck(object);
 
-    object.name = name;
-    object.transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    object->name = name;
+    object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    object->batch = batch;
+    object->matrixOffsetInBatch = object->batch->objectMatrices.count;
 
-    object.scene = scene;
-    object.vertexCountInScene = mesh.vertices.count;
-    object.vertexOffsetInScene = object.scene->mesh.vertices.count;
-    object.indexCountInScene = mesh.indices.count;
-    object.indexOffsetInScene = object.scene->mesh.indices.count;
-    object.matrixOffsetInScene = object.scene->modelMatrices.count;
+    mat4 temp; // dummy, just to allocate the space in list
+    ListArray_Add(&object->batch->objectMatrices, &temp);
 
-    ListArray_AddRange(&object.scene->mesh.vertices, mesh.vertices.data, mesh.vertices.count);
-    ListArray_AddRange(&object.scene->mesh.indices, mesh.indices.data, mesh.indices.count);
-    ListArray_Add(&object.scene->modelMatrices, (mat4){0});
-
-    RendererScene_Update(object.scene);
-
-    DebugInfo("Renderer Object created with name: %s", object.name.characters);
+    DebugInfo("Renderer Object '%s' created.", object->name.characters);
 
     return object;
 }
@@ -523,26 +573,25 @@ void RendererObject_Destroy(RendererObject *object)
 
     String_Destroy(&object->name);
 
-    ListArray_RemoveRange(&object->scene->mesh.vertices, object->vertexOffsetInScene, object->vertexCountInScene);
-    ListArray_RemoveRange(&object->scene->mesh.indices, object->indexOffsetInScene, object->indexCountInScene);
+    ListArray_RemoveAtIndex(&object->batch->objectMatrices, object->matrixOffsetInBatch);
+    for (size_t i = object->matrixOffsetInBatch; i < object->batch->objectMatrices.count - object->matrixOffsetInBatch; i++)
+    {
+        RendererObject *nextObject = (RendererObject *)ListArray_Get(object->batch->objectMatrices, i);
+        nextObject->matrixOffsetInBatch--;
+    }
 
-    object->scene = NULL;
-    object->vertexCountInScene = 0;
-    object->vertexOffsetInScene = 0;
-    object->indexCountInScene = 0;
-    object->indexOffsetInScene = 0;
-
+    free(object);
     object = NULL;
 
-    DebugInfo("Renderer Dynamic Object destroyed with name: %s", tempTitle);
+    DebugInfo("Renderer Object '%s' destroyed.", tempTitle);
 }
 
 void RendererObject_Update(RendererObject *object)
 {
-    mat4 *matrix = (mat4 *)ListArray_Get(object->scene->modelMatrices, object->matrixOffsetInScene);
+    mat4 *matrix = (mat4 *)ListArray_Get(object->batch->objectMatrices, object->matrixOffsetInBatch);
     RendererObjectTransform_ToModelMatrix(&object->transform, matrix);
 
-    DebugInfo("Renderer Object '%s' updated", object->name.characters);
+    // DebugInfo("Renderer Object '%s' updated", object->name.characters);
 }
 
 #pragma endregion Renderer Object
