@@ -8,10 +8,12 @@
 #define RESOURCE_FILE_MAX_LINE_COUNT 2048
 
 #if PLATFORM_WINDOWS
-#define RESOURCE_PATH "resources\\"
+#define PATH_DELIMETER "\\"
 #elif PLATFORM_UNIX
-#define RESOURCE_PATH "resources/"
+#define PATH_DELIMETER "/"
 #endif
+
+#define RESOURCE_PATH "resources" PATH_DELIMETER
 
 typedef struct Resource
 {

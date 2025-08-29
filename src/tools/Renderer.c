@@ -16,6 +16,7 @@
     } while (0)
 
 GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
+Vector2Int RENDERER_MAIN_WINDOW_SIZE = {0};
 
 float RENDERER_DELTA_TIME = 0.0f;
 Timer RENDERER_TIMER = {0};
@@ -30,7 +31,7 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int hei
 
 #pragma region Renderer
 
-void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync)
+void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen)
 {
     DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
@@ -50,38 +51,35 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
     DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
     DebugInfo("GLAD initialized successfully.");
 
+    Renderer_ConfigureContext(windowSize, vSync, fullScreen);
+
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glfwSwapInterval(vSync);
 
     GLint glslHasCompiled = 0;
-    char glslInfoLog[1024] = {0};
+    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
     glCompileShader(vertexShader);
 
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    if (glslHasCompiled == GL_FALSE)
-    {
-        glGetShaderInfoLog(vertexShader, 1024, NULL, glslInfoLog);
-        DebugError("Vertex shader compilation failed: %s", glslInfoLog);
-    }
-    DebugInfo("Vertex shader compiled successfully.");
+    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Vertex shader compiled successfully. Logs:\n%s", glslInfoLog);
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
     glCompileShader(fragmentShader);
 
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    if (glslHasCompiled == GL_FALSE)
-    {
-        glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
-        DebugError("Fragment shader compilation failed: %s", glslInfoLog);
-    }
-    DebugInfo("Fragment shader compiled successfully.");
+    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Fragment shader compiled successfully. Logs:\n%s", glslInfoLog);
 
     RENDERER_MAIN_SHADER_PROGRAM = glCreateProgram();
     glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, vertexShader);
@@ -89,12 +87,10 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
     glLinkProgram(RENDERER_MAIN_SHADER_PROGRAM);
 
     glGetProgramiv(RENDERER_MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
-    if (glslHasCompiled == GL_FALSE)
-    {
-        glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, 1024, NULL, glslInfoLog);
-        DebugError("Shader program linking failed:\n%s", glslInfoLog);
-    }
-    DebugInfo("Shader program linked successfully.");
+    glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Shader program linked successfully. Logs:\n%s", glslInfoLog);
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -111,6 +107,25 @@ void Renderer_Terminate()
     glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
     glfwDestroyWindow(RENDERER_MAIN_WINDOW);
     glfwTerminate();
+}
+
+void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScreen)
+{
+    RENDERER_MAIN_WINDOW_SIZE = windowSize;
+
+    glfwSwapInterval(vSync);
+
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+    if (fullScreen)
+    {
+        glfwSetWindowMonitor(RENDERER_MAIN_WINDOW, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
+    else
+    {
+        glfwSetWindowMonitor(RENDERER_MAIN_WINDOW, NULL, 100, 100, RENDERER_MAIN_WINDOW_SIZE.x, RENDERER_MAIN_WINDOW_SIZE.y, 0);
+    }
 }
 
 void Renderer_StartRendering()
@@ -149,6 +164,7 @@ void Renderer_RenderScene(RendererScene *scene)
     glBindVertexArray(scene->vao);
     glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
+    glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
 
     // todo fix
     glUniformMatrix4fv(scene->projectionMatrixHandle, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
@@ -156,12 +172,12 @@ void Renderer_RenderScene(RendererScene *scene)
 
     for (size_t i = 0; i < scene->batches.count; i++)
     {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
+        RendererBatch *batch = *(RendererBatch **)ListArray_Get(scene->batches, i);
 
-        glUniformMatrix4fv(scene->modelMatricesHandle,
-                           batch->objectMatrices.count,
-                           GL_FALSE,
-                           batch->objectMatrices.data);
+        glBufferData(GL_UNIFORM_BUFFER,
+                     (long long)(batch->objectMatrices.sizeOfItem * batch->objectMatrices.count),
+                     batch->objectMatrices.data,
+                     OPENGL_DRAW_TYPE);
 
         glBufferData(GL_ARRAY_BUFFER,
                      (long long)(batch->mesh->vertices.sizeOfItem * batch->mesh->vertices.count),
@@ -185,6 +201,7 @@ void Renderer_RenderScene(RendererScene *scene)
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // DebugInfo("Scene '%s' rendered", scene.name.characters);
 }
@@ -214,6 +231,29 @@ void RendererObjectTransform_SetScale(RendererObjectTransform *transform, Vector
     transform->scale = scale;
 }
 
+void RendererObjectTransform_AddPosition(RendererObjectTransform *transform, Vector3 position)
+{
+    DebugAssertNullPointerCheck(transform);
+
+    transform->position = Vector3_Add(transform->position, position);
+}
+
+void RendererObjectTransform_AddRotation(RendererObjectTransform *transform, Vector3 rotation)
+{
+    DebugAssertNullPointerCheck(transform);
+
+    transform->rotation = Vector3_Add(transform->rotation, rotation);
+}
+
+void RendererObjectTransform_MultiplyScale(RendererObjectTransform *transform, Vector3 scale)
+{
+    DebugAssertNullPointerCheck(transform);
+
+    transform->scale.x *= scale.x;
+    transform->scale.y *= scale.y;
+    transform->scale.z *= scale.z;
+}
+
 void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, mat4 *matrix)
 {
     DebugAssertNullPointerCheck(transform);
@@ -223,9 +263,9 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
     glm_translate((vec4 *)matrix, (vec3){transform->position.x, transform->position.y, transform->position.z});
 
-    glm_rotate((vec4 *)matrix, transform->position.x, (vec3){1, 0, 0});
-    glm_rotate((vec4 *)matrix, transform->position.y, (vec3){0, 1, 0});
-    glm_rotate((vec4 *)matrix, transform->position.z, (vec3){0, 0, 1});
+    glm_rotate((vec4 *)matrix, transform->rotation.x, (vec3){1, 0, 0});
+    glm_rotate((vec4 *)matrix, transform->rotation.y, (vec3){0, 1, 0});
+    glm_rotate((vec4 *)matrix, transform->rotation.z, (vec3){0, 0, 1});
 
     glm_scale((vec4 *)matrix, (vec3){transform->scale.x, transform->scale.y, transform->scale.z});
 }
@@ -237,10 +277,10 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
 {
     size_t lineCount = 0;
+    size_t vertexCount = 0;
+    size_t indexCount = 0;
     String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
     String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
-
-    RendererMesh *mesh = RendererMesh_CreateEmpty(lineCount, lineCount);
 
     for (size_t i = 0; i < lineCount; i++)
     {
@@ -252,13 +292,41 @@ RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
 
         if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
         {
-            RendererMeshVertex vertex = {{String_ToFloat(tokens[1]) / 100,
-                                          String_ToFloat(tokens[2]) / 100,
-                                          String_ToFloat(tokens[3]) / 100},
-                                         {String_ToFloat(tokens[1]) / 10,
-                                          String_ToFloat(tokens[2]) / 10,
-                                          String_ToFloat(tokens[3]) / 10,
-                                          1.0f}};
+            vertexCount++;
+        }
+        else if (String_Compare(firstToken, scl("vt")) == 0) // vt 0.073128 0.431854
+        {
+            // Count texture coordinate data
+        }
+        else if (String_Compare(firstToken, scl("vn")) == 0) // vn -0.0233 0.1253 -0.9918
+        {
+            // Count normal vector data
+        }
+        else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        {
+            size_t faceVertexCount = tokenCount - 1;
+
+            DebugAssert(faceVertexCount >= 3, "Source have invalid .OBJ format");
+
+            indexCount += (faceVertexCount - 2) * 3;
+        }
+    }
+
+    RendererMesh *mesh = RendererMesh_CreateEmpty(vertexCount, indexCount);
+
+    for (size_t i = 0; i < lineCount; i++)
+    {
+        size_t tokenCount = 0;
+        String tokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+        String_Tokenize(lines[i], scl(" "), &tokenCount, tokens, sizeof(tokens));
+
+        String firstToken = tokens[0];
+
+        if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
+        {
+            RendererMeshVertex vertex = {{String_ToFloat(tokens[1]),
+                                          String_ToFloat(tokens[2]),
+                                          String_ToFloat(tokens[3])}};
 
             ListArray_Add(&mesh->vertices, &vertex);
         }
@@ -272,12 +340,12 @@ RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
         }
         else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
-            for (int j = 0; j < 3; j++)
+            for (size_t j = 1; j < tokenCount; j++)
             {
                 String indices[3]; // 15/15/24
-                String_Tokenize(tokens[j + 1], scl("/"), NULL, indices, 3);
+                String_Tokenize(tokens[j], scl("/"), NULL, indices, 3);
 
-                unsigned int index = (unsigned int)String_ToInt(indices[0]);
+                unsigned int index = (unsigned int)String_ToInt(indices[0]) - 1;
 
                 ListArray_Add(&mesh->indices, &index);
             }
@@ -329,10 +397,12 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
     glGenVertexArrays(1, &scene->vao);
     glGenBuffers(1, &scene->vboModelVertices);
     glGenBuffers(1, &scene->iboModelIndices);
+    glGenBuffers(1, &scene->uboObjectMatrices);
 
     glBindVertexArray(scene->vao);
     glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
+    glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
 
     size_t offset = 0;
 
@@ -340,15 +410,15 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
     glEnableVertexAttribArray(RENDERER_VBO_POSITION_BINDING);
     offset += sizeof(Vector3);
 
-    glVertexAttribPointer(RENDERER_VBO_COLOR_BINDING, 4, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
-    glEnableVertexAttribArray(RENDERER_VBO_COLOR_BINDING);
-    offset += sizeof(Vector4);
-
     //! ... other attributes in vertex
 
     scene->projectionMatrixHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "projectionMatrix");
     scene->viewMatrixHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "viewMatrix");
-    scene->modelMatricesHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "modelMatrices");
+
+    scene->objectMatricesHandle = glGetUniformBlockIndex(RENDERER_MAIN_SHADER_PROGRAM, "modelMatrices");
+    glUniformBlockBinding(RENDERER_MAIN_SHADER_PROGRAM, scene->objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
+    glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene->uboObjectMatrices);
+    // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -381,7 +451,7 @@ void RendererScene_Destroy(RendererScene *scene)
 
     scene->projectionMatrixHandle = 0;
     scene->viewMatrixHandle = 0;
-    scene->modelMatricesHandle = 0;
+    scene->objectMatricesHandle = 0;
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -417,7 +487,7 @@ RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererM
 
     ListArray_Add(&scene->batches, &batch);
 
-    DebugInfo("Renderer Batch '%s' destroyed.", batch->name.characters);
+    DebugInfo("Renderer Batch '%s' created.", batch->name.characters);
 
     return batch;
 }
@@ -459,6 +529,7 @@ RendererCamera *RendererCamera_Create(String name, RendererScene *scene)
     camera->name = name;
     camera->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
     camera->scene = scene;
+    scene->camera = camera;
 
     camera->isPerspective = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE;
     camera->size = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE ? RENDERER_CAMERA_DEFAULT_FOV : RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE;
@@ -515,6 +586,8 @@ void RendererCamera_Update(RendererCamera *camera)
                                    sinf(camera->transform.rotation.x),
                                    cosf(camera->transform.rotation.x) * sinf(camera->transform.rotation.y));
 
+    direction = Vector3_Normalized(direction);
+
     Vector3 center = Vector3_Add(camera->transform.position, Vector3_Normalized(direction));
 
     glm_lookat((float *)&camera->transform.position, (float *)&center, (vec3){0, 1, 0}, (vec4 *)&camera->viewMatrix);
@@ -557,7 +630,7 @@ RendererObject *RendererObject_Create(String name, RendererBatch *batch)
     mat4 temp; // dummy, just to allocate the space in list
     ListArray_Add(&object->batch->objectMatrices, &temp);
 
-    DebugInfo("Renderer Object '%s' created.", object->name.characters);
+    // DebugInfo("Renderer Object '%s' created.", object->name.characters);
 
     return object;
 }
@@ -589,6 +662,7 @@ void RendererObject_Destroy(RendererObject *object)
 void RendererObject_Update(RendererObject *object)
 {
     mat4 *matrix = (mat4 *)ListArray_Get(object->batch->objectMatrices, object->matrixOffsetInBatch);
+
     RendererObjectTransform_ToModelMatrix(&object->transform, matrix);
 
     // DebugInfo("Renderer Object '%s' updated", object->name.characters);

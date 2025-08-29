@@ -11,9 +11,9 @@
 #define RENDERER_OPENGL_VERSION_MAJOR 3
 #define RENDERER_OPENGL_VERSION_MINOR 3
 #define RENDERER_OPENGL_CLEAR_COLOR 0.1f, 0.1f, 0.1f, 1.0f
+#define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
 #define RENDERER_VBO_POSITION_BINDING 0
-#define RENDERER_VBO_COLOR_BINDING 1
 
 #define RENDERER_UBO_MATRICES_BINDING 0
 
@@ -24,7 +24,7 @@
 #define RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE 100.0f
 #define RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER 1000.0f
 
-#define RENDERER_BATCH_MAX_OBJECT_COUNT 256
+#define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 
 extern float RENDERER_DELTA_TIME;
 
@@ -33,11 +33,13 @@ extern float RENDERER_DELTA_TIME;
 typedef unsigned int RendererShaderHandle;
 typedef unsigned int RendererShaderProgramHandle;
 typedef unsigned int RendererTextureHandle;
-typedef int RendererUniformHandle;
+typedef int RendererUniformLocationHandle;
+typedef unsigned int RendererUniformBlockHandle;
 
 typedef unsigned int RendererVAOHandle;
 typedef unsigned int RendererVBOHandle;
 typedef unsigned int RendererIBOHandle;
+typedef unsigned int RendererUBOHandle;
 
 typedef unsigned int RendererMeshIndex;
 
@@ -56,7 +58,6 @@ typedef struct RendererObjectTransform
 typedef struct RendererMeshVertex
 {
     Vector3 position;
-    Vector4 color;
 } RendererMeshVertex;
 
 /// @brief A model mesh structure that holds all necessary data to represent a 3D mesh.
@@ -92,10 +93,11 @@ typedef struct RendererScene
     RendererVAOHandle vao;
     RendererVBOHandle vboModelVertices;
     RendererIBOHandle iboModelIndices;
+    RendererUBOHandle uboObjectMatrices;
 
-    RendererUniformHandle projectionMatrixHandle;
-    RendererUniformHandle viewMatrixHandle;
-    RendererUniformHandle modelMatricesHandle;
+    RendererUniformLocationHandle projectionMatrixHandle;
+    RendererUniformLocationHandle viewMatrixHandle;
+    RendererUniformBlockHandle objectMatricesHandle;
 } RendererScene;
 
 typedef struct RendererBatch
@@ -127,12 +129,18 @@ typedef struct RendererObject
 /// @param windowSize Window size.
 /// @param vertexShaderSource Source code of the main vertex shader.
 /// @param fragmentShaderSource Source code of the main fragment shader.
-/// @param mainCamera Pointer to the main camera object.
 /// @param vSync Whether to enable vertical synchronization.
-void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync);
+/// @param fullScreen Whether the app will start in full screen mode or not.
+void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();
+
+/// @brief Configure the main window of the app.
+/// @param windowSize Window size.
+/// @param vSync Whether to enable vertical synchronization.
+/// @param fullScreen Whether the app will start in full screen mode or not
+void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScreen);
 
 /// @brief Should be called before using rendering functions.
 void Renderer_StartRendering();
@@ -162,6 +170,21 @@ void RendererObjectTransform_SetRotation(RendererObjectTransform *transform, Vec
 /// @param transform Pointer to the object transform.
 /// @param scale New scale for the object.
 void RendererObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale);
+
+/// @brief Adds the given position of the object to transform.
+/// @param transform Pointer to the object transform.
+/// @param position Position to add to the object.
+void RendererObjectTransform_AddPosition(RendererObjectTransform *transform, Vector3 position);
+
+/// @brief Adds the given rotation of the object to transform.
+/// @param transform Pointer to the object transform.
+/// @param rotation Rotation to add to the object.
+void RendererObjectTransform_AddRotation(RendererObjectTransform *transform, Vector3 rotation);
+
+/// @brief Multiplies the scale of the transform with given scale.
+/// @param transform Pointer to the object transform.
+/// @param scale Scale to multiply the object.
+void RendererObjectTransform_MultiplyScale(RendererObjectTransform *transform, Vector3 scale);
 
 /// @brief Sets the matrix with transform values.
 /// @param transform Transform to reference. (pointer for performance)

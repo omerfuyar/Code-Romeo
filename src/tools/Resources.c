@@ -17,7 +17,7 @@ void Resource_Initialize()
     GetExePath(buffer, sizeof(buffer));
 
     String tempString = String_CreateReference(buffer, strlen(buffer));
-    String pathDelimeter = scl(PLATFORM_WINDOWS ? "\\" : "/");
+    String pathDelimeter = scl(PATH_DELIMETER);
 
     String pathBuffer[16];
     size_t pathCount = 0;
