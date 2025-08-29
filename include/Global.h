@@ -5,6 +5,7 @@
 #define PLATFORM_LINUX 0
 #define PLATFORM_MACOS 0
 #elif defined(__linux__)
+#define _POSIX_C_SOURCE 200809L
 #define PLATFORM_LINUX 1
 #define PLATFORM_WINDOWS 0
 #define PLATFORM_MACOS 0
@@ -66,12 +67,12 @@
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-#if defined(PLATFORM_WINDOWS)
+#if PLATFORM_WINDOWS
 #define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
 #define StringConcat(destination, size, source) strcat_s(destination, size, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
-#elif defined(PLATFORM_UNIX)
+#elif PLATFORM_UNIX
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define MemoryCopy(destination, source, size) (destination, source, size)
 #define StringConcat(destination, size, source) strcat(destination, source)

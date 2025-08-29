@@ -38,6 +38,8 @@ void Resource_Initialize()
 
     String_ConcatEnd(&EXECUTABLE_DIRECTORY_PATH, pathDelimeter);
 
+    // todo fix linux file open and path finding
+    printf("%s\n", EXECUTABLE_DIRECTORY_PATH.characters);
     DebugInfo("Executable path detected : '%s'", EXECUTABLE_DIRECTORY_PATH.characters);
 }
 
