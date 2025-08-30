@@ -19,8 +19,8 @@ typedef struct Resource
 /// @brief Creates a new resource. Looks for a resources folder in executable directory.
 /// @param title The title of the resource.
 /// @param path The file path of the resource in resources folder.
-/// @return The created resource.
-Resource Resource_Create(String title, String path);
+/// @return Pointer to the created resource.
+Resource *Resource_Create(String title, String path);
 
 /// @brief Destroys a resource.
 /// @param resource The resource to destroy.

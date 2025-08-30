@@ -14,16 +14,15 @@
 int main()
 {
     // todo input system
-    // todo make resources pointers/handles
-    Resource vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders" PATH_DELIMETER_STR "vertex.glsl"));
-    Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders" PATH_DELIMETER_STR "fragment.glsl"));
-    Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models" PATH_DELIMETER_STR "maxwell.obj"));
-    Resource pistolSource = Resource_Create(scl("Pistol"), scl("models" PATH_DELIMETER_STR "Pistol.obj"));
+    Resource *vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders" PATH_DELIMETER_STR "vertex.glsl"));
+    Resource *fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders" PATH_DELIMETER_STR "fragment.glsl"));
+    Resource *maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models" PATH_DELIMETER_STR "maxwell.obj"));
+    Resource *pistolSource = Resource_Create(scl("Pistol"), scl("models" PATH_DELIMETER_STR "Pistol.obj"));
 
     Renderer_CreateContext(scl("Juliette"),
                            NewVector2Int(720, 540),
-                           vertexShaderResource.data,
-                           fragmentShaderResource.data,
+                           vertexShaderResource->data,
+                           fragmentShaderResource->data,
                            false,
                            TEST_BENCH_FULL_SCREEN);
 
@@ -32,8 +31,8 @@ int main()
     RendererCamera *mainCamera = RendererCamera_Create(scl("Main Camera"), myScene);
     RendererObjectTransform_SetPosition(&mainCamera->transform, NewVector3(-0.25f, 0, 0));
 
-    RendererMesh *gunMesh = RendererMesh_CreateOBJ(pistolSource.data);
-    RendererMesh *catMesh = RendererMesh_CreateOBJ(maxwellResource.data);
+    RendererMesh *gunMesh = RendererMesh_CreateOBJ(pistolSource->data);
+    RendererMesh *catMesh = RendererMesh_CreateOBJ(maxwellResource->data);
 
     RendererBatch *gunBatch = RendererBatch_Create(scl("gunBatch"), myScene, gunMesh, TEST_OBJ_COUNT_X * TEST_OBJ_COUNT_Y);
     RendererBatch *catBatch = RendererBatch_Create(scl("catBatch"), myScene, catMesh, TEST_OBJ_COUNT_X * TEST_OBJ_COUNT_Y);
