@@ -104,6 +104,7 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
 
 void Renderer_Terminate()
 {
+    String_Destroy(&RENDERER_MAIN_WINDOW_TITLE);
     glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
     glfwDestroyWindow(RENDERER_MAIN_WINDOW);
     glfwTerminate();
@@ -276,19 +277,22 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
 {
-    size_t lineCount = 0;
     size_t vertexCount = 0;
     size_t indexCount = 0;
+
+    size_t lineCount = 0;
     String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
+
+    size_t lineTokenCount = 0;
+    String lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+
     String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
 
     for (size_t i = 0; i < lineCount; i++)
     {
-        size_t tokenCount = 0;
-        String tokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
-        String_Tokenize(lines[i], scl(" "), &tokenCount, tokens, sizeof(tokens));
+        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, sizeof(lineTokens));
 
-        String firstToken = tokens[0];
+        String firstToken = lineTokens[0];
 
         if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
         {
@@ -304,11 +308,9 @@ RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
         }
         else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
-            size_t faceVertexCount = tokenCount - 1;
+            size_t faceVertexCount = lineTokenCount - 1;
 
-            DebugAssert(faceVertexCount >= 3, "Source have invalid .OBJ format");
-
-            indexCount += (faceVertexCount - 2) * 3;
+            indexCount += faceVertexCount * 3;
         }
     }
 
@@ -316,17 +318,15 @@ RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
 
     for (size_t i = 0; i < lineCount; i++)
     {
-        size_t tokenCount = 0;
-        String tokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
-        String_Tokenize(lines[i], scl(" "), &tokenCount, tokens, sizeof(tokens));
+        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, sizeof(lineTokens));
 
-        String firstToken = tokens[0];
+        String firstToken = lineTokens[0];
 
         if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
         {
-            RendererMeshVertex vertex = {{String_ToFloat(tokens[1]),
-                                          String_ToFloat(tokens[2]),
-                                          String_ToFloat(tokens[3])}};
+            RendererMeshVertex vertex = {{String_ToFloat(lineTokens[1]),
+                                          String_ToFloat(lineTokens[2]),
+                                          String_ToFloat(lineTokens[3])}};
 
             ListArray_Add(&mesh->vertices, &vertex);
         }
@@ -340,10 +340,10 @@ RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
         }
         else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
-            for (size_t j = 1; j < tokenCount; j++)
+            for (size_t j = 1; j < lineTokenCount; j++)
             {
                 String indices[3]; // 15/15/24
-                String_Tokenize(tokens[j], scl("/"), NULL, indices, 3);
+                String_Tokenize(lineTokens[j], scl("/"), NULL, indices, 3);
 
                 unsigned int index = (unsigned int)String_ToInt(indices[0]) - 1;
 
@@ -435,7 +435,7 @@ void RendererScene_Destroy(RendererScene *scene)
     DebugAssertNullPointerCheck(scene);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, scene->name.characters);
+    MemoryCopy(tempTitle, sizeof(tempTitle), scene->name.characters);
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
@@ -550,7 +550,7 @@ void RendererCamera_Destroy(RendererCamera *camera)
     DebugAssertNullPointerCheck(camera);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, camera->name.characters);
+    MemoryCopy(tempTitle, sizeof(tempTitle), camera->name.characters);
 
     String_Destroy(&camera->name);
     camera->transform = (RendererObjectTransform){0};

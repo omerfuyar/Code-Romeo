@@ -1,29 +1,31 @@
 #include "utilities/String.h"
 
-String String_CreateCopy(char *string, size_t length)
+String String_CreateCopy(char *string)
 {
     DebugAssertNullPointerCheck(string);
 
     String createdString = {0};
 
-    createdString.length = length;
+    createdString.length = strlen(string);
     createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(createdString.characters);
 
-    MemoryCopy(createdString.characters, (createdString.length + 1) * sizeof(char), string);
+    MemoryCopy(createdString.characters, createdString.length * sizeof(char), string);
     createdString.characters[createdString.length] = '\0';
+
     createdString.isOwner = true;
 
     return createdString;
 }
 
-String String_CreateReference(char *string, size_t length)
+String String_CreateReference(char *string)
 {
     DebugAssertNullPointerCheck(string);
 
     String createdString;
 
-    createdString.length = length;
+    createdString.length = strlen(string);
+
     createdString.characters = string;
 
     createdString.isOwner = false;
@@ -53,7 +55,7 @@ void String_Change(String *string, char *newString, size_t newLength)
     string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters, (string->length + 1) * sizeof(char), newString);
+    MemoryCopy(string->characters, string->length * sizeof(char), newString);
     string->characters[string->length] = '\0';
 }
 
@@ -65,7 +67,7 @@ void String_ConcatEnd(String *string, String other)
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + string->length, (other.length + 1) * sizeof(char), other.characters);
+    MemoryCopy(string->characters + string->length, other.length * sizeof(char), other.characters);
     string->length += other.length;
     string->characters[string->length] = '\0';
 }
@@ -75,7 +77,7 @@ void String_ConcatBegin(String *string, String other)
     DebugAssertNullPointerCheck(string);
     DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
-    String buffer = String_CreateCopy(string->characters, string->length);
+    String buffer = String_CreateCopy(string->characters);
 
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
@@ -91,6 +93,9 @@ void String_ConcatBegin(String *string, String other)
 
 int String_Compare(String string, String other)
 {
+    DebugAssertNullPointerCheck(string.characters);
+    DebugAssertNullPointerCheck(other.characters);
+
     int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
 
     return result;
@@ -141,6 +146,8 @@ void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, Str
 
 char String_GetChar(String string, size_t index)
 {
+    DebugAssertNullPointerCheck(string.characters);
+
     DebugAssert(index <= string.length, "Char index to get can not be less than the string length");
 
     return string.characters[index];
@@ -148,16 +155,22 @@ char String_GetChar(String string, size_t index)
 
 float String_ToFloat(String string)
 {
+    DebugAssertNullPointerCheck(string.characters);
+
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    MemoryCopy(buffer, string.length, string.characters);
+    MemoryCopy(buffer, Min(sizeof(buffer), string.length), string.characters);
     float result = (float)atof(buffer);
+
     return result;
 }
 
 int String_ToInt(String string)
 {
+    DebugAssertNullPointerCheck(string.characters);
+
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    MemoryCopy(buffer, string.length, string.characters);
+    MemoryCopy(buffer, Min(sizeof(buffer), string.length), string.characters);
     int result = atoi(buffer);
+
     return result;
 }

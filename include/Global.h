@@ -80,7 +80,7 @@
 #define PATH_DELIMETER_STR "/"
 
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
-#define MemoryCopy(destination, source, size) (destination, source, size)
+#define MemoryCopy(destination, size, source) memcpy(destination, source, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 
 #endif

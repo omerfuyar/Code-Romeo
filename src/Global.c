@@ -26,8 +26,8 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
     {
         DEBUG_FILE_NAME_STR = (char *)malloc(strlen(GetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
 
-        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(EXECUTABLE_DIRECTORY_PATH), EXECUTABLE_DIRECTORY_PATH);
-        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME), DEBUG_FILE_NAME);
+        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(EXECUTABLE_DIRECTORY_PATH) * sizeof(char), EXECUTABLE_DIRECTORY_PATH);
+        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME) * sizeof(char), DEBUG_FILE_NAME);
 
         DEBUG_FILE_NAME_STR[strlen(EXECUTABLE_DIRECTORY_PATH) + strlen(DEBUG_FILE_NAME)] = '\0';
 
@@ -88,7 +88,7 @@ char *GetExecutablePath()
         EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
         DebugAssertNullPointerCheck(EXECUTABLE_DIRECTORY_PATH);
 
-        MemoryCopy(EXECUTABLE_DIRECTORY_PATH, currentIndex + 1, buffer);
+        MemoryCopy(EXECUTABLE_DIRECTORY_PATH, currentIndex * sizeof(char), buffer);
         EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
 
         DebugInfo("Executable path detected : '%s'", EXECUTABLE_DIRECTORY_PATH);

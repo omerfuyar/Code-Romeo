@@ -8,11 +8,11 @@ Resource Resource_Create(String title, String path)
 
     Resource resource;
     resource.title = title;
-    resource.path = String_CreateCopy(path.characters, path.length);
+    resource.path = String_CreateCopy(path.characters);
     String_ConcatBegin(&resource.path, scl(RESOURCE_PATH));
-    String_ConcatBegin(&resource.path, String_CreateReference(GetExecutablePath(), strlen(GetExecutablePath())));
+    String_ConcatBegin(&resource.path, String_CreateReference(GetExecutablePath()));
 
-    // malloc because the buffer is too large
+    // malloc because the buffer is too large for stack
     char *dataBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT);
     DebugAssertNullPointerCheck(dataBuffer);
     char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
@@ -23,25 +23,25 @@ Resource Resource_Create(String title, String path)
     size_t dataIndex = 0;
 
     FILE *file = NULL;
-    FileOpen(file, resource.path.characters, "r");
-    DebugAssert(file != NULL, "File open failed for %s", resource.path.characters);
+    DebugAssert(FileOpen(file, resource.path.characters, "r"), "File open failed for %s", resource.path.characters);
 
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
     {
         size_t lineLength = strlen(lineBuffer);
-        MemoryCopy(dataBuffer + dataIndex, lineLength, lineBuffer);
+        MemoryCopy(dataBuffer + dataIndex, lineLength * sizeof(char), lineBuffer);
         dataIndex += lineLength;
     }
     fclose(file);
 
     dataBuffer[dataIndex] = '\0';
 
-    resource.data = String_CreateCopy(dataBuffer, strlen(dataBuffer));
+    resource.data = String_CreateCopy(dataBuffer);
 
     free(dataBuffer);
     free(lineBuffer);
 
     Timer_Stop(&timer);
+
     DebugInfo("Resource '%s' loaded in %f seconds.", resource.title.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
 
     return resource;
