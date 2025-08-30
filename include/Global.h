@@ -5,6 +5,7 @@
 #define PLATFORM_LINUX 0
 #define PLATFORM_MACOS 0
 #elif defined(__linux__)
+#define _POSIX_C_SOURCE 200809L
 #define PLATFORM_LINUX 1
 #define PLATFORM_WINDOWS 0
 #define PLATFORM_MACOS 0
@@ -66,7 +67,7 @@
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-#if defined(PLATFORM_WINDOWS)
+#if PLATFORM_WINDOWS
 #define PATH_DELIMETER_CHAR '\\'
 #define PATH_DELIMETER_STR "\\"
 
@@ -74,7 +75,7 @@
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
 
-#elif defined(PLATFORM_UNIX)
+#elif PLATFORM_UNIX
 #define PATH_DELIMETER_CHAR '/'
 #define PATH_DELIMETER_STR "/"
 

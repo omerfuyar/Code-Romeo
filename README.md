@@ -40,7 +40,7 @@ cd Code-Romeo
 
 #### Linux
 ``` bash
-sudo apt install cmake snap ninja-build  libwayland-dev libxkbcommon-dev wayland-protocols libglfw3-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev clang
+sudo apt install cmake ninja-build  libwayland-dev libxkbcommon-dev wayland-protocols libglfw3-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev clang
 ```
 
 #### MacOS

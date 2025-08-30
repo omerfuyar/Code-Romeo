@@ -44,7 +44,7 @@ file(GLOB_RECURSE PROJECT_SOURCE
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE})
 
 # Compiler Arguments
-set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wshadow -Wpedantic -Wconversion -Wnull-dereference -Wunused-result -Wno-strict-prototypes -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument -fstack-protector-strong -Werror")
+set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wshadow -Wpedantic -Wconversion -Wnull-dereference -Wunused-result -Wno-strict-prototypes -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument -Wno-unused-value -fstack-protector-strong -Werror")
 
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
 
