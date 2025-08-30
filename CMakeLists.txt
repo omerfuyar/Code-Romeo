@@ -8,6 +8,13 @@ cmake_minimum_required(VERSION 3.22)
 # Project
 project(Code-Romeo C)
 
+option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
+option(ENABLE_UBSAN "Enable Undefined Behaviour Sanitizer" OFF)
+
+if((ENABLE_ASAN OR ENABLE_UBSAN) AND NOT CMAKE_C_COMPILER MATCHES "clang")
+    message(FATAL_ERROR "Sanitizers are only compatible with LLVM")
+endif()
+
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED OFF)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -40,6 +47,18 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCE})
 set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wshadow -Wpedantic -Wconversion -Wnull-dereference -Wunused-result -Wno-strict-prototypes -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument -fstack-protector-strong -Werror")
 
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+
+if(ENABLE_ASAN)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+    message(STATUS "Address Sanitizer enabled")
+endif()
+
+if(ENABLE_UBSAN)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=undefined -fno-omit-frame-pointer")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=undefined")
+    message(STATUS "Undefined Behavior Sanitizer enabled")
+endif()
 
 # Dependencies
 add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/glfw)

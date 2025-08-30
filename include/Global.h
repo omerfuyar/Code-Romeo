@@ -67,15 +67,21 @@
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
 #if defined(PLATFORM_WINDOWS)
+#define PATH_DELIMETER_CHAR '\\'
+#define PATH_DELIMETER_STR "\\"
+
 #define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
-#define StringConcat(destination, size, source) strcat_s(destination, size, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
+
 #elif defined(PLATFORM_UNIX)
+#define PATH_DELIMETER_CHAR '/'
+#define PATH_DELIMETER_STR "/"
+
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define MemoryCopy(destination, source, size) (destination, source, size)
-#define StringConcat(destination, size, source) strcat(destination, source)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
+
 #endif
 
 /// @brief Logs a debug message to the debug log file.
@@ -89,6 +95,10 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 /// @brief Terminates and closes necessary utilities and exits the program.
 /// @param exitCode The code to pass to exit() function.
 void Terminate(int exitCode);
+
+/// @brief Gets the executable file directory.
+/// @return The null terminated C string : "path/to/exe/"
+char *GetExecutablePath();
 
 #pragma endregion Functions And Macros
 

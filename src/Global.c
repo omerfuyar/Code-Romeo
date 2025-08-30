@@ -1,15 +1,16 @@
 #include "Global.h"
 
-#include "tools/Resources.h"
-
 #if PLATFORM_WINDOWS
 #include <windows.h>
+#define GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
 #elif PLATFORM_UNIX
 #include <unistd.h>
+#define GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 #endif
 
 FILE *DEBUG_FILE = NULL;
-String DEBUG_FILE_NAME_STR = {0};
+char *DEBUG_FILE_NAME_STR = NULL;
+char *EXECUTABLE_DIRECTORY_PATH = NULL;
 
 void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
@@ -23,22 +24,26 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
     if (DEBUG_FILE == NULL)
     {
-        DEBUG_FILE_NAME_STR = String_CreateCopy(Resource_GetExePath().characters, Resource_GetExePath().length);
-        String_ConcatEnd(&DEBUG_FILE_NAME_STR, scl(DEBUG_FILE_NAME));
+        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(GetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
 
-        remove(DEBUG_FILE_NAME_STR.characters);
+        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(EXECUTABLE_DIRECTORY_PATH), EXECUTABLE_DIRECTORY_PATH);
+        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME), DEBUG_FILE_NAME);
 
-        if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR.characters, "a"))
+        DEBUG_FILE_NAME_STR[strlen(EXECUTABLE_DIRECTORY_PATH) + strlen(DEBUG_FILE_NAME)] = '\0';
+
+        remove(DEBUG_FILE_NAME_STR);
+
+        if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
         {
-            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR.characters);
+            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             Terminate(-1); // todo error codes
         }
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", buffer, tempSpec.tv_nsec / 1000000);
     }
-    else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR.characters, "a"))
+    else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
     {
-        fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR.characters);
+        fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
         Terminate(-1); // todo error codes
     }
 
@@ -63,4 +68,31 @@ void Terminate(int exitCode)
     fprintf(stdout, "Terminating application with exit code: %d\n", exitCode);
 
     exit(exitCode);
+}
+
+char *GetExecutablePath()
+{
+    if (EXECUTABLE_DIRECTORY_PATH == NULL)
+    {
+        char buffer[TEMP_BUFFER_SIZE];
+        GetExePath(buffer, sizeof(buffer));
+
+        size_t currentIndex = strlen(buffer);
+
+        while (buffer[--currentIndex] != PATH_DELIMETER_CHAR)
+        {
+            buffer[currentIndex] = '\0';
+        }
+        currentIndex++;
+
+        EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
+        DebugAssertNullPointerCheck(EXECUTABLE_DIRECTORY_PATH);
+
+        MemoryCopy(EXECUTABLE_DIRECTORY_PATH, currentIndex + 1, buffer);
+        EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
+
+        DebugInfo("Executable path detected : '%s'", EXECUTABLE_DIRECTORY_PATH);
+    }
+
+    return EXECUTABLE_DIRECTORY_PATH;
 }

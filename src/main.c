@@ -13,14 +13,12 @@
 
 int main()
 {
-    Resource_Initialize();
-
     // todo input system
     // todo make resources pointers/handles
-    Resource vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders" PATH_DELIMETER "vertex.glsl"));
-    Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders" PATH_DELIMETER "fragment.glsl"));
-    Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models" PATH_DELIMETER "maxwell.obj"));
-    Resource pistolSource = Resource_Create(scl("Pistol"), scl("models" PATH_DELIMETER "Pistol.obj"));
+    Resource vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders" PATH_DELIMETER_STR "vertex.glsl"));
+    Resource fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders" PATH_DELIMETER_STR "fragment.glsl"));
+    Resource maxwellResource = Resource_Create(scl("Maxwell the Cat"), scl("models" PATH_DELIMETER_STR "maxwell.obj"));
+    Resource pistolSource = Resource_Create(scl("Pistol"), scl("models" PATH_DELIMETER_STR "Pistol.obj"));
 
     Renderer_CreateContext(scl("Juliette"),
                            NewVector2Int(720, 540),
