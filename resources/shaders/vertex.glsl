@@ -2,19 +2,31 @@
 
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 // 16 KB = 16,384 Bytes = 256 * 64
 
-layout (location = 0) in vec3 aPos;
+layout (location = 0) in vec3 verPosition;
+layout (location = 1) in vec3 verNormal;
+layout (location = 2) in vec2 verUv;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 camProjectionMatrix;
+uniform mat4 camViewMatrix;
+
+uniform vec4 matAmbientColor;
+uniform vec4 matDiffuseColor;
+uniform vec4 matSpecularColor;
+uniform float matSpecularExponent;
+uniform float matDissolve;
 
 layout(std140) uniform modelMatrices {
     mat4 models[RENDERER_BATCH_MAX_OBJECT_COUNT];
 };
 
-out vec4 vertexColor;
+out vec2 fragUv;
+out vec3 fragPosition;
+out vec3 fragNormal;
 
 void main()
 {
-    gl_Position = projectionMatrix * viewMatrix * models[gl_InstanceID] * vec4(aPos, 1.0);
-    vertexColor = vec4(aPos, 1.0);
+    gl_Position = camProjectionMatrix * camViewMatrix * models[gl_InstanceID] * vec4(verPosition, 1.0);
+    fragPosition = vec3(models[gl_InstanceID] * vec4(verPosition, 1.0));
+    fragNormal = mat3(transpose(inverse(models[gl_InstanceID]))) * verNormal;
+    fragUv = verUv;
 }

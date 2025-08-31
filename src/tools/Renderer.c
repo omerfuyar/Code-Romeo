@@ -1,5 +1,6 @@
 #include "tools/Renderer.h"
 #include "tools/Resources.h"
+
 #include "utilities/Timer.h"
 
 #include <glad/glad.h>
@@ -167,37 +168,58 @@ void Renderer_RenderScene(RendererScene *scene)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
     glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
 
-    // todo fix
-    glUniformMatrix4fv(scene->projectionMatrixHandle, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
-    glUniformMatrix4fv(scene->viewMatrixHandle, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
+    glUniformMatrix4fv(scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
+    glUniformMatrix4fv(scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
 
     for (size_t i = 0; i < scene->batches.count; i++)
     {
         RendererBatch *batch = *(RendererBatch **)ListArray_Get(scene->batches, i);
+        RendererMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
                      (long long)(batch->objectMatrices.sizeOfItem * batch->objectMatrices.count),
                      batch->objectMatrices.data,
                      OPENGL_DRAW_TYPE);
 
-        glBufferData(GL_ARRAY_BUFFER,
-                     (long long)(batch->mesh->vertices.sizeOfItem * batch->mesh->vertices.count),
-                     batch->mesh->vertices.data,
-                     OPENGL_DRAW_TYPE);
+        for (size_t j = 0; j < batch->model->meshes.count; j++)
+        {
+            RendererMesh *mesh = *(RendererMesh **)ListArray_Get(batch->model->meshes, j);
 
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     (long long)(batch->mesh->indices.sizeOfItem * batch->mesh->indices.count),
-                     batch->mesh->indices.data,
-                     OPENGL_DRAW_TYPE);
+            if (mesh->material != previousMaterial)
+            {
+                glUniform3fv(scene->matAmbientColor, 1, (GLfloat *)&mesh->material->ambientColor);
+                glUniform3fv(scene->matDiffuseColor, 1, (GLfloat *)&mesh->material->diffuseColor);
+                glUniform3fv(scene->matSpecularColor, 1, (GLfloat *)&mesh->material->specularColor);
+                glUniform1f(scene->matSpecularExponent, mesh->material->specularExponent);
+                glUniform1f(scene->matDissolve, mesh->material->dissolve);
 
-        glDrawElementsInstanced(GL_TRIANGLES,
-                                batch->mesh->indices.count,
-                                GL_UNSIGNED_INT,
-                                0,
-                                batch->objectMatrices.count);
+                // Texture binding
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMapHandle);
+                glUniform1i(scene->matDiffuseMap, 0);
 
-        DebugCheckRenderer();
+                previousMaterial = mesh->material;
+            }
+
+            glBufferData(GL_ARRAY_BUFFER,
+                         (long long)(mesh->vertices.sizeOfItem * mesh->vertices.count),
+                         mesh->vertices.data,
+                         OPENGL_DRAW_TYPE);
+
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                         (long long)(mesh->indices.sizeOfItem * mesh->indices.count),
+                         mesh->indices.data,
+                         OPENGL_DRAW_TYPE);
+
+            glDrawElementsInstanced(GL_TRIANGLES,
+                                    mesh->indices.count,
+                                    GL_UNSIGNED_INT,
+                                    0,
+                                    batch->objectMatrices.count);
+        }
     }
+
+    DebugCheckRenderer();
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -275,88 +297,6 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma region Renderer Mesh
 
-RendererMesh *RendererMesh_CreateOBJ(String objFileSource)
-{
-    size_t vertexCount = 0;
-    size_t indexCount = 0;
-
-    size_t lineCount = 0;
-    String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
-
-    size_t lineTokenCount = 0;
-    String lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
-
-    String_Tokenize(objFileSource, scl("\n"), &lineCount, lines, sizeof(lines));
-
-    for (size_t i = 0; i < lineCount; i++)
-    {
-        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, sizeof(lineTokens));
-
-        String firstToken = lineTokens[0];
-
-        if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
-        {
-            vertexCount++;
-        }
-        else if (String_Compare(firstToken, scl("vt")) == 0) // vt 0.073128 0.431854
-        {
-            // Count texture coordinate data
-        }
-        else if (String_Compare(firstToken, scl("vn")) == 0) // vn -0.0233 0.1253 -0.9918
-        {
-            // Count normal vector data
-        }
-        else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
-        {
-            size_t faceVertexCount = lineTokenCount - 1;
-
-            indexCount += faceVertexCount * 3;
-        }
-    }
-
-    RendererMesh *mesh = RendererMesh_CreateEmpty(vertexCount, indexCount);
-
-    for (size_t i = 0; i < lineCount; i++)
-    {
-        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, sizeof(lineTokens));
-
-        String firstToken = lineTokens[0];
-
-        if (String_Compare(firstToken, scl("v")) == 0) // v -7.579129 4.591946 4.850700
-        {
-            RendererMeshVertex vertex = {{String_ToFloat(lineTokens[1]),
-                                          String_ToFloat(lineTokens[2]),
-                                          String_ToFloat(lineTokens[3])}};
-
-            ListArray_Add(&mesh->vertices, &vertex);
-        }
-        else if (String_Compare(firstToken, scl("vt")) == 0) // vt 0.073128 0.431854
-        {
-            // Process texture coordinate data
-        }
-        else if (String_Compare(firstToken, scl("vn")) == 0) // vn -0.0233 0.1253 -0.9918
-        {
-            // Process normal vector data
-        }
-        else if (String_Compare(firstToken, scl("f")) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
-        {
-            for (size_t j = 1; j < lineTokenCount; j++)
-            {
-                String indices[3]; // 15/15/24
-                String_Tokenize(lineTokens[j], scl("/"), NULL, indices, 3);
-
-                unsigned int index = (unsigned int)String_ToInt(indices[0]) - 1;
-
-                ListArray_Add(&mesh->indices, &index);
-            }
-        }
-    }
-
-    DebugInfo("Mesh created with %zu vertices and %zu indices", mesh->vertices.count, mesh->indices.count);
-
-    return mesh;
-}
-
 RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity)
 {
     RendererMesh *mesh = malloc(sizeof(RendererMesh));
@@ -375,6 +315,8 @@ void RendererMesh_Destroy(RendererMesh *mesh)
     ListArray_Destroy(&mesh->vertices);
     ListArray_Destroy(&mesh->indices);
 
+    mesh->material = NULL;
+
     free(mesh);
     mesh = NULL;
 
@@ -382,6 +324,337 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 }
 
 #pragma endregion Renderer Mesh
+
+#pragma region Renderer Model
+
+// todo fix material creation and destroy
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath)
+{
+    ListArray materials = {0}; // RendererMaterial*
+
+    size_t meshCount = 0;
+    size_t meshIndex = 0;
+
+    size_t vertexPositionCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
+    size_t vertexNormalCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
+    size_t vertexUvCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
+    size_t faceCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
+
+    size_t lineCount = 0;
+    String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
+
+    size_t lineTokenCount = 0;
+    String lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+
+    String strNewline = scl("\n");
+    String strSpace = scl(" ");
+    String strV = scl("v");
+    String strF = scl("f");
+    String strVT = scl("vt");
+    String strVN = scl("vn");
+    String strO = scl("o");
+    String strG = scl("g");
+    String strMTLLIB = scl("mtllib");
+    String strUSEMTL = scl("usemtl");
+
+    String_Tokenize(objFileSource, strNewline, &lineCount, lines, sizeof(lines));
+    for (size_t i = 0; i < lineCount; i++) // count
+    {
+        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, sizeof(lineTokens));
+
+        String firstToken = lineTokens[0];
+
+        if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
+        {
+            vertexPositionCounts[meshCount - 1]++;
+        }
+        else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        {
+            faceCounts[meshCount - 1]++;
+        }
+        else if (String_Compare(firstToken, strVT) == 0) // vt 0.073128 0.431854
+        {
+            vertexUvCounts[meshCount - 1]++;
+        }
+        else if (String_Compare(firstToken, strVN) == 0) // vn -0.0233 0.1253 -0.9918
+        {
+            vertexNormalCounts[meshCount - 1]++;
+        }
+        else if (String_Compare(firstToken, strO) == 0) // new object
+        {
+            meshCount++;
+        }
+        else if (String_Compare(firstToken, strMTLLIB)) // .mtl file
+        {
+            char nameBuffer[TEMP_BUFFER_SIZE] = {0};
+            snprintf(nameBuffer, sizeof(nameBuffer), "%s Material File", name.characters);
+
+            String tempStr = String_CreateCopy(objFilePath.characters);
+            String_ConcatEnd(&tempStr, lineTokens[1]);
+
+            Resource *mtlFileResource = Resource_Create(scl(nameBuffer), tempStr);
+            String_Destroy(&tempStr);
+
+            size_t materialCount = 0;
+
+            size_t mtlLineCount = 0;
+            String mtlLines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
+
+            size_t mtlLineTokenCount = 0;
+            String mtlLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+
+            String strNEWMTL = scl("newmtl");
+            String strNS = scl("Ns");
+            String strKA = scl("Ka");
+            String strKD = scl("Kd");
+            String strKS = scl("Ks");
+            String strNI = scl("Ni");
+            String strD = scl("d");
+            String strILLNUM = scl("illum");
+            String strMAP_KD = scl("map_Kd");
+
+            String_Tokenize(mtlFileResource->data, strNewline, &mtlLineCount, mtlLines, sizeof(mtlLines));
+
+            for (size_t j = 0; j < mtlLineCount; j++) // count
+            {
+                String_Tokenize(lines[i], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
+
+                String mtlFirstToken = mtlLineTokens[0];
+
+                if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
+                {
+                    materialCount++;
+                }
+            }
+
+            materials = ListArray_Create("Renderer Material Pointer", sizeof(RendererMaterial *), materialCount);
+            RendererMaterial *currentMaterial = NULL;
+
+            for (size_t j = 0; j < mtlLineCount; j++) // compute
+            {
+                String_Tokenize(lines[i], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
+
+                String mtlFirstToken = mtlLineTokens[0];
+
+                if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
+                {
+                    currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
+                    currentMaterial->name = mtlLineTokens[1];
+                    ListArray_Add(&materials, &currentMaterial);
+                }
+                else if (String_Compare(mtlFirstToken, strNS) == 0)
+                {
+                    currentMaterial->specularExponent = String_ToFloat(mtlLineTokens[1]);
+                }
+                else if (String_Compare(mtlFirstToken, strKA) == 0)
+                {
+                    currentMaterial->ambientColor =
+                        NewColor(String_ToFloat(mtlLineTokens[1]),
+                                 String_ToFloat(mtlLineTokens[2]),
+                                 String_ToFloat(mtlLineTokens[3]),
+                                 1.0f);
+                }
+                else if (String_Compare(mtlFirstToken, strKD) == 0)
+                {
+                    currentMaterial->diffuseColor =
+                        NewColor(String_ToFloat(mtlLineTokens[1]),
+                                 String_ToFloat(mtlLineTokens[2]),
+                                 String_ToFloat(mtlLineTokens[3]),
+                                 1.0f);
+                }
+                else if (String_Compare(mtlFirstToken, strKS) == 0)
+                {
+                    currentMaterial->specularColor =
+                        NewColor(String_ToFloat(mtlLineTokens[1]),
+                                 String_ToFloat(mtlLineTokens[2]),
+                                 String_ToFloat(mtlLineTokens[3]),
+                                 1.0f);
+                }
+                else if (String_Compare(mtlFirstToken, strNI) == 0)
+                {
+                    currentMaterial->refractionIndex = String_ToFloat(mtlLineTokens[1]);
+                }
+                else if (String_Compare(mtlFirstToken, strD) == 0)
+                {
+                    currentMaterial->dissolve = String_ToFloat(mtlLineTokens[1]);
+                }
+                else if (String_Compare(mtlFirstToken, strILLNUM) == 0)
+                {
+                    currentMaterial->illuminationModel = String_ToInt(mtlLineTokens[1]);
+                }
+                else if (String_Compare(mtlFirstToken, strMAP_KD) == 0)
+                {
+                    char imageNameBuffer[TEMP_BUFFER_SIZE] = {0};
+                    snprintf(imageNameBuffer, sizeof(imageNameBuffer), "%s : %s", name.characters, lineTokens[1].characters);
+
+                    String imageTempStr = String_CreateCopy(objFilePath.characters);
+                    String_ConcatEnd(&imageTempStr, lineTokens[1]);
+
+                    // todo make material to hold image
+                    ResourceImage *image = ResourceImage_Create(scl(imageNameBuffer), imageTempStr);
+                    String_Destroy(&imageTempStr);
+
+                    currentMaterial->diffuseMapHandle = image->handle;
+                }
+            }
+
+            Resource_Destroy(mtlFileResource);
+        }
+    }
+
+    RendererModel *model = RendererModel_CreateEmpty(meshCount);
+    RendererMesh *currentMesh = NULL;
+    RendererMaterial *currentMaterial = NULL;
+
+    ListArray currentVertexPositionPool = {0}; // Vector3
+    ListArray currentVertexNormalPool = {0};   // Vector3
+    ListArray currentVertexUvPool = {0};       // Vector2
+
+    for (size_t i = 0; i < lineCount; i++) // compute
+    {
+        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, sizeof(lineTokens));
+
+        String firstToken = lineTokens[0];
+
+        if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
+        {
+            Vector3 vertexPosition =
+                NewVector3(String_ToFloat(lineTokens[1]),
+                           String_ToFloat(lineTokens[2]),
+                           String_ToFloat(lineTokens[3]));
+
+            ListArray_Add(&currentVertexPositionPool, &vertexPosition);
+        }
+        else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        {
+            for (size_t j = 1; j < lineTokenCount; j++)
+            {
+                String vertexData[3]; // 15/15/24 \ 15//14 \ 15/12
+                size_t vertexDataCount;
+                String_Tokenize(lineTokens[j], scl("/"), &vertexDataCount, vertexData, sizeof(vertexData));
+
+                RendererMeshVertex createdVertex = {0};
+
+                if (vertexDataCount == 1)
+                {
+                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(vertexData[0]) - 1);
+                }
+                else if (vertexDataCount == 2)
+                {
+                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(vertexData[0]) - 1);
+                    createdVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(vertexData[1]) - 1);
+                }
+                else if (vertexDataCount == 3)
+                {
+                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(vertexData[0]) - 1);
+                    createdVertex.vertexUV = vertexData[1].length != 0
+                                                 ? *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(vertexData[1]) - 1)
+                                                 : NewVector2(0.0f, 0.0f);
+                    createdVertex.vertexNormal = *(Vector3 *)ListArray_Get(currentVertexNormalPool, (size_t)String_ToInt(vertexData[2]) - 1);
+                }
+
+                unsigned int createdIndex = (unsigned int)String_ToInt(vertexData[0]) - 1;
+
+                ListArray_Add(&currentMesh->vertices, &createdVertex);
+                ListArray_Add(&currentMesh->indices, &createdIndex);
+            }
+        }
+        else if (String_Compare(firstToken, strVT) == 0) // vt 0.073128 0.431854
+        {
+            Vector2 vertexUv =
+                NewVector2(String_ToFloat(lineTokens[1]),
+                           String_ToFloat(lineTokens[2]));
+
+            ListArray_Add(&currentVertexUvPool, &vertexUv);
+        }
+        else if (String_Compare(firstToken, strVN) == 0) // vn -0.0233 0.1253 -0.9918
+        {
+            Vector3 vertexNormal =
+                NewVector3(String_ToFloat(lineTokens[1]),
+                           String_ToFloat(lineTokens[2]),
+                           String_ToFloat(lineTokens[3]));
+
+            ListArray_Add(&currentVertexNormalPool, &vertexNormal);
+        }
+        else if (String_Compare(firstToken, strO) == 0) // new mesh object
+        {
+            if (currentVertexPositionPool.data)
+            {
+                ListArray_Destroy(&currentVertexPositionPool);
+            }
+            if (currentVertexNormalPool.data)
+            {
+                ListArray_Destroy(&currentVertexNormalPool);
+            }
+            if (currentVertexUvPool.data)
+            {
+                ListArray_Destroy(&currentVertexUvPool);
+            }
+
+            currentVertexPositionPool = ListArray_Create("Vector3", sizeof(Vector3), vertexPositionCounts[meshIndex]);
+            currentVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), vertexNormalCounts[meshIndex]);
+            currentVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), vertexUvCounts[meshIndex]);
+
+            currentMesh = RendererMesh_CreateEmpty(vertexPositionCounts[meshIndex], faceCounts[meshIndex]);
+            ListArray_Add(&model->meshes, &currentMesh);
+            currentMesh->material = currentMaterial;
+            meshIndex++;
+        }
+        else if (String_Compare(firstToken, strG) == 0) // new mesh object group
+        {
+        }
+        else if (String_Compare(firstToken, strUSEMTL)) // use material
+        {
+            for (size_t j = 0; j < materials.count; j++)
+            {
+                RendererMaterial *tempMaterial = *(RendererMaterial **)ListArray_Get(materials, j);
+                if (String_Compare(tempMaterial->name, lineTokens[1]) == 0)
+                {
+                    currentMaterial = tempMaterial;
+                    break;
+                }
+            }
+        }
+    }
+
+    DebugInfo("Renderer Model '%s' created with %zu child meshes.", model->name, model->meshes.count);
+
+    return model;
+}
+
+RendererModel *RendererModel_CreateEmpty(size_t initialMeshCapacity)
+{
+    RendererModel *model = malloc(sizeof(RendererModel));
+    DebugAssertNullPointerCheck(model);
+
+    model->meshes = ListArray_Create("Renderer Mesh Pointer", sizeof(RendererMesh *), initialMeshCapacity);
+
+    return model;
+}
+
+void RendererModel_Destroy(RendererModel *model)
+{
+    DebugAssertNullPointerCheck(model);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, sizeof(tempTitle), model->name.characters);
+
+    String_Destroy(&model->name);
+
+    for (size_t i = model->meshes.count - 1; i >= 0; i--)
+    {
+        RendererMesh_Destroy(*(RendererMesh **)ListArray_Get(model->meshes, i));
+    }
+
+    ListArray_Destroy(&model->meshes);
+
+    free(model);
+    model = NULL;
+
+    DebugInfo("Renderer Model '%s' destroyed.", tempTitle);
+}
+
+#pragma endregion Renderer Model
 
 #pragma region Renderer Scene
 
@@ -410,10 +683,25 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
     glEnableVertexAttribArray(RENDERER_VBO_POSITION_BINDING);
     offset += sizeof(Vector3);
 
+    glVertexAttribPointer(RENDERER_VBO_NORMAL_BINDING, 3, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_VBO_NORMAL_BINDING);
+    offset += sizeof(Vector3);
+
+    glVertexAttribPointer(RENDERER_VBO_UV_BINDING, 2, GL_FLOAT, GL_FALSE, sizeof(RendererMeshVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_VBO_UV_BINDING);
+    offset += sizeof(Vector2);
+
     //! ... other attributes in vertex
 
-    scene->projectionMatrixHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "projectionMatrix");
-    scene->viewMatrixHandle = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "viewMatrix");
+    scene->camProjectionMatrix = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camProjectionMatrix");
+    scene->camViewMatrix = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camViewMatrix");
+
+    scene->matAmbientColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matAmbientColor");
+    scene->matDiffuseColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseColor");
+    scene->matSpecularColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularColor");
+    scene->matSpecularExponent = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularExponent");
+    scene->matDissolve = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDissolve");
+    scene->matDiffuseMap = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseMap");
 
     scene->objectMatricesHandle = glGetUniformBlockIndex(RENDERER_MAIN_SHADER_PROGRAM, "modelMatrices");
     glUniformBlockBinding(RENDERER_MAIN_SHADER_PROGRAM, scene->objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
@@ -439,7 +727,7 @@ void RendererScene_Destroy(RendererScene *scene)
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
-    ListArray_Destroy(&scene->batches);
+    ListArray_Destroy(&scene->batches); // todo clear
 
     glDeleteVertexArrays(1, &scene->vao);
     glDeleteBuffers(1, &scene->vboModelVertices);
@@ -449,8 +737,8 @@ void RendererScene_Destroy(RendererScene *scene)
     scene->vboModelVertices = 0;
     scene->iboModelIndices = 0;
 
-    scene->projectionMatrixHandle = 0;
-    scene->viewMatrixHandle = 0;
+    scene->camProjectionMatrix = 0;
+    scene->camViewMatrix = 0;
     scene->objectMatricesHandle = 0;
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -475,13 +763,13 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera)
 
 #pragma region Renderer Batch
 
-RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererMesh *mesh, size_t initialObjectCapacity)
+RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererModel *model, size_t initialObjectCapacity)
 {
     RendererBatch *batch = malloc(sizeof(RendererBatch));
     DebugAssertNullPointerCheck(batch);
 
     batch->name = name;
-    batch->mesh = mesh;
+    batch->model = model;
     batch->scene = scene;
     batch->objectMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
 
@@ -499,6 +787,7 @@ void RendererBatch_Destroy(RendererBatch *batch)
     char tempTitle[TEMP_BUFFER_SIZE];
     MemoryCopy(tempTitle, sizeof(tempTitle), batch->name.characters);
 
+    // todo fix these dependencies
     ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
@@ -507,7 +796,7 @@ void RendererBatch_Destroy(RendererBatch *batch)
     }
 
     String_Destroy(&batch->name);
-    batch->mesh = NULL;
+    batch->model = NULL;
 
     ListArray_Destroy(&batch->objectMatrices);
 

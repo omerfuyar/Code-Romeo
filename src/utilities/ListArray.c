@@ -17,6 +17,7 @@ ListArray ListArray_Create(char *nameOfType, size_t sizeOfItem, size_t initialCa
 void ListArray_Destroy(ListArray *list)
 {
     DebugAssertNullPointerCheck(list);
+    DebugAssertNullPointerCheck(list->data);
 
     char tempTitle[TEMP_BUFFER_SIZE];
     MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, list->data);

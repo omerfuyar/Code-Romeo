@@ -18,21 +18,6 @@ String String_CreateCopy(char *string)
     return createdString;
 }
 
-String String_CreateReference(char *string)
-{
-    DebugAssertNullPointerCheck(string);
-
-    String createdString;
-
-    createdString.length = strlen(string);
-
-    createdString.characters = string;
-
-    createdString.isOwner = false;
-
-    return createdString;
-}
-
 void String_Destroy(String *string)
 {
     DebugAssertNullPointerCheck(string);

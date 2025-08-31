@@ -28,6 +28,8 @@ typedef struct Vector4
     float w;
 } Vector4;
 
+typedef Vector4 Color;
+
 // A vector that contains 2 integer values. Can be used with helper functions.
 typedef struct Vector2Int
 {
@@ -58,6 +60,8 @@ typedef struct Vector4Int
     (Vector3) { x, y, z }
 #define NewVector4(x, y, z, w) \
     (Vector4) { x, y, z, w }
+#define NewColor(x, y, z, w) \
+    NewVector4(x, y, z, w)
 #define NewVector2Int(x, y) \
     (Vector2Int) { x, y }
 #define NewVector3Int(x, y, z) \

@@ -60,49 +60,6 @@
 
 #pragma endregion Constants
 
-#pragma region Functions And Macros
-
-#define TEMP_BUFFER_SIZE 128
-
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
-
-#if PLATFORM_WINDOWS
-#define PATH_DELIMETER_CHAR '\\'
-#define PATH_DELIMETER_STR "\\"
-
-#define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
-#define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
-#define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
-
-#elif PLATFORM_UNIX
-#define PATH_DELIMETER_CHAR '/'
-#define PATH_DELIMETER_STR "/"
-
-#define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
-#define MemoryCopy(destination, size, source) memcpy(destination, source, size)
-#define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
-
-#endif
-
-/// @brief Logs a debug message to the debug log file.
-/// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
-/// @param format The format string for the log message, similar to printf.
-/// @param ... The arguments for the format string.
-/// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
-void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...);
-
-// todo add error codes
-/// @brief Terminates and closes necessary utilities and exits the program.
-/// @param exitCode The code to pass to exit() function.
-void Terminate(int exitCode);
-
-/// @brief Gets the executable file directory.
-/// @return The null terminated C string : "path/to/exe/"
-char *GetExecutablePath();
-
-#pragma endregion Functions And Macros
-
 #pragma region Debug Log
 
 #define DEBUG_INFO_ENABLED true
@@ -169,6 +126,50 @@ char *GetExecutablePath();
     } while (false)
 #endif
 
-#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
-
 #pragma endregion Debug
+
+#pragma region Functions And Macros
+
+#define TEMP_BUFFER_SIZE 128
+
+#if PLATFORM_WINDOWS
+#define PATH_DELIMETER_CHAR '\\'
+#define PATH_DELIMETER_STR "\\"
+
+#define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
+#define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
+#define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
+
+#elif PLATFORM_UNIX
+#define PATH_DELIMETER_CHAR '/'
+#define PATH_DELIMETER_STR "/"
+
+#define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
+#define MemoryCopy(destination, size, source) memcpy(destination, source, size)
+#define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
+
+#endif
+
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
+
+#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+#define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
+
+/// @brief Logs a debug message to the debug log file.
+/// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
+/// @param format The format string for the log message, similar to printf.
+/// @param ... The arguments for the format string.
+/// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
+void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...);
+
+// todo add error codes
+/// @brief Terminates and closes necessary utilities and exits the program.
+/// @param exitCode The code to pass to exit() function.
+void Terminate(int exitCode);
+
+/// @brief Gets the executable file directory.
+/// @return The null terminated C string : "path/to/exe/"
+char *GetExecutablePath();
+
+#pragma endregion Functions And Macros

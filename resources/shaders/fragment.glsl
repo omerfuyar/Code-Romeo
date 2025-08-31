@@ -1,10 +1,12 @@
 #version 330 core
 
-out vec4 FragColor;
+in vec2 verUv;
 
-in vec4 vertexColor;
+uniform sampler2D matDiffuseMap;
+
+out vec4 FragColor;
 
 void main()
 {
-	FragColor = vertexColor;
+	FragColor = texture(matDiffuseMap, verUv);
 }

@@ -6,7 +6,7 @@
 #include "utilities/ListArray.h"
 #include "utilities/Vectors.h"
 
-#include "cglm/mat4.h"
+#include <cglm/mat4.h>
 
 #define RENDERER_OPENGL_VERSION_MAJOR 3
 #define RENDERER_OPENGL_VERSION_MINOR 3
@@ -14,6 +14,8 @@
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
 #define RENDERER_VBO_POSITION_BINDING 0
+#define RENDERER_VBO_NORMAL_BINDING 1
+#define RENDERER_VBO_UV_BINDING 2
 
 #define RENDERER_UBO_MATRICES_BINDING 0
 
@@ -24,6 +26,8 @@
 #define RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE 100.0f
 #define RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER 1000.0f
 
+#define RENDERER_MODEL_MAX_CHILD_MESH_COUNT 16
+
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 
 extern float RENDERER_DELTA_TIME;
@@ -33,6 +37,7 @@ extern float RENDERER_DELTA_TIME;
 typedef unsigned int RendererShaderHandle;
 typedef unsigned int RendererShaderProgramHandle;
 typedef unsigned int RendererTextureHandle;
+
 typedef int RendererUniformLocationHandle;
 typedef unsigned int RendererUniformBlockHandle;
 
@@ -42,7 +47,6 @@ typedef unsigned int RendererIBOHandle;
 typedef unsigned int RendererUBOHandle;
 
 typedef unsigned int RendererMeshIndex;
-
 typedef struct RendererScene RendererScene;
 
 /// @brief Represents the transformation (position, rotation, scale) of an object in 3D space.
@@ -53,19 +57,42 @@ typedef struct RendererObjectTransform
     Vector3 scale;
 } RendererObjectTransform;
 
-//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS
+//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
 /// @brief Represents a primal vertex in 3D space.
 typedef struct RendererMeshVertex
 {
-    Vector3 position;
+    Vector3 vertexPosition;
+    Vector3 vertexNormal;
+    Vector2 vertexUV;
 } RendererMeshVertex;
+
+typedef struct RendererMaterial
+{
+    String name;
+    Color ambientColor;
+    Color diffuseColor;
+    Color specularColor;
+    float specularExponent;
+    float refractionIndex;
+    float dissolve;
+    int illuminationModel;
+    RendererTextureHandle diffuseMapHandle;
+} RendererMaterial;
 
 /// @brief A model mesh structure that holds all necessary data to represent a 3D mesh.
 typedef struct RendererMesh
 {
     ListArray vertices; // RendererMeshVertex
     ListArray indices;  // RendererMeshIndex
+    RendererMaterial *material;
 } RendererMesh;
+
+/// @brief A complete model that holds multiple mesh data inside
+typedef struct RendererModel
+{
+    String name;
+    ListArray meshes; // RendererMesh*
+} RendererModel;
 
 /// @brief The camera object for the renderer.
 typedef struct RendererCamera
@@ -95,15 +122,21 @@ typedef struct RendererScene
     RendererIBOHandle iboModelIndices;
     RendererUBOHandle uboObjectMatrices;
 
-    RendererUniformLocationHandle projectionMatrixHandle;
-    RendererUniformLocationHandle viewMatrixHandle;
+    RendererUniformLocationHandle camProjectionMatrix;
+    RendererUniformLocationHandle camViewMatrix;
+    RendererUniformLocationHandle matAmbientColor;
+    RendererUniformLocationHandle matDiffuseColor;
+    RendererUniformLocationHandle matSpecularColor;
+    RendererUniformLocationHandle matSpecularExponent;
+    RendererUniformLocationHandle matDissolve;
+    RendererUniformLocationHandle matDiffuseMap;
     RendererUniformBlockHandle objectMatricesHandle;
 } RendererScene;
 
 typedef struct RendererBatch
 {
     String name;
-    RendererMesh *mesh;
+    RendererModel *model;
     RendererScene *scene;
 
     ListArray objectMatrices; // mat4, data should be continuous
@@ -195,11 +228,6 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma region Renderer Mesh
 
-/// @brief Creates a mesh from an OBJ file source.
-/// @param objFileSource Source code of the OBJ file.
-/// @return Created mesh with vertices and indices.
-RendererMesh *RendererMesh_CreateOBJ(String objFileSource);
-
 /// @brief Creates an empty mesh with no vertices or indices.
 /// @param initialVertexCapacity Initial capacity for the vertex array.
 /// @param initialIndexCapacity Initial capacity for the index array.
@@ -211,6 +239,26 @@ RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t init
 void RendererMesh_Destroy(RendererMesh *mesh);
 
 #pragma endregion Renderer Mesh
+
+#pragma region Renderer Model
+
+/// @brief Creates a mesh from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory.
+/// @param name Name of the model to create.
+/// @param objFileSource Source code of the OBJ file.
+/// @param objFilePath The resources-relative path of the OBJ file.
+/// @return Created mesh with vertices and indices.
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath);
+
+/// @brief
+/// @param initialMeshCapacity
+/// @return
+RendererModel *RendererModel_CreateEmpty(size_t initialMeshCapacity);
+
+/// @brief
+/// @param model
+void RendererModel_Destroy(RendererModel *model);
+
+#pragma endregion Renderer Model
 
 #pragma region Renderer Scene
 
@@ -236,10 +284,10 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera);
 /// @brief Creates renderer batch to store objects that are using the same mesh. Changes the scene.
 /// @param name Name of the batch.
 /// @param scene Pointer to the scene that the batch is belong to.
-/// @param mesh Pointer to the mesh that the batch is using.
+/// @param model Pointer to the model that the batch is using.
 /// @param initialObjectCapacity The initial capacity for objects inside batch.
 /// @return The created batch.
-RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererMesh *mesh, size_t initialObjectCapacity);
+RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererModel *model, size_t initialObjectCapacity);
 
 /// @brief Destroys the renderer batch and frees its resources.
 /// @param batch Batch to destroy.

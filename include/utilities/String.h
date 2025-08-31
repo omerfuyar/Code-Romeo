@@ -17,11 +17,6 @@ typedef struct String
 /// @return Newly created String object holding a pointer to copy of the original string.
 String String_CreateCopy(char *string);
 
-/// @brief Creates a new String object from a char array. The created String object will use the original string's memory. Can be used with constant strings. Uses strlen to determine the length.
-/// @param string Null terminated C-style string.
-/// @return Newly created String object holding a pointer to reference of the original string.
-String String_CreateReference(char *string);
-
 /// @brief Creates a new String object from a string literal. The created String object will use the original string's memory.
 /// @param string Null terminated C-style string literal.
 #define scl(string) \
@@ -53,7 +48,7 @@ void String_ConcatBegin(String *string, String other);
 /// @return Negative if string < other, positive if string > other, zero if they are equal.
 int String_Compare(String string, String other);
 
-/// @brief Tokenizes a string into an array of strings.
+/// @brief Tokenizes a string into an array of strings. Returned buffer uses the memory of the first string parameter.
 /// @param string The string to tokenize.
 /// @param delimeter The delimiter to use for tokenization.
 /// @param tokenCountRet A pointer to a size_t variable to store the number of tokens. Leave NULL if not needed.
