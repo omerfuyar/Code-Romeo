@@ -19,17 +19,17 @@ void ListArray_Destroy(ListArray *list)
     DebugAssertNullPointerCheck(list);
     DebugAssertNullPointerCheck(list->data);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, list->data);
+    char *name = list->nameOfType;
 
     free(list->data);
     list->data = NULL;
 
+    list->nameOfType = NULL;
     list->capacity = 0;
     list->count = 0;
     list->sizeOfItem = 0;
 
-    DebugInfo("ListArray %s destroyed.", tempTitle);
+    DebugInfo("ListArray '%s' destroyed.", name);
 }
 
 ListArray ListArray_Copy(ListArray list)
@@ -47,19 +47,25 @@ void ListArray_Resize(ListArray *list, size_t newCapacity)
 {
     DebugAssertNullPointerCheck(list);
 
-    void *newData = realloc(list->data, newCapacity * list->sizeOfItem);
-    DebugAssertNullPointerCheck(newData);
+    if (newCapacity != 0)
+    {
+        list->data = realloc(list->data, newCapacity * list->sizeOfItem);
+        DebugAssertNullPointerCheck(list->data);
+    }
 
-    list->data = newData;
-
-    DebugInfo("ListArray '%s' resized from %zu to %zu", list->nameOfType, list->capacity, newCapacity);
+    DebugInfo("ListArray '%s' resized from %zu to %zu.", list->nameOfType, list->capacity, newCapacity);
 
     list->capacity = newCapacity;
+    list->count = Min(list->count, list->capacity);
 }
 
 void *ListArray_Get(ListArray list, size_t index)
 {
-    DebugAssert(index < list.count, "Index out of range. List size : %zu, index : %zu", list.count, index);
+    if (!(index < list.count))
+    {
+        DebugInfo("a");
+    }
+    DebugAssert(index < list.count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list.nameOfType, list.count, index);
 
     void *itemLocation = (void *)((char *)list.data + index * list.sizeOfItem);
     DebugAssertNullPointerCheck(itemLocation);
@@ -69,7 +75,7 @@ void *ListArray_Get(ListArray list, size_t index)
 
 void ListArray_Set(ListArray list, size_t index, const void *item)
 {
-    DebugAssert(index < list.count, "Index out of range. List size : %zu, index : %zu", list.count, index);
+    DebugAssert(index < list.count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list.nameOfType, list.count, index);
 
     void *targetLocation = ListArray_Get(list, index);
 
@@ -97,7 +103,7 @@ void ListArray_Add(ListArray *list, const void *item)
 void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)
 {
     DebugAssertNullPointerCheck(list);
-    DebugAssert(itemCount > 0, "Item count to add must be greater than 0.");
+    DebugAssert(itemCount > 0, "Item count to add to ListArray '%s' must be greater than 0.", list->nameOfType);
 
     while (list->count + itemCount > list->capacity)
     {
@@ -116,7 +122,7 @@ void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)
 void ListArray_RemoveAtIndex(ListArray *list, size_t index)
 {
     DebugAssertNullPointerCheck(list);
-    DebugAssert(index < list->count, "Index out of range. List size : %zu, index : %zu", list->count, index);
+    DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list->nameOfType, list->count, index);
 
     if (list->count - 1 > 0 && (double)list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - 1 < (size_t)((double)list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT))
     {
@@ -141,8 +147,8 @@ void ListArray_RemoveAtIndex(ListArray *list, size_t index)
 void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount)
 {
     DebugAssertNullPointerCheck(list);
-    DebugAssert(index + itemCount < list->count, "Index out of range. List size : %zu, index : %zu", list->count, index);
-    DebugAssert(itemCount > 0, "Item count to remove must be greater than 0.");
+    DebugAssert(index + itemCount <= list->count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu, count: %zu", list->nameOfType, list->count, index, itemCount);
+    DebugAssert(itemCount > 0, "Item count to remove from ListArray '%s' must be greater than 0.", list->nameOfType);
 
     if (list->count - itemCount > 0 && (double)list->capacity > ARRAY_LIST_RESIZE_MULTIPLIER && list->count - itemCount < (size_t)((double)list->capacity / ARRAY_LIST_MIN_DECIMAL_LIMIT))
     {
@@ -179,7 +185,7 @@ void ListArray_RemoveItem(ListArray *list, const void *item)
 void *ListArray_Pop(ListArray *list)
 {
     DebugAssertNullPointerCheck(list);
-    DebugAssert(list->count > 0, "Cannot pop from an empty list.");
+    DebugAssert(list->count > 0, "Cannot pop from an empty ListArray '%s'.", list->nameOfType);
 
     void *item = ListArray_Get(*list, list->count - 1);
     ListArray_RemoveAtIndex(list, list->count - 1);

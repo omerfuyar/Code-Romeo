@@ -364,6 +364,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
         String firstToken = lineTokens[0];
 
+        //todo vertex uv not counting
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
             vertexPositionCounts[meshCount - 1]++;
@@ -384,7 +385,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         {
             meshCount++;
         }
-        else if (String_Compare(firstToken, strMTLLIB)) // .mtl file
+        else if (String_Compare(firstToken, strMTLLIB) == 0) // .mtl file
         {
             char nameBuffer[TEMP_BUFFER_SIZE] = {0};
             snprintf(nameBuffer, sizeof(nameBuffer), "%s Material File", name.characters);
@@ -506,9 +507,9 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     RendererMesh *currentMesh = NULL;
     RendererMaterial *currentMaterial = NULL;
 
-    ListArray currentVertexPositionPool = {0}; // Vector3
-    ListArray currentVertexNormalPool = {0};   // Vector3
-    ListArray currentVertexUvPool = {0};       // Vector2
+    ListArray currentVertexPositionPool = ListArray_Create("Vector3", sizeof(Vector3), 1); // Vector3
+    ListArray currentVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), 1);   // Vector3
+    ListArray currentVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), 1);       // Vector2
 
     for (size_t i = 0; i < lineCount; i++) // compute
     {
@@ -529,31 +530,29 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         {
             for (size_t j = 1; j < lineTokenCount; j++)
             {
-                String vertexData[3]; // 15/15/24 \ 15//14 \ 15/12
-                size_t vertexDataCount;
-                String_Tokenize(lineTokens[j], scl("/"), &vertexDataCount, vertexData, sizeof(vertexData));
+                String faceData[3];
+                size_t faceDataCount;
+                String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, sizeof(faceData));
 
                 RendererMeshVertex createdVertex = {0};
 
-                if (vertexDataCount == 1)
+                if (faceDataCount == 1) // 15
                 {
-                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(vertexData[0]) - 1);
+                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
                 }
-                else if (vertexDataCount == 2)
+                else if (faceDataCount == 2) // 15/16
                 {
-                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(vertexData[0]) - 1);
-                    createdVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(vertexData[1]) - 1);
+                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
+                    createdVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
                 }
-                else if (vertexDataCount == 3)
+                else if (faceDataCount == 3) // 15/16/17
                 {
-                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(vertexData[0]) - 1);
-                    createdVertex.vertexUV = vertexData[1].length != 0
-                                                 ? *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(vertexData[1]) - 1)
-                                                 : NewVector2(0.0f, 0.0f);
-                    createdVertex.vertexNormal = *(Vector3 *)ListArray_Get(currentVertexNormalPool, (size_t)String_ToInt(vertexData[2]) - 1);
+                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
+                    createdVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
+                    createdVertex.vertexNormal = *(Vector3 *)ListArray_Get(currentVertexNormalPool, (size_t)String_ToInt(faceData[2]) - 1);
                 }
 
-                unsigned int createdIndex = (unsigned int)String_ToInt(vertexData[0]) - 1;
+                unsigned int createdIndex = (unsigned int)String_ToInt(faceData[0]) - 1;
 
                 ListArray_Add(&currentMesh->vertices, &createdVertex);
                 ListArray_Add(&currentMesh->indices, &createdIndex);
@@ -578,25 +577,17 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         }
         else if (String_Compare(firstToken, strO) == 0) // new mesh object
         {
-            if (currentVertexPositionPool.data)
-            {
-                ListArray_Destroy(&currentVertexPositionPool);
-            }
-            if (currentVertexNormalPool.data)
-            {
-                ListArray_Destroy(&currentVertexNormalPool);
-            }
-            if (currentVertexUvPool.data)
-            {
-                ListArray_Destroy(&currentVertexUvPool);
-            }
+            ListArray_Clear(&currentVertexPositionPool);
+            ListArray_Clear(&currentVertexNormalPool);
+            ListArray_Clear(&currentVertexUvPool);
 
-            currentVertexPositionPool = ListArray_Create("Vector3", sizeof(Vector3), vertexPositionCounts[meshIndex]);
-            currentVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), vertexNormalCounts[meshIndex]);
-            currentVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), vertexUvCounts[meshIndex]);
+            ListArray_Resize(&currentVertexPositionPool, vertexPositionCounts[meshIndex]);
+            ListArray_Resize(&currentVertexNormalPool, vertexNormalCounts[meshIndex]);
+            ListArray_Resize(&currentVertexUvPool, vertexUvCounts[meshIndex]);
 
             currentMesh = RendererMesh_CreateEmpty(vertexPositionCounts[meshIndex], faceCounts[meshIndex]);
             ListArray_Add(&model->meshes, &currentMesh);
+
             currentMesh->material = currentMaterial;
             meshIndex++;
         }
