@@ -66,27 +66,6 @@ typedef struct RendererMeshVertex
     Vector2 vertexUV;
 } RendererMeshVertex;
 
-typedef struct RendererMaterial
-{
-    String name;
-    Color ambientColor;
-    Color diffuseColor;
-    Color specularColor;
-    float specularExponent;
-    float refractionIndex;
-    float dissolve;
-    int illuminationModel;
-    RendererTextureHandle diffuseMapHandle;
-} RendererMaterial;
-
-/// @brief A model mesh structure that holds all necessary data to represent a 3D mesh.
-typedef struct RendererMesh
-{
-    ListArray vertices; // RendererMeshVertex
-    ListArray indices;  // RendererMeshIndex
-    RendererMaterial *material;
-} RendererMesh;
-
 /// @brief A complete model that holds multiple mesh data inside
 typedef struct RendererModel
 {
@@ -226,43 +205,29 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma endregion Renderer Object Transform
 
-#pragma region Renderer Mesh
-
-/// @brief Creates an empty mesh with no vertices or indices.
-/// @param initialVertexCapacity Initial capacity for the vertex array.
-/// @param initialIndexCapacity Initial capacity for the index array.
-/// @return Created empty mesh.
-RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity);
-
-/// @brief Destroyer function for renderer mesh.
-/// @param mesh Mesh to destroy.
-void RendererMesh_Destroy(RendererMesh *mesh);
-
-#pragma endregion Renderer Mesh
-
 #pragma region Renderer Model
 
-/// @brief Creates a mesh from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory.
+/// @brief Creates a model from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory.
 /// @param name Name of the model to create.
 /// @param objFileSource Source code of the OBJ file.
 /// @param objFilePath The resources-relative path of the OBJ file.
-/// @return Created mesh with vertices and indices.
+/// @return Created model with vertices and indices.
 RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath);
 
-/// @brief
-/// @param initialMeshCapacity
-/// @return
+/// @brief Creates an empty model with no meshes.
+/// @param initialMeshCapacity Initial capacity for the mesh array.
+/// @return Created empty model.
 RendererModel *RendererModel_CreateEmpty(size_t initialMeshCapacity);
 
-/// @brief
-/// @param model
+/// @brief Destroyer function for renderer model.
+/// @param model Model to destroy.
 void RendererModel_Destroy(RendererModel *model);
 
 #pragma endregion Renderer Model
 
 #pragma region Renderer Scene
 
-/// @brief Creates a scene of render objects. A vertex allocator for objects.
+/// @brief Creates a scene of render objects that will be managed together.
 /// @param name Name of the scene.
 /// @param initialBatchCapacity The initial capacity of the batch list in scene.
 /// @return Created scene of render objects.

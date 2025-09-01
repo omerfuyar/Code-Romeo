@@ -38,7 +38,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
             char buffer[TEMP_BUFFER_SIZE] = {0};
             snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             fprintf(stderr, "%s", buffer);
-            Terminate(-1, buffer);
+            Terminate(EXIT_FAILURE, buffer);
         }
 
         fprintf(DEBUG_FILE, "\n[%s:%03ld] : [INFO] :\nLog file created successfully.", timeBuffer, tempSpec.tv_nsec / 1000000);
@@ -48,7 +48,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
         char buffer[TEMP_BUFFER_SIZE] = {0};
         snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
         fprintf(stderr, "%s", buffer);
-        Terminate(-1, buffer);
+        Terminate(EXIT_FAILURE, buffer);
     }
 
     char messageBuffer[TEMP_BUFFER_SIZE * 4] = {0};
@@ -73,7 +73,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
 
     if (terminate)
     {
-        Terminate(-1, finalBuffer);
+        Terminate(EXIT_FAILURE, finalBuffer);
     }
 }
 

@@ -7,6 +7,8 @@
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 
+#pragma region Source Only
+
 #define OPENGL_DRAW_TYPE GL_STATIC_DRAW
 
 #define DebugCheckRenderer()                                               \
@@ -24,11 +26,81 @@ Timer RENDERER_TIMER = {0};
 String RENDERER_MAIN_WINDOW_TITLE = {0};
 RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
 
+typedef struct RendererMaterial
+{
+    String name;
+    Color ambientColor;
+    Color diffuseColor;
+    Color specularColor;
+    float specularExponent;
+    float refractionIndex;
+    float dissolve;
+    int illuminationModel;
+    RendererTextureHandle diffuseMapHandle;
+} RendererMaterial;
+
+typedef struct RendererMesh
+{
+    ListArray vertices; // RendererMeshVertex
+    ListArray indices;  // RendererMeshIndex
+    RendererMaterial *material;
+} RendererMesh;
+
 void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
 {
     DebugAssertNullPointerCheck(window);
     glViewport(0, 0, width, height);
 }
+
+#pragma region Renderer Material
+
+RendererMaterial *RendererMaterial_Create(String name)
+{
+    RendererMaterial *material = (RendererMaterial *)malloc(sizeof(RendererMaterial));
+    DebugAssertNullPointerCheck(material);
+
+    material->name = name;
+
+    return material;
+}
+
+void RendererMaterial_Destroy(RendererMaterial *material)
+{
+}
+
+#pragma endregion Renderer Material
+
+#pragma region Renderer Mesh
+
+RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity)
+{
+    RendererMesh *mesh = malloc(sizeof(RendererMesh));
+    DebugAssertNullPointerCheck(mesh);
+
+    mesh->vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), initialVertexCapacity);
+    mesh->indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
+
+    return mesh;
+}
+
+void RendererMesh_Destroy(RendererMesh *mesh)
+{
+    DebugAssertNullPointerCheck(mesh);
+
+    ListArray_Destroy(&mesh->vertices);
+    ListArray_Destroy(&mesh->indices);
+
+    mesh->material = NULL;
+
+    free(mesh);
+    mesh = NULL;
+
+    DebugInfo("Mesh destroyed with %zu vertices and %zu indices", mesh->vertices.count, mesh->indices.count);
+}
+
+#pragma endregion Renderer Mesh
+
+#pragma endregion Source Only
 
 #pragma region Renderer
 
@@ -137,7 +209,7 @@ void Renderer_StartRendering()
     if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW))
     {
         DebugInfo("Main window close input received");
-        Terminate(0, "Main window close input received");
+        Terminate(EXIT_SUCCESS, "Main window close input received");
     }
 
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
@@ -295,36 +367,6 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma endregion Renderer Object Transform
 
-#pragma region Renderer Mesh
-
-RendererMesh *RendererMesh_CreateEmpty(size_t initialVertexCapacity, size_t initialIndexCapacity)
-{
-    RendererMesh *mesh = malloc(sizeof(RendererMesh));
-    DebugAssertNullPointerCheck(mesh);
-
-    mesh->vertices = ListArray_Create("Renderer Mesh Vertices", sizeof(RendererMeshVertex), initialVertexCapacity);
-    mesh->indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
-
-    return mesh;
-}
-
-void RendererMesh_Destroy(RendererMesh *mesh)
-{
-    DebugAssertNullPointerCheck(mesh);
-
-    ListArray_Destroy(&mesh->vertices);
-    ListArray_Destroy(&mesh->indices);
-
-    mesh->material = NULL;
-
-    free(mesh);
-    mesh = NULL;
-
-    DebugInfo("Mesh destroyed with %zu vertices and %zu indices", mesh->vertices.count, mesh->indices.count);
-}
-
-#pragma endregion Renderer Mesh
-
 #pragma region Renderer Model
 
 // todo fix material creation and destroy
@@ -439,8 +481,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
-                    currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-                    currentMaterial->name = mtlLineTokens[1];
+                    currentMaterial = RendererMaterial_Create(mtlLineTokens[1]);
                     ListArray_Add(&materials, &currentMaterial);
                 }
                 else if (String_Compare(mtlFirstToken, strNS) == 0)
@@ -491,7 +532,6 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                     String imageTempStr = String_CreateCopy(objFilePath.characters);
                     String_ConcatEnd(&imageTempStr, lineTokens[1]);
 
-                    // todo make material to hold image
                     ResourceImage *image = ResourceImage_Create(scl(imageNameBuffer), imageTempStr);
                     String_Destroy(&imageTempStr);
 
@@ -594,7 +634,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         else if (String_Compare(firstToken, strG) == 0) // new mesh object group
         {
         }
-        else if (String_Compare(firstToken, strUSEMTL)) // use material
+        else if (String_Compare(firstToken, strUSEMTL) == 0) // use material
         {
             for (size_t j = 0; j < materials.count; j++)
             {
@@ -718,7 +758,14 @@ void RendererScene_Destroy(RendererScene *scene)
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
-    ListArray_Destroy(&scene->batches); // todo clear
+
+    for (size_t i = scene->batches.count - 1; i >= 0; i--)
+    {
+        RendererBatch *batch = *(RendererBatch **)ListArray_Get(scene->batches, i);
+        RendererBatch_Destroy(batch);
+    }
+
+    ListArray_Destroy(&scene->batches);
 
     glDeleteVertexArrays(1, &scene->vao);
     glDeleteBuffers(1, &scene->vboModelVertices);
@@ -782,7 +829,7 @@ void RendererBatch_Destroy(RendererBatch *batch)
     ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
-        RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(batch->scene->batches, i);
+        RendererBatch *nextBatch = *(RendererBatch **)ListArray_Get(batch->scene->batches, i);
         nextBatch->batchOffsetInScene--;
     }
 
