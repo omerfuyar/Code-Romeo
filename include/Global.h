@@ -60,75 +60,7 @@
 
 #pragma endregion Constants
 
-#pragma region Debug Log
-
-#define DEBUG_INFO_ENABLED true
-#define DEBUG_WARNING_ENABLED true
-#define DEBUG_ERROR_ENABLED true
-#define DEBUG_ASSERT_ENABLED true
-
-#define DEBUG_TERMINATE_ON_ERROR true
-#define DEBUG_TERMINATE_ON_ASSERT true
-
-#define DEBUG_FLUSH_AFTER_LOG true
-
-#define DEBUG_TIME_FORMAT "%H:%M:%S"
-#define DEBUG_FILE_NAME "debug.log"
-
-#if DEBUG_INFO_ENABLED == false
-#define DebugInfo(format, ...)
-#else
-#define DebugInfo(format, ...)                                                 \
-    do                                                                         \
-    {                                                                          \
-        DebugLog("INFO", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-    } while (false)
-#endif
-
-#if DEBUG_WARNING_ENABLED == false
-#define DebugWarning(format, ...)
-#else
-#define DebugWarning(format, ...)                                                 \
-    do                                                                            \
-    {                                                                             \
-        DebugLog("WARNING", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-    } while (false)
-#endif
-
-#if DEBUG_ERROR_ENABLED == false
-#define DebugError(format, ...)
-#else
-#define DebugError(format, ...)                                                 \
-    do                                                                          \
-    {                                                                           \
-        DebugLog("ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-        if (DEBUG_TERMINATE_ON_ERROR)                                           \
-        {                                                                       \
-            Terminate(EXIT_FAILURE);                                            \
-        }                                                                       \
-    } while (false)
-#endif
-
-#if DEBUG_ASSERT_ENABLED == false
-#define DebugAssert(condition, format, ...) condition
-#else
-#define DebugAssert(condition, format, ...)                                                     \
-    do                                                                                          \
-    {                                                                                           \
-        if (!(condition))                                                                       \
-        {                                                                                       \
-            DebugLog("ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-            if (DEBUG_TERMINATE_ON_ASSERT)                                                      \
-            {                                                                                   \
-                Terminate(EXIT_FAILURE);                                                        \
-            }                                                                                   \
-        }                                                                                       \
-    } while (false)
-#endif
-
-#pragma endregion Debug
-
-#pragma region Functions And Macros
+#pragma endregion Functions and Macros
 
 #define TEMP_BUFFER_SIZE 128
 
@@ -153,23 +85,88 @@
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
-#define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
-
 /// @brief Logs a debug message to the debug log file.
 /// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
 /// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
-void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...);
+void DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 // todo add error codes
 /// @brief Terminates and closes necessary utilities and exits the program.
 /// @param exitCode The code to pass to exit() function.
-void Terminate(int exitCode);
+/// @param message The message to show to the console.
+void Terminate(int exitCode, char *message);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
 char *GetExecutablePath();
 
-#pragma endregion Functions And Macros
+#pragma region Functions and Macros
+
+#pragma region Debug Log
+
+#define DEBUG_INFO_ENABLED true
+#define DEBUG_WARNING_ENABLED true
+#define DEBUG_ERROR_ENABLED true
+#define DEBUG_ASSERT_ENABLED true
+
+#define DEBUG_TERMINATE_ON_ERROR true
+#define DEBUG_TERMINATE_ON_ASSERT true
+
+#define DEBUG_FLUSH_AFTER_LOG true
+
+#define DEBUG_TIME_FORMAT "%H:%M:%S"
+#define DEBUG_FILE_NAME "debug.log"
+
+#if DEBUG_INFO_ENABLED == false
+#define DebugInfo(format, ...)
+#else
+#define DebugInfo(format, ...)                                                        \
+    do                                                                                \
+    {                                                                                 \
+        DebugLog(false, "INFO", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+    } while (false)
+#endif
+
+#if DEBUG_WARNING_ENABLED == false
+#define DebugWarning(format, ...)
+#else
+#define DebugWarning(format, ...)                                                        \
+    do                                                                                   \
+    {                                                                                    \
+        DebugLog(false, "WARNING", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+    } while (false)
+#endif
+
+#if DEBUG_ERROR_ENABLED == false
+#define DebugError(format, ...)
+#else
+#define DebugError(format, ...)                                                                           \
+    do                                                                                                    \
+    {                                                                                                     \
+        DebugLog(DEBUG_TERMINATE_ON_ERROR, "ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+    } while (false)
+#endif
+
+#if DEBUG_ASSERT_ENABLED == false
+#define DebugAssert(condition, format, ...) condition
+#else
+#define DebugAssert(condition, format, ...)                                                                                \
+    do                                                                                                                     \
+    {                                                                                                                      \
+        if (!(condition))                                                                                                  \
+        {                                                                                                                  \
+            DebugLog(DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+        }                                                                                                                  \
+    } while (false)
+#endif
+
+#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+#define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
+
+#pragma endregion Debug
+
+#pragma region Macros
+
+#pragma endregion Macros

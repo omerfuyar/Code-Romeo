@@ -137,7 +137,7 @@ void Renderer_StartRendering()
     if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW))
     {
         DebugInfo("Main window close input received");
-        Terminate(0);
+        Terminate(0, "Main window close input received");
     }
 
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
@@ -364,7 +364,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
         String firstToken = lineTokens[0];
 
-        //todo vertex uv not counting
+        // todo vertex uv not counting
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
             vertexPositionCounts[meshCount - 1]++;

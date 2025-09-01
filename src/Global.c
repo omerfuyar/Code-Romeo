@@ -12,15 +12,15 @@ FILE *DEBUG_FILE = NULL;
 char *DEBUG_FILE_NAME_STR = NULL;
 char *EXECUTABLE_DIRECTORY_PATH = NULL;
 
-void DebugLog(const char *header, const char *file, int line, const char *function, const char *format, ...)
+void DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
-    char buffer[16];
+    char timeBuffer[TEMP_BUFFER_SIZE / 4];
 
     timespec_get(&tempSpec, TIME_UTC);
     LocalTime(&tempSpec.tv_sec, &timer);
-    strftime(buffer, sizeof(buffer), DEBUG_TIME_FORMAT, &timer);
+    strftime(timeBuffer, sizeof(timeBuffer), DEBUG_TIME_FORMAT, &timer);
 
     if (DEBUG_FILE == NULL)
     {
@@ -35,25 +35,34 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
 
         if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
         {
-            fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
-            Terminate(-1); // todo error codes
+            char buffer[TEMP_BUFFER_SIZE] = {0};
+            snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
+            fprintf(stderr, "%s", buffer);
+            Terminate(-1, buffer);
         }
 
-        fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", buffer, tempSpec.tv_nsec / 1000000);
+        fprintf(DEBUG_FILE, "\n[%s:%03ld] : [INFO] :\nLog file created successfully.", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
     else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
     {
-        fprintf(stderr, "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
-        Terminate(-1); // todo error codes
+        char buffer[TEMP_BUFFER_SIZE] = {0};
+        snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
+        fprintf(stderr, "%s", buffer);
+        Terminate(-1, buffer);
     }
 
+    char messageBuffer[TEMP_BUFFER_SIZE * 4] = {0};
     va_list args;
     va_start(args, format);
-    fprintf(DEBUG_FILE, "[%s:%03ld] : [%s] : [%s:%d:%s] :\n",
-            buffer, tempSpec.tv_nsec / 1000000, header, file, line, function);
-    vfprintf(DEBUG_FILE, format, args);
-    fprintf(DEBUG_FILE, "\n");
+    vsnprintf(messageBuffer, sizeof(messageBuffer), format, args);
     va_end(args);
+
+    char finalBuffer[TEMP_BUFFER_SIZE * 5] = {0};
+
+    snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n %s\n",
+             timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
+
+    fprintf(DEBUG_FILE, "%s", finalBuffer);
 
     if (DEBUG_FLUSH_AFTER_LOG)
     {
@@ -61,11 +70,16 @@ void DebugLog(const char *header, const char *file, int line, const char *functi
     }
 
     fclose(DEBUG_FILE);
+
+    if (terminate)
+    {
+        Terminate(-1, finalBuffer);
+    }
 }
 
-void Terminate(int exitCode)
+void Terminate(int exitCode, char *message)
 {
-    fprintf(stdout, "Terminating application with exit code: %d\n", exitCode);
+    fprintf(stdout, "Terminating application with exit code: %d\nExit message : %s\n", exitCode, message);
 
     exit(exitCode);
 }
