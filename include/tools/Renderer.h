@@ -50,15 +50,15 @@ typedef unsigned int RendererMeshIndex;
 typedef struct RendererScene RendererScene;
 
 /// @brief Represents the transformation (position, rotation, scale) of an object in 3D space.
-typedef struct RendererObjectTransform
+typedef struct RendererTransform
 {
     Vector3 position;
     Vector3 rotation;
     Vector3 scale;
-} RendererObjectTransform;
+} RendererTransform;
 
 #define RendererObjectTransformDefault \
-    (RendererObjectTransform) { NewVector3(0.0f, 0.0f, 0.0f), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(1.0f, 1.0f, 1.0f) }
+    (RendererTransform) { NewVector3(0.0f, 0.0f, 0.0f), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(1.0f, 1.0f, 1.0f) }
 
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
 /// @brief Represents a primal vertex in 3D space.
@@ -82,7 +82,7 @@ typedef struct RendererCamera
     mat4 projectionMatrix;
     mat4 viewMatrix;
 
-    RendererObjectTransform transform;
+    RendererTransform transform;
     String name;
     RendererScene *scene;
 
@@ -129,7 +129,7 @@ typedef struct RendererBatch
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
 typedef struct RendererObject
 {
-    RendererObjectTransform transform;
+    RendererTransform transform;
     String name;
     Vector3 hitBoxSize;
     Vector3 velocity;
@@ -176,37 +176,37 @@ void Renderer_RenderScene(RendererScene *scene);
 /// @brief Sets the position of the object transform.
 /// @param transform Pointer to the object transform.
 /// @param position New position for the object.
-void RendererObjectTransform_SetPosition(RendererObjectTransform *transform, Vector3 position);
+void RendererObjectTransform_SetPosition(RendererTransform *transform, Vector3 position);
 
 /// @brief Sets the rotation of the object transform.
 /// @param transform Pointer to the object transform.
 /// @param rotation New rotation for the object.
-void RendererObjectTransform_SetRotation(RendererObjectTransform *transform, Vector3 rotation);
+void RendererObjectTransform_SetRotation(RendererTransform *transform, Vector3 rotation);
 
 /// @brief Sets the scale of the object transform.
 /// @param transform Pointer to the object transform.
 /// @param scale New scale for the object.
-void RendererObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale);
+void RendererObjectTransform_SetScale(RendererTransform *transform, Vector3 scale);
 
 /// @brief Adds the given position of the object to transform.
 /// @param transform Pointer to the object transform.
 /// @param position Position to add to the object.
-void RendererObjectTransform_AddPosition(RendererObjectTransform *transform, Vector3 position);
+void RendererObjectTransform_AddPosition(RendererTransform *transform, Vector3 position);
 
 /// @brief Adds the given rotation of the object to transform.
 /// @param transform Pointer to the object transform.
 /// @param rotation Rotation to add to the object.
-void RendererObjectTransform_AddRotation(RendererObjectTransform *transform, Vector3 rotation);
+void RendererObjectTransform_AddRotation(RendererTransform *transform, Vector3 rotation);
 
 /// @brief Multiplies the scale of the transform with given scale.
 /// @param transform Pointer to the object transform.
 /// @param scale Scale to multiply the object.
-void RendererObjectTransform_MultiplyScale(RendererObjectTransform *transform, Vector3 scale);
+void RendererObjectTransform_MultiplyScale(RendererTransform *transform, Vector3 scale);
 
 /// @brief Sets the matrix with transform values.
 /// @param transform Transform to reference. (pointer for performance)
 /// @param matrix Matrix to edit.
-void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, mat4 *matrix);
+void RendererObjectTransform_ToModelMatrix(RendererTransform *transform, mat4 *matrix);
 
 #pragma endregion Renderer Object Transform
 
@@ -218,7 +218,7 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 /// @param objFilePath The resources-relative path of the OBJ file.
 /// @param modelOffset Offset to freely adjust final model.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererObjectTransform modelOffset);
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererTransform modelOffset);
 
 /// @brief Creates an empty model with no meshes.
 /// @param name Name of the model to create.

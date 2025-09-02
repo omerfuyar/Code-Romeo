@@ -3,9 +3,6 @@
 #include "tools/Resources.h"
 #include "utilities/Timer.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #define TEST_OBJ_COUNT_X 16
 #define TEST_OBJ_COUNT_Y 16
 #define TEST_BENCH_TIME_SECONDS 10.0f
@@ -32,7 +29,7 @@ int main()
     RendererCamera *mainCamera = RendererCamera_Create(scl("Main Camera"), myScene);
     RendererObjectTransform_SetPosition(&mainCamera->transform, NewVector3(-1.0f, 0, 0));
 
-    RendererModel *tankModel = RendererModel_CreateOBJ(scl("tiger tank"), tankSource->data, scl("models" PATH_DELIMETER_STR "tank" PATH_DELIMETER_STR), RendererObjectTransformDefault);
+    RendererModel *tankModel = RendererModel_CreateOBJ(scl("tiger tank"), tankSource->data, scl("models" PATH_DELIMETER_STR "tank" PATH_DELIMETER_STR), (RendererTransform){NewVector3(10, 0, 0), NewVector3(0, 0, 0), NewVector3(0.1f, 0.1f, 0.1f)});
     RendererBatch *tankBatch = RendererBatch_Create(scl("tank batch"), myScene, tankModel, 10);
     RendererObject *tank1 = RendererObject_Create(scl("myTank"), tankBatch);
 
@@ -40,7 +37,7 @@ int main()
     {
         Renderer_StartRendering();
 
-        RendererObjectTransform_AddRotation(&tank1->transform, NewVector3(0.0f, RENDERER_DELTA_TIME * 10, 0.0f));
+        RendererObjectTransform_AddRotation(&tank1->transform, NewVector3(0.0f, RENDERER_DELTA_TIME * 1, 0.0f));
         RendererObject_Update(tank1);
 
         RendererCamera_Update(mainCamera);

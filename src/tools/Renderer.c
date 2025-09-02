@@ -319,42 +319,42 @@ void Renderer_RenderScene(RendererScene *scene)
 
 #pragma region Renderer Object Transform
 
-void RendererObjectTransform_SetPosition(RendererObjectTransform *transform, Vector3 position)
+void RendererObjectTransform_SetPosition(RendererTransform *transform, Vector3 position)
 {
     DebugAssertNullPointerCheck(transform);
 
     transform->position = position;
 }
 
-void RendererObjectTransform_SetRotation(RendererObjectTransform *transform, Vector3 rotation)
+void RendererObjectTransform_SetRotation(RendererTransform *transform, Vector3 rotation)
 {
     DebugAssertNullPointerCheck(transform);
 
     transform->rotation = rotation;
 }
 
-void RendererObjectTransform_SetScale(RendererObjectTransform *transform, Vector3 scale)
+void RendererObjectTransform_SetScale(RendererTransform *transform, Vector3 scale)
 {
     DebugAssertNullPointerCheck(transform);
 
     transform->scale = scale;
 }
 
-void RendererObjectTransform_AddPosition(RendererObjectTransform *transform, Vector3 position)
+void RendererObjectTransform_AddPosition(RendererTransform *transform, Vector3 position)
 {
     DebugAssertNullPointerCheck(transform);
 
     transform->position = Vector3_Add(transform->position, position);
 }
 
-void RendererObjectTransform_AddRotation(RendererObjectTransform *transform, Vector3 rotation)
+void RendererObjectTransform_AddRotation(RendererTransform *transform, Vector3 rotation)
 {
     DebugAssertNullPointerCheck(transform);
 
     transform->rotation = Vector3_Add(transform->rotation, rotation);
 }
 
-void RendererObjectTransform_MultiplyScale(RendererObjectTransform *transform, Vector3 scale)
+void RendererObjectTransform_MultiplyScale(RendererTransform *transform, Vector3 scale)
 {
     DebugAssertNullPointerCheck(transform);
 
@@ -363,7 +363,7 @@ void RendererObjectTransform_MultiplyScale(RendererObjectTransform *transform, V
     transform->scale.z *= scale.z;
 }
 
-void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, mat4 *matrix)
+void RendererObjectTransform_ToModelMatrix(RendererTransform *transform, mat4 *matrix)
 {
     DebugAssertNullPointerCheck(transform);
     DebugAssertNullPointerCheck(matrix);
@@ -383,7 +383,7 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma region Renderer Model
 
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererObjectTransform modelOffset)
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererTransform modelOffset)
 {
     Timer modelTimer = Timer_Create("Model Import Timer");
     Timer_Start(&modelTimer);
@@ -403,7 +403,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     size_t faceCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
 
     size_t lineCount = 0;
-    String lines[RESOURCE_FILE_MAX_LINE_COUNT] = {0};
+    String *lines = (String *)malloc(RESOURCE_FILE_MAX_LINE_COUNT * sizeof(String));
 
     size_t lineTokenCount = 0;
     String lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
@@ -419,7 +419,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     String strMTLLIB = scl("mtllib");
     String strUSEMTL = scl("usemtl");
 
-    String_Tokenize(objFileSource, strNewline, &lineCount, lines, sizeof(lines));
+    String_Tokenize(objFileSource, strNewline, &lineCount, lines, RESOURCE_FILE_MAX_LINE_COUNT * sizeof(String));
     for (size_t i = 0; i < lineCount; i++) // count
     {
         String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, sizeof(lineTokens));
@@ -678,6 +678,8 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
     ListArray_Destroy(&currentVertexNormalPool);
     ListArray_Destroy(&currentVertexUvPool);
+
+    free(lines);
 
     Timer_Stop(&modelTimer);
 
