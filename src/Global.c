@@ -79,7 +79,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
 
 void Terminate(int exitCode, char *message)
 {
-    fprintf(stdout, "Terminating application with exit code: %d\nExit message : %s\n", exitCode, message);
+    fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
 
     exit(exitCode);
 }

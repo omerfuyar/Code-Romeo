@@ -385,6 +385,9 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererObjectTransform modelOffset)
 {
+    Timer modelTimer = Timer_Create("Model Import Timer");
+    Timer_Start(&modelTimer);
+
     ListArray materials = {0}; // RendererMaterial*
 
     mat4 offsetMatrix;
@@ -394,7 +397,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     size_t meshCount = 0;
     size_t meshIndex = 0;
 
-    size_t vertexPositionCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
+    size_t vertexCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
     size_t vertexNormalCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
     size_t vertexUvCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
     size_t faceCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
@@ -423,10 +426,9 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
         String firstToken = lineTokens[0];
 
-        // todo vertex uv not counting
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
-            vertexPositionCounts[meshCount - 1]++;
+            vertexCounts[meshCount - 1]++;
         }
         else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
@@ -477,7 +479,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
             for (size_t j = 0; j < mtlLineCount; j++) // count
             {
-                String_Tokenize(lines[i], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
+                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
 
                 String mtlFirstToken = mtlLineTokens[0];
 
@@ -564,9 +566,8 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     RendererMesh *currentMesh = NULL;
     RendererMaterial *currentMaterial = NULL;
 
-    ListArray currentVertexPositionPool = ListArray_Create("Vector3", sizeof(Vector3), 1); // Vector3
-    ListArray currentVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), 1);   // Vector3
-    ListArray currentVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), 1);       // Vector2
+    ListArray currentVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), 1); // Vector3
+    ListArray currentVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), 1);     // Vector2
 
     for (size_t i = 0; i < lineCount; i++) // compute
     {
@@ -576,7 +577,6 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
-
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
                            (vec3){String_ToFloat(lineTokens[1]),
                                   String_ToFloat(lineTokens[2]),
@@ -584,7 +584,10 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                            0.0f,
                            (float *)&finalVector);
 
-            ListArray_Add(&currentVertexPositionPool, &finalVector);
+            RendererMeshVertex createdVertex;
+            createdVertex.vertexPosition = NewVector3(finalVector[0], finalVector[1], finalVector[2]);
+
+            ListArray_Add(&currentMesh->vertices, &createdVertex);
         }
         else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
@@ -594,27 +597,31 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                 size_t faceDataCount;
                 String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, sizeof(faceData));
 
-                RendererMeshVertex createdVertex = {0};
-
-                if (faceDataCount == 1) // 15
+                if ((size_t)String_ToInt(faceData[0]) - 1 >= currentMesh->vertices.count)
                 {
-                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
+                    // todo DebugWarning("Incorrect .obj file format");
+                    continue;
                 }
-                else if (faceDataCount == 2) // 15/16
+
+                RendererMeshVertex currentVertex = *(RendererMeshVertex *)ListArray_Get(currentMesh->vertices, (size_t)String_ToInt(faceData[0]) - 1);
+
+                if (faceDataCount == 2) // 15/16
                 {
-                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
-                    createdVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
+                    if ((size_t)String_ToInt(faceData[1]) - 1 >= currentVertexUvPool.count)
+                    {
+                        // todo DebugWarning("Incorrect .obj file format");
+                        continue;
+                    }
+                    currentVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
                 }
                 else if (faceDataCount == 3) // 15/16/17
                 {
-                    createdVertex.vertexPosition = *(Vector3 *)ListArray_Get(currentVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
-                    createdVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
-                    createdVertex.vertexNormal = *(Vector3 *)ListArray_Get(currentVertexNormalPool, (size_t)String_ToInt(faceData[2]) - 1);
+                    currentVertex.vertexUV = *(Vector2 *)ListArray_Get(currentVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
+                    currentVertex.vertexNormal = *(Vector3 *)ListArray_Get(currentVertexNormalPool, (size_t)String_ToInt(faceData[2]) - 1);
                 }
 
                 unsigned int createdIndex = (unsigned int)String_ToInt(faceData[0]) - 1;
 
-                ListArray_Add(&currentMesh->vertices, &createdVertex);
                 ListArray_Add(&currentMesh->indices, &createdIndex);
             }
         }
@@ -633,19 +640,19 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                            String_ToFloat(lineTokens[2]),
                            String_ToFloat(lineTokens[3]));
 
+            // todo maybe matrix mult here too
+
             ListArray_Add(&currentVertexNormalPool, &vertexNormal);
         }
         else if (String_Compare(firstToken, strO) == 0) // new mesh object
         {
-            ListArray_Clear(&currentVertexPositionPool);
             ListArray_Clear(&currentVertexNormalPool);
             ListArray_Clear(&currentVertexUvPool);
 
-            ListArray_Resize(&currentVertexPositionPool, vertexPositionCounts[meshIndex]);
             ListArray_Resize(&currentVertexNormalPool, vertexNormalCounts[meshIndex]);
             ListArray_Resize(&currentVertexUvPool, vertexUvCounts[meshIndex]);
 
-            currentMesh = RendererMesh_CreateEmpty(vertexPositionCounts[meshIndex], faceCounts[meshIndex]);
+            currentMesh = RendererMesh_CreateEmpty(vertexCounts[meshIndex], faceCounts[meshIndex] * 3);
             ListArray_Add(&model->meshes, &currentMesh);
 
             currentMesh->material = currentMaterial;
@@ -662,13 +669,19 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                 if (String_Compare(tempMaterial->name, lineTokens[1]) == 0)
                 {
                     currentMaterial = tempMaterial;
+                    currentMesh->material = tempMaterial;
                     break;
                 }
             }
         }
     }
 
-    DebugInfo("Renderer Model '%s' created with %zu child meshes.", model->name, model->meshes.count);
+    ListArray_Destroy(&currentVertexNormalPool);
+    ListArray_Destroy(&currentVertexUvPool);
+
+    Timer_Stop(&modelTimer);
+
+    DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes in %f seconds.", model->name, model->meshes.count, (double)Timer_GetElapsedNanoseconds(modelTimer) / 1000000000.0);
 
     return model;
 }

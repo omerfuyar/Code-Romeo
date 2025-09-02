@@ -61,10 +61,6 @@ void ListArray_Resize(ListArray *list, size_t newCapacity)
 
 void *ListArray_Get(ListArray list, size_t index)
 {
-    if (!(index < list.count))
-    {
-        DebugInfo("a");
-    }
     DebugAssert(index < list.count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list.nameOfType, list.count, index);
 
     void *itemLocation = (void *)((char *)list.data + index * list.sizeOfItem);
@@ -79,7 +75,7 @@ void ListArray_Set(ListArray list, size_t index, const void *item)
 
     void *targetLocation = ListArray_Get(list, index);
 
-    memcpy(targetLocation, item, list.sizeOfItem);
+    MemoryCopy(targetLocation, list.sizeOfItem, item);
 }
 
 void ListArray_Add(ListArray *list, const void *item)

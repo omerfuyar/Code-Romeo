@@ -30,7 +30,7 @@ int main()
     RendererScene *myScene = RendererScene_Create(scl("My Scene"), 5);
 
     RendererCamera *mainCamera = RendererCamera_Create(scl("Main Camera"), myScene);
-    RendererObjectTransform_SetPosition(&mainCamera->transform, NewVector3(-0.25f, 0, 0));
+    RendererObjectTransform_SetPosition(&mainCamera->transform, NewVector3(-1.0f, 0, 0));
 
     RendererModel *tankModel = RendererModel_CreateOBJ(scl("tiger tank"), tankSource->data, scl("models" PATH_DELIMETER_STR "tank" PATH_DELIMETER_STR), RendererObjectTransformDefault);
     RendererBatch *tankBatch = RendererBatch_Create(scl("tank batch"), myScene, tankModel, 10);

@@ -150,7 +150,11 @@ char *GetExecutablePath();
 
 #if DEBUG_ASSERT_ENABLED == false
 #define DebugAssert(condition, format, ...) condition
+#define DebugAssertNullPointerCheck(ptr)
+#define DebugAssertFileOpenCheck(filePtr, fileName, mode) FileOpen(filePtr, fileName, mode)
 #else
+#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+#define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
 #define DebugAssert(condition, format, ...)                                                                                \
     do                                                                                                                     \
     {                                                                                                                      \
@@ -161,11 +165,4 @@ char *GetExecutablePath();
     } while (false)
 #endif
 
-#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
-#define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
-
 #pragma endregion Debug
-
-#pragma region Macros
-
-#pragma endregion Macros

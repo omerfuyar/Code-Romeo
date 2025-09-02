@@ -81,7 +81,7 @@ int String_Compare(String string, String other)
     DebugAssertNullPointerCheck(string.characters);
     DebugAssertNullPointerCheck(other.characters);
 
-    int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
+    int result = strncmp(string.characters, other.characters, string.length);
 
     return result;
 }
