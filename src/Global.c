@@ -41,7 +41,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
             Terminate(EXIT_FAILURE, buffer);
         }
 
-        fprintf(DEBUG_FILE, "\n[%s:%03ld] : [INFO] :\nLog file created successfully.", timeBuffer, tempSpec.tv_nsec / 1000000);
+        fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
     else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
     {
@@ -59,7 +59,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
 
     char finalBuffer[TEMP_BUFFER_SIZE * 5] = {0};
 
-    snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n %s\n",
+    snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n",
              timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
     fprintf(DEBUG_FILE, "%s", finalBuffer);

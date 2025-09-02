@@ -57,6 +57,9 @@ typedef struct RendererObjectTransform
     Vector3 scale;
 } RendererObjectTransform;
 
+#define RendererObjectTransformDefault \
+    (RendererObjectTransform) { NewVector3(0.0f, 0.0f, 0.0f), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(1.0f, 1.0f, 1.0f) }
+
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
 /// @brief Represents a primal vertex in 3D space.
 typedef struct RendererMeshVertex
@@ -76,17 +79,17 @@ typedef struct RendererModel
 /// @brief The camera object for the renderer.
 typedef struct RendererCamera
 {
-    String name;
+    mat4 projectionMatrix;
+    mat4 viewMatrix;
+
     RendererObjectTransform transform;
+    String name;
     RendererScene *scene;
 
-    bool isPerspective;
     float size; // fov if perspective, orthographic size if orthographic
     float nearClipPlane;
     float farClipPlane;
-
-    mat4 projectionMatrix;
-    mat4 viewMatrix;
+    bool isPerspective;
 } RendererCamera;
 
 /// @brief A scene of render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The scene is resizable but object's vertices or indices are not because it holds one big mesh for all objects. Scene is only updatable all at once.
@@ -126,8 +129,10 @@ typedef struct RendererBatch
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
 typedef struct RendererObject
 {
-    String name;
     RendererObjectTransform transform;
+    String name;
+    Vector3 hitBoxSize;
+    Vector3 velocity;
     RendererBatch *batch;
     size_t matrixOffsetInBatch;
 } RendererObject;
@@ -211,13 +216,15 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 /// @param name Name of the model to create.
 /// @param objFileSource Source code of the OBJ file.
 /// @param objFilePath The resources-relative path of the OBJ file.
+/// @param modelOffset Offset to freely adjust final model.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath);
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererObjectTransform modelOffset);
 
 /// @brief Creates an empty model with no meshes.
+/// @param name Name of the model to create.
 /// @param initialMeshCapacity Initial capacity for the mesh array.
 /// @return Created empty model.
-RendererModel *RendererModel_CreateEmpty(size_t initialMeshCapacity);
+RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity);
 
 /// @brief Destroyer function for renderer model.
 /// @param model Model to destroy.

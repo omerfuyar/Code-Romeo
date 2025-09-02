@@ -66,6 +66,20 @@ RendererMaterial *RendererMaterial_Create(String name)
 
 void RendererMaterial_Destroy(RendererMaterial *material)
 {
+    material->ambientColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
+    material->diffuseColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
+    glDeleteTextures(1, &material->diffuseMapHandle);
+    material->diffuseMapHandle = 0;
+    material->dissolve = -1.0f;
+    material->illuminationModel = -1;
+    String_Destroy(&material->name);
+    material->refractionIndex = -1.0f;
+    material->specularColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
+    material->specularExponent = -1.0f;
+
+    free(material);
+
+    material = NULL;
 }
 
 #pragma endregion Renderer Material
@@ -369,10 +383,13 @@ void RendererObjectTransform_ToModelMatrix(RendererObjectTransform *transform, m
 
 #pragma region Renderer Model
 
-// todo fix material creation and destroy
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath)
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererObjectTransform modelOffset)
 {
     ListArray materials = {0}; // RendererMaterial*
+
+    mat4 offsetMatrix;
+    vec3 finalVector;
+    RendererObjectTransform_ToModelMatrix(&modelOffset, &offsetMatrix);
 
     size_t meshCount = 0;
     size_t meshIndex = 0;
@@ -543,7 +560,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         }
     }
 
-    RendererModel *model = RendererModel_CreateEmpty(meshCount);
+    RendererModel *model = RendererModel_CreateEmpty(name, meshCount);
     RendererMesh *currentMesh = NULL;
     RendererMaterial *currentMaterial = NULL;
 
@@ -559,12 +576,15 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
-            Vector3 vertexPosition =
-                NewVector3(String_ToFloat(lineTokens[1]),
-                           String_ToFloat(lineTokens[2]),
-                           String_ToFloat(lineTokens[3]));
 
-            ListArray_Add(&currentVertexPositionPool, &vertexPosition);
+            glm_mat4_mulv3((vec4 *)&offsetMatrix,
+                           (vec3){String_ToFloat(lineTokens[1]),
+                                  String_ToFloat(lineTokens[2]),
+                                  String_ToFloat(lineTokens[3])},
+                           0.0f,
+                           (float *)&finalVector);
+
+            ListArray_Add(&currentVertexPositionPool, &finalVector);
         }
         else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
@@ -653,11 +673,12 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     return model;
 }
 
-RendererModel *RendererModel_CreateEmpty(size_t initialMeshCapacity)
+RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity)
 {
     RendererModel *model = malloc(sizeof(RendererModel));
     DebugAssertNullPointerCheck(model);
 
+    model->name = name;
     model->meshes = ListArray_Create("Renderer Mesh Pointer", sizeof(RendererMesh *), initialMeshCapacity);
 
     return model;
@@ -825,7 +846,6 @@ void RendererBatch_Destroy(RendererBatch *batch)
     char tempTitle[TEMP_BUFFER_SIZE];
     MemoryCopy(tempTitle, sizeof(tempTitle), batch->name.characters);
 
-    // todo fix these dependencies
     ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
@@ -854,7 +874,7 @@ RendererCamera *RendererCamera_Create(String name, RendererScene *scene)
     DebugAssertNullPointerCheck(camera);
 
     camera->name = name;
-    camera->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    camera->transform = RendererObjectTransformDefault;
     camera->scene = scene;
     scene->camera = camera;
 
@@ -880,7 +900,7 @@ void RendererCamera_Destroy(RendererCamera *camera)
     MemoryCopy(tempTitle, sizeof(tempTitle), camera->name.characters);
 
     String_Destroy(&camera->name);
-    camera->transform = (RendererObjectTransform){0};
+    camera->transform = RendererObjectTransformDefault;
 
     camera->size = -1.0f;
 
@@ -950,7 +970,8 @@ RendererObject *RendererObject_Create(String name, RendererBatch *batch)
     DebugAssertNullPointerCheck(object);
 
     object->name = name;
-    object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    object->transform = RendererObjectTransformDefault;
+    object->hitBoxSize = NewVector3(1.0f, 1.0f, 1.0f);
     object->batch = batch;
     object->matrixOffsetInBatch = object->batch->objectMatrices.count;
 
@@ -969,7 +990,8 @@ void RendererObject_Destroy(RendererObject *object)
     char tempTitle[TEMP_BUFFER_SIZE];
     MemoryCopy(tempTitle, sizeof(tempTitle), object->name.characters);
 
-    object->transform = (RendererObjectTransform){NewVector3(0, 0, 0), NewVector3(0, 0, 0), NewVector3(1, 1, 1)};
+    object->transform = RendererObjectTransformDefault;
+    object->hitBoxSize = NewVector3(0.0f, 0.0f, 0.0f);
 
     String_Destroy(&object->name);
 

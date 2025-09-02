@@ -23,6 +23,8 @@ ignore.*
 mono_crash.*
 
 # Build results
+[Bb]uild/
+[Bb]uild-san/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

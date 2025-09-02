@@ -92,7 +92,6 @@
 /// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
 void DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
-// todo add error codes
 /// @brief Terminates and closes necessary utilities and exits the program.
 /// @param exitCode The code to pass to exit() function.
 /// @param message The message to show to the console.
