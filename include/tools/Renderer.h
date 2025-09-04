@@ -73,7 +73,8 @@ typedef struct RendererMeshVertex
 typedef struct RendererModel
 {
     String name;
-    ListArray meshes; // RendererMesh*
+    ListArray vertices; // RendererMeshVertex
+    ListArray meshes;   // RendererMesh*
 } RendererModel;
 
 /// @brief The camera object for the renderer.
@@ -212,7 +213,7 @@ void RendererObjectTransform_ToModelMatrix(RendererTransform *transform, mat4 *m
 
 #pragma region Renderer Model
 
-/// @brief Creates a model from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory.
+/// @brief Creates a model from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
 /// @param name Name of the model to create.
 /// @param objFileSource Source code of the OBJ file.
 /// @param objFilePath The resources-relative path of the OBJ file.
@@ -223,8 +224,9 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 /// @brief Creates an empty model with no meshes.
 /// @param name Name of the model to create.
 /// @param initialMeshCapacity Initial capacity for the mesh array.
+/// @param initialVertexCapacity Initial capacity for the vertex array.
 /// @return Created empty model.
-RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity);
+RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity, size_t initialVertexCapacity);
 
 /// @brief Destroyer function for renderer model.
 /// @param model Model to destroy.
