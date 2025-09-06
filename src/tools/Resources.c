@@ -42,7 +42,7 @@ Resource *Resource_Create(String title, String path)
 
     dataBuffer[dataIndex] = '\0';
 
-    resource->data = String_CreateCopy(dataBuffer);
+    resource->data = String_CreateCopyS(dataBuffer, dataIndex);
 
     free(dataBuffer);
     free(lineBuffer);
@@ -111,7 +111,7 @@ ResourceImage *ResourceImage_Create(String title, String path)
 
     Timer_Stop(&timer);
 
-    DebugInfo("Resource Image '%s' loaded in %f seconds.", resourceImage->title.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
+    DebugInfo("Resource Image '%.*s' loaded in %f seconds.", resourceImage->title.length, resourceImage->title.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
 
     return resourceImage;
 }

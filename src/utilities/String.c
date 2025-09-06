@@ -18,6 +18,24 @@ String String_CreateCopy(char *string)
     return createdString;
 }
 
+String String_CreateCopyS(char *string, size_t length)
+{
+    DebugAssertNullPointerCheck(string);
+
+    String createdString = {0};
+
+    createdString.length = length;
+    createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
+    DebugAssertNullPointerCheck(createdString.characters);
+
+    MemoryCopy(createdString.characters, createdString.length * sizeof(char), string);
+    createdString.characters[createdString.length] = '\0';
+
+    createdString.isOwner = true;
+
+    return createdString;
+}
+
 void String_Destroy(String *string)
 {
     DebugAssertNullPointerCheck(string);
@@ -144,6 +162,7 @@ float String_ToFloat(String string)
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
     MemoryCopy(buffer, Min(sizeof(buffer), string.length), string.characters);
+    buffer[string.length] = '\0';
     float result = (float)atof(buffer);
 
     return result;
@@ -155,6 +174,7 @@ int String_ToInt(String string)
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
     MemoryCopy(buffer, Min(sizeof(buffer), string.length), string.characters);
+    buffer[string.length] = '\0';
     int result = atoi(buffer);
 
     return result;

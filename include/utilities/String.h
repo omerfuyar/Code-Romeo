@@ -17,6 +17,16 @@ typedef struct String
 /// @return Newly created String object holding a pointer to copy of the original string.
 String String_CreateCopy(char *string);
 
+/// @brief Creates a new String object from a char array safely. Allocates its own memory and copies the string. Can be used with dynamic strings.
+/// @param string Any char pointer.
+/// @param length Length of the given string.
+/// @return Newly created String object holding a pointer to copy of the original string.
+String String_CreateCopyS(char *string, size_t length);
+
+/// @brief Creates a new copy String object from a string object. Just a wrapper of String_CreateCopyS function.
+/// @param string String object, not a pointer.
+#define scc(string) String_CreateCopyS(string.characters, string.length)
+
 /// @brief Creates a new String object from a string literal. The created String object will use the original string's memory.
 /// @param string Null terminated C-style string literal.
 #define scl(string) \

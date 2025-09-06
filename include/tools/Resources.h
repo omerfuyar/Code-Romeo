@@ -29,7 +29,7 @@ typedef struct ResoureImage
     int channels;
 } ResourceImage;
 
-/// @brief Creates a new resource. Looks for a resources folder in executable directory.
+/// @brief Creates a new resource.
 /// @param title The title of the resource.
 /// @param path The file path of the resource in resources folder.
 /// @return Pointer to the created resource.

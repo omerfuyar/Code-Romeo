@@ -61,7 +61,7 @@ void ListArray_Resize(ListArray *list, size_t newCapacity)
 
 void *ListArray_Get(ListArray list, size_t index)
 {
-    DebugAssert(index < list.count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list.nameOfType, list.count, index);
+    DebugAssert(index < list.count, "Index out of range for ListArray '%s'. List size: %zu, index trying to access: %zu", list.nameOfType, list.count, index);
 
     void *itemLocation = (void *)((char *)list.data + index * list.sizeOfItem);
     DebugAssertNullPointerCheck(itemLocation);

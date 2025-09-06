@@ -29,14 +29,15 @@ RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
 typedef struct RendererMaterial
 {
     String name;
+    String diffuseMapFileName;
     Color ambientColor;
     Color diffuseColor;
     Color specularColor;
+    RendererTextureHandle diffuseMapHandle;
     float specularExponent;
     float refractionIndex;
     float dissolve;
     int illuminationModel;
-    RendererTextureHandle diffuseMapHandle;
 } RendererMaterial;
 
 typedef struct RendererMesh
@@ -59,6 +60,17 @@ RendererMaterial *RendererMaterial_Create(String name)
     DebugAssertNullPointerCheck(material);
 
     material->name = name;
+    material->diffuseMapFileName.characters = NULL;
+    material->diffuseMapFileName.length = 0;
+    material->diffuseMapFileName.isOwner = false;
+    material->ambientColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
+    material->diffuseColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
+    material->diffuseMapHandle = 0;
+    material->dissolve = -1.0f;
+    material->illuminationModel = -1;
+    material->refractionIndex = -1.0f;
+    material->specularColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
+    material->specularExponent = -1.0f;
 
     return material;
 }
@@ -72,6 +84,7 @@ void RendererMaterial_Destroy(RendererMaterial *material)
     material->dissolve = -1.0f;
     material->illuminationModel = -1;
     String_Destroy(&material->name);
+    String_Destroy(&material->diffuseMapFileName);
     material->refractionIndex = -1.0f;
     material->specularColor = NewColor(-1.0f, -1.0f, -1.0f, -1.0f);
     material->specularExponent = -1.0f;
@@ -281,9 +294,17 @@ void Renderer_RenderScene(RendererScene *scene)
                 glUniform1f(scene->matDissolve, mesh->material->dissolve);
 
                 // Texture binding
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMapHandle);
-                glUniform1i(scene->matDiffuseMap, 0);
+                if (mesh->material->diffuseMapHandle != 0)
+                {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMapHandle);
+                    glUniform1i(scene->matDiffuseMap, 0);
+                    glUniform1i(scene->matHasDiffuseMap, 1);
+                }
+                else
+                {
+                    glUniform1i(scene->matHasDiffuseMap, 0);
+                }
 
                 previousMaterial = mesh->material;
             }
@@ -389,7 +410,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
     size_t meshCount = 0;
 
-    size_t totalVertexCount = 0;
+    size_t totalVertexPositionCount = 0;
     size_t totalVertexNormalCount = 0;
     size_t totalVertexUvCount = 0;
 
@@ -407,7 +428,8 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
     String strF = scl("f");
     String strVT = scl("vt");
     String strVN = scl("vn");
-    String strO = scl("o");
+    // String strO = scl("o");
+    //  String strG = scl("g");
     String strMTLLIB = scl("mtllib");
     String strUSEMTL = scl("usemtl");
 
@@ -422,7 +444,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
-            totalVertexCount++;
+            totalVertexPositionCount++;
         }
         else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
@@ -436,7 +458,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         {
             totalVertexNormalCount++;
         }
-        else if (String_Compare(firstToken, strO) == 0) // new object
+        else if (String_Compare(firstToken, strUSEMTL) == 0) // new object
         {
             meshCount++;
         }
@@ -488,13 +510,13 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
 
             for (size_t j = 0; j < mtlLineCount; j++) // compute
             {
-                String_Tokenize(mtlLines[i], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
+                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
 
                 String mtlFirstToken = mtlLineTokens[0];
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
-                    currentMaterial = RendererMaterial_Create(mtlLineTokens[1]);
+                    currentMaterial = RendererMaterial_Create(scc(mtlLineTokens[1]));
                     ListArray_Add(&materials, &currentMaterial);
                 }
                 else if (String_Compare(mtlFirstToken, strNS) == 0)
@@ -507,7 +529,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                         NewColor(String_ToFloat(mtlLineTokens[1]),
                                  String_ToFloat(mtlLineTokens[2]),
                                  String_ToFloat(mtlLineTokens[3]),
-                                 1.0f);
+                                 mtlLineTokenCount > 4 ? String_ToFloat(mtlLineTokens[4]) : 1.0f);
                 }
                 else if (String_Compare(mtlFirstToken, strKD) == 0)
                 {
@@ -515,7 +537,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                         NewColor(String_ToFloat(mtlLineTokens[1]),
                                  String_ToFloat(mtlLineTokens[2]),
                                  String_ToFloat(mtlLineTokens[3]),
-                                 1.0f);
+                                 mtlLineTokenCount > 4 ? String_ToFloat(mtlLineTokens[4]) : 1.0f);
                 }
                 else if (String_Compare(mtlFirstToken, strKS) == 0)
                 {
@@ -523,7 +545,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                         NewColor(String_ToFloat(mtlLineTokens[1]),
                                  String_ToFloat(mtlLineTokens[2]),
                                  String_ToFloat(mtlLineTokens[3]),
-                                 1.0f);
+                                 mtlLineTokenCount > 4 ? String_ToFloat(mtlLineTokens[4]) : 1.0f);
                 }
                 else if (String_Compare(mtlFirstToken, strNI) == 0)
                 {
@@ -539,16 +561,31 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                 }
                 else if (String_Compare(mtlFirstToken, strMAP_KD) == 0)
                 {
-                    char imageNameBuffer[TEMP_BUFFER_SIZE] = {0};
-                    snprintf(imageNameBuffer, sizeof(imageNameBuffer), "%s : %s", name.characters, lineTokens[1].characters);
+                    currentMaterial->diffuseMapFileName = scc(mtlLineTokens[1]);
 
-                    String imageTempStr = String_CreateCopy(objFilePath.characters);
-                    String_ConcatEnd(&imageTempStr, lineTokens[1]);
+                    for (size_t k = 0; k < materials.count; k++)
+                    {
+                        RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materials, k);
+                        if (material != currentMaterial && String_Compare(material->diffuseMapFileName, mtlLineTokens[1]) == 0)
+                        {
+                            currentMaterial->diffuseMapHandle = material->diffuseMapHandle;
+                            break;
+                        }
+                    }
 
-                    ResourceImage *image = ResourceImage_Create(scl(imageNameBuffer), imageTempStr);
-                    String_Destroy(&imageTempStr);
+                    if (currentMaterial->diffuseMapHandle == 0)
+                    {
+                        char imageNameBuffer[TEMP_BUFFER_SIZE] = {0};
+                        snprintf(imageNameBuffer, sizeof(imageNameBuffer), "%s : %.*s", name.characters, (int)mtlLineTokens[1].length, mtlLineTokens[1].characters);
 
-                    currentMaterial->diffuseMapHandle = image->handle;
+                        String imageTempStr = String_CreateCopy(objFilePath.characters);
+                        String_ConcatEnd(&imageTempStr, mtlLineTokens[1]);
+
+                        ResourceImage *image = ResourceImage_Create(scl(imageNameBuffer), imageTempStr);
+                        String_Destroy(&imageTempStr);
+
+                        currentMaterial->diffuseMapHandle = image->handle;
+                    }
                 }
             }
 
@@ -558,7 +595,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         }
     }
 
-    ListArray globalVertexPositionPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexCount);     // Vector3
+    RendererModel *model = RendererModel_CreateEmpty(name, meshCount, totalVertexPositionCount);
     ListArray globalVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexNormalCount); // Vector3
     ListArray globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);         // Vector3
 
@@ -582,7 +619,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
             RendererMeshVertex createdVertex;
             createdVertex.vertexPosition = NewVector3(vertexPosition[0], vertexPosition[1], vertexPosition[2]);
 
-            ListArray_Add(&globalVertexPositionPool, &createdVertex);
+            ListArray_Add(&model->vertices, &createdVertex);
         }
         else if (String_Compare(firstToken, strVT) == 0) // vt 0.073128 0.431854
         {
@@ -610,7 +647,6 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         }
     }
 
-    RendererModel *model = RendererModel_CreateEmpty(name, meshCount, totalVertexCount);
     RendererMesh *currentMesh = NULL;
 
     for (size_t i = 0; i < lineCount; i++) // add data to model
@@ -627,31 +663,29 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
                 size_t faceDataCount;
                 String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, sizeof(faceData));
 
-                RendererMeshVertex vertex = {0};
+                RendererMeshVertex vertex = *(RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)String_ToInt(faceData[0]) - 1);
 
-                if (faceDataCount == 1) // 15
+                // 15
+
+                if (faceDataCount == 2) // 15/16
                 {
-                    vertex.vertexPosition = *(Vector3 *)ListArray_Get(globalVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
-                }
-                else if (faceDataCount == 2) // 15/16
-                {
-                    vertex.vertexPosition = *(Vector3 *)ListArray_Get(globalVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
                     vertex.vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
                 }
-                else if (faceDataCount == 3) // 15/16/17
+                else if (faceDataCount > 2) // 15/16/17 ...
                 {
-                    vertex.vertexPosition = *(Vector3 *)ListArray_Get(globalVertexPositionPool, (size_t)String_ToInt(faceData[0]) - 1);
                     vertex.vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
                     vertex.vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)String_ToInt(faceData[2]) - 1);
                 }
 
-                unsigned int createdIndex = (unsigned int)String_ToInt(faceData[0]) - 1;
+                int createdIndex = (int)String_ToInt(faceData[0]);
+                unsigned int index = 0;
 
-                ListArray_Add(&model->vertices, &vertex);
-                ListArray_Add(&currentMesh->indices, &createdIndex);
+                index = createdIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdIndex : (unsigned int)createdIndex - 1;
+
+                ListArray_Add(&currentMesh->indices, &index);
             }
         }
-        else if (String_Compare(firstToken, strUSEMTL) == 0) // use material
+        else if (String_Compare(firstToken, strUSEMTL) == 0) // use material and create object
         {
             for (size_t j = 0; j < materials.count; j++)
             {
@@ -666,7 +700,6 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String
         }
     }
 
-    ListArray_Destroy(&globalVertexPositionPool);
     ListArray_Destroy(&globalVertexNormalPool);
     ListArray_Destroy(&globalVertexUvPool);
 
@@ -765,6 +798,7 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
     scene->matSpecularExponent = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularExponent");
     scene->matDissolve = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDissolve");
     scene->matDiffuseMap = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseMap");
+    scene->matHasDiffuseMap = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matHasDiffuseMap");
 
     scene->objectMatricesHandle = glGetUniformBlockIndex(RENDERER_MAIN_SHADER_PROGRAM, "modelMatrices");
     glUniformBlockBinding(RENDERER_MAIN_SHADER_PROGRAM, scene->objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);

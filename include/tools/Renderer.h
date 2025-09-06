@@ -73,7 +73,7 @@ typedef struct RendererMeshVertex
 typedef struct RendererModel
 {
     String name;
-    ListArray vertices; // RendererMeshVertex
+    ListArray vertices; // RendererMeshVertex, data must be continuous
     ListArray meshes;   // RendererMesh*
 } RendererModel;
 
@@ -113,6 +113,7 @@ typedef struct RendererScene
     RendererUniformLocationHandle matSpecularExponent;
     RendererUniformLocationHandle matDissolve;
     RendererUniformLocationHandle matDiffuseMap;
+    RendererUniformLocationHandle matHasDiffuseMap;
     RendererUniformBlockHandle objectMatricesHandle;
 } RendererScene;
 
@@ -120,20 +121,21 @@ typedef struct RendererBatch
 {
     String name;
     RendererModel *model;
+    ListArray objectMatrices; // mat4, data must be continuous
+
     RendererScene *scene;
-
-    ListArray objectMatrices; // mat4, data should be continuous
-
     size_t batchOffsetInScene;
 } RendererBatch;
 
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
 typedef struct RendererObject
 {
-    RendererTransform transform;
     String name;
+    RendererTransform transform;
+
     Vector3 hitBoxSize;
     Vector3 velocity;
+
     RendererBatch *batch;
     size_t matrixOffsetInBatch;
 } RendererObject;
