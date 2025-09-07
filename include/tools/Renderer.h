@@ -30,6 +30,8 @@
 
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 
+#define RENDERER_TEXTURE_MAX_COUNT 16
+
 #pragma region typedefs
 
 typedef unsigned int RendererShaderHandle;

@@ -24,24 +24,12 @@ typedef struct myCameraType
     RendererCamera *camera;
 } myCameraType;
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
     // todo input system
-    Resource *vertexShaderResource = Resource_Create(scl("Vertex Shader"), scl("shaders" PATH_DELIMETER_STR "vertex.glsl"));
-    Resource *fragmentShaderResource = Resource_Create(scl("Fragment Shader"), scl("shaders" PATH_DELIMETER_STR "fragment.glsl"));
-
-    Resource *objResource = NULL;
-    if (argc == 1)
-    {
-        objResource = Resource_Create(scl("Object"), scl("models" PATH_DELIMETER_STR "Pistol.obj"));
-    }
-    else
-    {
-        String modelPath = String_CreateCopy("models" PATH_DELIMETER_STR);
-        String_ConcatEnd(&modelPath, scl(argv[1]));
-        objResource = Resource_Create(scl("Object"), modelPath);
-        String_Destroy(&modelPath);
-    }
+    Resource *vertexShaderResource = Resource_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
     Renderer_CreateContext(scl("Juliette"),
                            NewVector2Int(720, 540),
@@ -58,7 +46,7 @@ int main(int argc, char **argv)
         .rotation = NewVector3(0.0f, 0.0f, 0.0f),
         .camera = RendererCamera_Create(myScene)};
 
-    RendererModel *objModel = RendererModel_CreateOBJ(scl("Object Model"), objResource->data, objResource->lineCount, scl("models" PATH_DELIMETER_STR), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(1.0f, 1.0f, 1.0f));
+    RendererModel *objModel = RendererModel_CreateOBJ(scl("Object Model"), objResource->data, objResource->lineCount, objResource->path, NewVector3(0.0f, 0.0f, 0.0f), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(1.0f, 1.0f, 1.0f));
     RendererBatch *objBatch = RendererScene_CreateBatch(myScene, scl("object Batch"), objModel, TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);
 
     // ListArray objectList = ListArray_Create("My Object Type", sizeof(myObjectType), TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);

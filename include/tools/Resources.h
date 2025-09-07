@@ -12,7 +12,7 @@
 
 typedef struct Resource
 {
-    String title;
+    String name;
     String path;
     String data;
     size_t lineCount;
@@ -22,28 +22,28 @@ typedef unsigned int ResourceImageHandle;
 
 typedef struct ResoureImage
 {
-    String title;
+    String name;
     String path;
+    void *data;
     Vector2Int size;
-    ResourceImageHandle handle;
     int channels;
 } ResourceImage;
 
 /// @brief Creates a new resource.
-/// @param title The title of the resource.
-/// @param path The file path of the resource in resources folder.
+/// @param name The name of the resource file. (e.g. "vertex.glsl")
+/// @param path The file path of the resource in resources folder. Excluding file name. (e.g. "shaders/").
 /// @return Pointer to the created resource.
-Resource *Resource_Create(String title, String path);
+Resource *Resource_Create(String name, String path);
 
 /// @brief Destroys a resource.
 /// @param resource The resource to destroy.
 void Resource_Destroy(Resource *resource);
 
-/// @brief Creates a new resource image and assigns its handle to OpenGL texture. Looks for a resources folder in executable directory.
-/// @param title The title of the resource image.
-/// @param path The file path of the resource image in resources folder.
+/// @brief Creates a new resource image. Looks for a resources folder in executable directory.
+/// @param name The name of the resource image. (e.g. "texture.png")
+/// @param path The file path of the resource image in resources folder. Excluding file name. (e.g. "images/").
 /// @return Pointer to the created resource image.
-ResourceImage *ResourceImage_Create(String title, String path);
+ResourceImage *ResourceImage_Create(String name, String path);
 
 /// @brief Destroys a resource image.
 /// @param resourceImage The resource image to destroy.

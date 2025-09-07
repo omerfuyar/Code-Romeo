@@ -3,10 +3,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
-Resource *Resource_Create(String title, String path)
+Resource *Resource_Create(String name, String relativePath)
 {
     Timer timer = Timer_Create("Resource Loading");
     Timer_Start(&timer);
@@ -14,16 +12,19 @@ Resource *Resource_Create(String title, String path)
     Resource *resource = (Resource *)malloc(sizeof(Resource));
     DebugAssertNullPointerCheck(resource);
 
-    resource->title = title;
-    resource->path = String_CreateCopy(path.characters);
-    String_ConcatBegin(&resource->path, scl(RESOURCE_PATH));
-    String_ConcatBegin(&resource->path, scl(GetExecutablePath()));
+    resource->name = scc(name);
+    resource->path = scc(relativePath);
+
+    String fullPath = scc(resource->path);
+    String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
+    String_ConcatBegin(&fullPath, scl(GetExecutablePath()));
+    String_ConcatEnd(&fullPath, resource->name);
 
     size_t lineCount = 0;
     int character = 0;
 
     FILE *file = NULL;
-    DebugAssertFileOpenCheck(file, resource->path.characters, "r");
+    DebugAssertFileOpenCheck(file, fullPath.characters, "r");
     while ((character = fgetc(file)) != EOF)
     {
         if (character == '\n')
@@ -45,7 +46,7 @@ Resource *Resource_Create(String title, String path)
     lineBuffer[0] = '\0';
     size_t dataIndex = 0;
 
-    DebugAssertFileOpenCheck(file, resource->path.characters, "r");
+    DebugAssertFileOpenCheck(file, fullPath.characters, "r");
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
     {
         size_t lineLength = strlen(lineBuffer);
@@ -61,9 +62,11 @@ Resource *Resource_Create(String title, String path)
     free(dataBuffer);
     free(lineBuffer);
 
+    String_Destroy(&fullPath);
+
     Timer_Stop(&timer);
 
-    DebugInfo("Resource '%s' loaded in %f seconds.", resource->title.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
+    DebugInfo("Resource '%s' loaded in %f seconds.", resource->name.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
 
     return resource;
 }
@@ -71,14 +74,14 @@ Resource *Resource_Create(String title, String path)
 void Resource_Destroy(Resource *resource)
 {
     DebugAssertNullPointerCheck(resource);
+    DebugAssertNullPointerCheck(resource->name.characters);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, resource->title.characters);
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, resource->name.characters);
 
-    String_Destroy(&resource->title);
+    String_Destroy(&resource->name);
     String_Destroy(&resource->path);
     String_Destroy(&resource->data);
-
     resource->lineCount = 0;
 
     free(resource);
@@ -95,39 +98,23 @@ ResourceImage *ResourceImage_Create(String title, String path)
     ResourceImage *resourceImage = (ResourceImage *)malloc(sizeof(ResourceImage));
     DebugAssertNullPointerCheck(resourceImage);
 
-    resourceImage->title = title;
-    resourceImage->path = String_CreateCopy(path.characters);
-    String_ConcatBegin(&resourceImage->path, scl(RESOURCE_PATH));
-    String_ConcatBegin(&resourceImage->path, scl(GetExecutablePath()));
+    resourceImage->name = scc(title);
+    resourceImage->path = scc(path);
+
+    String fullPath = scc(resourceImage->path);
+    String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
+    String_ConcatBegin(&fullPath, scl(GetExecutablePath()));
+    String_ConcatEnd(&fullPath, resourceImage->name);
 
     // stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load(resourceImage->path.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
-    DebugAssertNullPointerCheck(data);
+    resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
+    DebugAssertNullPointerCheck(resourceImage->data);
 
-    glGenTextures(1, &resourceImage->handle);
-    glBindTexture(GL_TEXTURE_2D, resourceImage->handle);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    GLenum format = GL_RGB;
-    if (resourceImage->channels == 1)
-        format = GL_RED;
-    else if (resourceImage->channels == 3)
-        format = GL_RGB;
-    else if (resourceImage->channels == 4)
-        format = GL_RGBA;
-
-    glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, resourceImage->size.x, resourceImage->size.y, 0, format, GL_UNSIGNED_BYTE, data);
-    // glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(data); // Free the image memory
+    String_Destroy(&fullPath);
 
     Timer_Stop(&timer);
 
-    DebugInfo("Resource Image '%.*s' loaded in %f seconds.", resourceImage->title.length, resourceImage->title.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
+    DebugInfo("Resource Image '%.*s' loaded in %f seconds.", resourceImage->name.length, resourceImage->name.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
 
     return resourceImage;
 }
@@ -137,15 +124,15 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     DebugAssertNullPointerCheck(resourceImage);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, resourceImage->title.characters);
+    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, resourceImage->name.characters);
 
-    String_Destroy(&resourceImage->title);
+    String_Destroy(&resourceImage->name);
     String_Destroy(&resourceImage->path);
     resourceImage->channels = 0;
     resourceImage->size = NewVector2Int(0, 0);
 
-    glDeleteTextures(1, &resourceImage->handle);
-    resourceImage->handle = 0;
+    stbi_image_free(resourceImage->data);
+    resourceImage->data = NULL;
 
     free(resourceImage);
     resourceImage = NULL;

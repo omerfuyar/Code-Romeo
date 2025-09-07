@@ -18,20 +18,20 @@
         DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
     } while (0)
 
-GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
-Vector2Int RENDERER_MAIN_WINDOW_SIZE = {0};
-
-String RENDERER_MAIN_WINDOW_TITLE = {0};
-RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
+typedef struct RendererTexture
+{
+    size_t index;
+    ResourceImage *image;
+    RendererTextureHandle handle;
+} RendererTexture;
 
 typedef struct RendererMaterial
 {
     String name;
-    String diffuseMapFileName;
     Vector3 ambientColor;
     Vector3 diffuseColor;
     Vector3 specularColor;
-    RendererTextureHandle diffuseMapHandle;
+    RendererTexture diffuseMap;
     float specularExponent;
     float refractionIndex;
     float dissolve;
@@ -43,6 +43,15 @@ typedef struct RendererMesh
     ListArray indices; // RendererMeshIndex
     RendererMaterial *material;
 } RendererMesh;
+
+GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
+Vector2Int RENDERER_MAIN_WINDOW_SIZE = {0};
+
+String RENDERER_MAIN_WINDOW_TITLE = {0};
+RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
+
+RendererTexture RENDERER_MAIN_TEXTURES[RENDERER_TEXTURE_MAX_COUNT] = {0};
+size_t RENDERER_MAIN_TEXTURES_COUNT = 0;
 
 void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
 {
@@ -67,6 +76,64 @@ void TransformToModelMatrix(Vector3 position, Vector3 rotation, Vector3 scale, m
     glm_scale((vec4 *)matrix, (vec3){scale.x, scale.y, scale.z});
 }
 
+#pragma region Renderer Texture
+
+RendererTexture RendererTexture_Create(String name, String path)
+{
+    for (size_t i = 0; i < RENDERER_TEXTURE_MAX_COUNT; i++)
+    {
+        if (RENDERER_MAIN_TEXTURES[i].image != NULL && String_Compare(RENDERER_MAIN_TEXTURES[i].image->name, name) == 0)
+        {
+            return RENDERER_MAIN_TEXTURES[i];
+        }
+    }
+
+    RendererTexture texture = {0};
+    texture.image = ResourceImage_Create(name, path);
+
+    glGenTextures(1, &texture.handle);
+    glBindTexture(GL_TEXTURE_2D, texture.handle);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    GLenum format = texture.image->channels == 4 ? GL_RGBA : (texture.image->channels == 3 ? GL_RGB : (texture.image->channels == 2 ? GL_RG : GL_RED));
+
+    glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, texture.image->size.x, texture.image->size.y, 0, format, GL_UNSIGNED_BYTE, texture.image->data);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    texture.index = RENDERER_MAIN_TEXTURES_COUNT++;
+    RENDERER_MAIN_TEXTURES[texture.index] = texture;
+
+    return texture;
+}
+
+void RendererTexture_Destroy(RendererTexture *texture)
+{
+    DebugAssertNullPointerCheck(texture);
+
+    RENDERER_MAIN_TEXTURES[texture->index] = (RendererTexture){0};
+    RENDERER_MAIN_TEXTURES_COUNT--;
+
+    ResourceImage_Destroy(texture->image);
+    texture->image = NULL;
+
+    glDeleteTextures(1, &texture->handle);
+    texture->handle = 0;
+
+    for (size_t i = texture->index; i < RENDERER_MAIN_TEXTURES_COUNT; i++)
+    {
+        RENDERER_MAIN_TEXTURES[i] = RENDERER_MAIN_TEXTURES[i + 1];
+        RENDERER_MAIN_TEXTURES[i].index = i;
+    }
+}
+
+#pragma endregion Renderer Texture
+
 #pragma region Renderer Material
 
 RendererMaterial *RendererMaterial_Create(String name)
@@ -75,12 +142,9 @@ RendererMaterial *RendererMaterial_Create(String name)
     DebugAssertNullPointerCheck(material);
 
     material->name = name;
-    material->diffuseMapFileName.characters = NULL;
-    material->diffuseMapFileName.length = 0;
-    material->diffuseMapFileName.isOwner = false;
     material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
     material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->diffuseMapHandle = 0;
+    material->diffuseMap = (RendererTexture){0};
     material->dissolve = -1.0f;
     material->illuminationModel = -1;
     material->refractionIndex = -1.0f;
@@ -94,12 +158,11 @@ void RendererMaterial_Destroy(RendererMaterial *material)
 {
     material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
     material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    glDeleteTextures(1, &material->diffuseMapHandle);
-    material->diffuseMapHandle = 0;
+    glDeleteTextures(1, &material->diffuseMap.handle);
     material->dissolve = -1.0f;
     material->illuminationModel = -1;
+    RendererTexture_Destroy(&material->diffuseMap);
     String_Destroy(&material->name);
-    String_Destroy(&material->diffuseMapFileName);
     material->refractionIndex = -1.0f;
     material->specularColor = NewVector3(-1.0f, -1.0f, -1.0f);
     material->specularExponent = -1.0f;
@@ -303,10 +366,10 @@ void Renderer_RenderScene(RendererScene *scene)
                 glUniform1f(scene->matDissolve, mesh->material->dissolve);
 
                 // Texture binding
-                if (mesh->material->diffuseMapHandle != 0)
+                if (mesh->material->diffuseMap.handle != 0)
                 {
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMapHandle);
+                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap.handle);
                     glUniform1i(scene->matDiffuseMap, 0);
                     glUniform1i(scene->matHasDiffuseMap, 1);
                 }
@@ -409,13 +472,8 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
         }
         else if (String_Compare(firstToken, strMTLLIB) == 0) // .mtl file
         {
-            char nameBuffer[TEMP_BUFFER_SIZE] = {0};
-            snprintf(nameBuffer, sizeof(nameBuffer), "%s Material File", name.characters);
-
-            String tempStr = String_CreateCopy(objFilePath.characters);
-            String_ConcatEnd(&tempStr, lineTokens[1]);
-
-            Resource *mtlFileResource = Resource_Create(scl(nameBuffer), tempStr);
+            String tempStr = scc(lineTokens[1]);
+            Resource *mtlFileResource = Resource_Create(tempStr, objFilePath);
             String_Destroy(&tempStr);
 
             size_t materialCount = 0;
@@ -462,7 +520,9 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
-                    currentMaterial = RendererMaterial_Create(scc(mtlLineTokens[1]));
+                    String tempMatStr = scc(mtlLineTokens[1]);
+                    currentMaterial = RendererMaterial_Create(tempMatStr);
+                    String_Destroy(&tempMatStr);
                     ListArray_Add(&materials, &currentMaterial);
                 }
                 else if (String_Compare(mtlFirstToken, strNS) == 0)
@@ -504,31 +564,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
                 }
                 else if (String_Compare(mtlFirstToken, strMAP_KD) == 0)
                 {
-                    currentMaterial->diffuseMapFileName = scc(mtlLineTokens[1]);
-
-                    for (size_t k = 0; k < materials.count; k++)
-                    {
-                        RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materials, k);
-                        if (material != currentMaterial && String_Compare(material->diffuseMapFileName, mtlLineTokens[1]) == 0)
-                        {
-                            currentMaterial->diffuseMapHandle = material->diffuseMapHandle;
-                            break;
-                        }
-                    }
-
-                    if (currentMaterial->diffuseMapHandle == 0)
-                    {
-                        char imageNameBuffer[TEMP_BUFFER_SIZE] = {0};
-                        snprintf(imageNameBuffer, sizeof(imageNameBuffer), "%s : %.*s", name.characters, (int)mtlLineTokens[1].length, mtlLineTokens[1].characters);
-
-                        String imageTempStr = String_CreateCopy(objFilePath.characters);
-                        String_ConcatEnd(&imageTempStr, mtlLineTokens[1]);
-
-                        ResourceImage *image = ResourceImage_Create(scl(imageNameBuffer), imageTempStr);
-                        String_Destroy(&imageTempStr);
-
-                        currentMaterial->diffuseMapHandle = image->handle;
-                    }
+                    currentMaterial->diffuseMap = RendererTexture_Create(scc(mtlLineTokens[1]), objFilePath); // try find in existing textures
                 }
             }
 
