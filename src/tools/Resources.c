@@ -1,10 +1,10 @@
 #include "tools/Resources.h"
 #include "utilities/Timer.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 Resource *Resource_Create(String title, String path)
 {
@@ -19,19 +19,33 @@ Resource *Resource_Create(String title, String path)
     String_ConcatBegin(&resource->path, scl(RESOURCE_PATH));
     String_ConcatBegin(&resource->path, scl(GetExecutablePath()));
 
+    size_t lineCount = 0;
+    int character = 0;
+
+    FILE *file = NULL;
+    DebugAssertFileOpenCheck(file, resource->path.characters, "r");
+    while ((character = fgetc(file)) != EOF)
+    {
+        if (character == '\n')
+        {
+            lineCount++;
+        }
+    }
+    fclose(file);
+
+    resource->lineCount = lineCount;
+
     // malloc because the buffer is too large for stack
-    char *dataBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * RESOURCE_FILE_MAX_LINE_COUNT);
+    char *dataBuffer = (char *)malloc(resource->lineCount * RESOURCE_FILE_LINE_MAX_CHAR_COUNT * sizeof(char));
     DebugAssertNullPointerCheck(dataBuffer);
-    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
+    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * sizeof(char));
     DebugAssertNullPointerCheck(lineBuffer);
 
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
     size_t dataIndex = 0;
 
-    FILE *file = NULL;
     DebugAssertFileOpenCheck(file, resource->path.characters, "r");
-
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
     {
         size_t lineLength = strlen(lineBuffer);
@@ -64,6 +78,8 @@ void Resource_Destroy(Resource *resource)
     String_Destroy(&resource->title);
     String_Destroy(&resource->path);
     String_Destroy(&resource->data);
+
+    resource->lineCount = 0;
 
     free(resource);
     resource = NULL;

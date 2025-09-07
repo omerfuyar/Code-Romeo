@@ -6,8 +6,7 @@
 #include "utilities/Vectors.h"
 
 #define RESOURCE_FILE_LINE_MAX_TOKEN_COUNT 64
-#define RESOURCE_FILE_LINE_MAX_CHAR_COUNT 512
-#define RESOURCE_FILE_MAX_LINE_COUNT 32768
+#define RESOURCE_FILE_LINE_MAX_CHAR_COUNT 256
 
 #define RESOURCE_PATH "resources" PATH_DELIMETER_STR
 
@@ -16,16 +15,17 @@ typedef struct Resource
     String title;
     String path;
     String data;
+    size_t lineCount;
 } Resource;
 
-typedef unsigned int ResoureImageHandle;
+typedef unsigned int ResourceImageHandle;
 
 typedef struct ResoureImage
 {
     String title;
     String path;
     Vector2Int size;
-    ResoureImageHandle handle;
+    ResourceImageHandle handle;
     int channels;
 } ResourceImage;
 

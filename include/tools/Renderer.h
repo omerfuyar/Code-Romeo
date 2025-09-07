@@ -30,8 +30,6 @@
 
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 
-extern float RENDERER_DELTA_TIME;
-
 #pragma region typedefs
 
 typedef unsigned int RendererShaderHandle;
@@ -49,16 +47,7 @@ typedef unsigned int RendererUBOHandle;
 typedef unsigned int RendererMeshIndex;
 typedef struct RendererScene RendererScene;
 
-/// @brief Represents the transformation (position, rotation, scale) of an object in 3D space.
-typedef struct RendererTransform
-{
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 scale;
-} RendererTransform;
-
-#define RendererObjectTransformDefault \
-    (RendererTransform) { NewVector3(0.0f, 0.0f, 0.0f), NewVector3(0.0f, 0.0f, 0.0f), NewVector3(1.0f, 1.0f, 1.0f) }
+#define RendererObjectTransformDefault
 
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
 /// @brief Represents a primal vertex in 3D space.
@@ -83,8 +72,6 @@ typedef struct RendererCamera
     mat4 projectionMatrix;
     mat4 viewMatrix;
 
-    RendererTransform transform;
-    String name;
     RendererScene *scene;
 
     float size; // fov if perspective, orthographic size if orthographic
@@ -128,17 +115,11 @@ typedef struct RendererBatch
 } RendererBatch;
 
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
-typedef struct RendererObject
+typedef struct RendererRenderable
 {
-    String name;
-    RendererTransform transform;
-
-    Vector3 hitBoxSize;
-    Vector3 velocity;
-
     RendererBatch *batch;
     size_t matrixOffsetInBatch;
-} RendererObject;
+} RendererRenderable;
 
 #pragma endregion typedefs
 
@@ -166,7 +147,7 @@ void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScree
 void Renderer_StartRendering();
 
 /// @brief Should be called after using rendering functions.
-void Renderer_FinishRendering();
+void Renderer_FinishRendering(float deltaTime);
 
 /// @brief Renders a scene of objects.
 /// @param scene The scene of objects to render.
@@ -174,54 +155,18 @@ void Renderer_RenderScene(RendererScene *scene);
 
 #pragma endregion Renderer
 
-#pragma region Renderer Object Transform
-
-/// @brief Sets the position of the object transform.
-/// @param transform Pointer to the object transform.
-/// @param position New position for the object.
-void RendererObjectTransform_SetPosition(RendererTransform *transform, Vector3 position);
-
-/// @brief Sets the rotation of the object transform.
-/// @param transform Pointer to the object transform.
-/// @param rotation New rotation for the object.
-void RendererObjectTransform_SetRotation(RendererTransform *transform, Vector3 rotation);
-
-/// @brief Sets the scale of the object transform.
-/// @param transform Pointer to the object transform.
-/// @param scale New scale for the object.
-void RendererObjectTransform_SetScale(RendererTransform *transform, Vector3 scale);
-
-/// @brief Adds the given position of the object to transform.
-/// @param transform Pointer to the object transform.
-/// @param position Position to add to the object.
-void RendererObjectTransform_AddPosition(RendererTransform *transform, Vector3 position);
-
-/// @brief Adds the given rotation of the object to transform.
-/// @param transform Pointer to the object transform.
-/// @param rotation Rotation to add to the object.
-void RendererObjectTransform_AddRotation(RendererTransform *transform, Vector3 rotation);
-
-/// @brief Multiplies the scale of the transform with given scale.
-/// @param transform Pointer to the object transform.
-/// @param scale Scale to multiply the object.
-void RendererObjectTransform_MultiplyScale(RendererTransform *transform, Vector3 scale);
-
-/// @brief Sets the matrix with transform values.
-/// @param transform Transform to reference. (pointer for performance)
-/// @param matrix Matrix to edit.
-void RendererObjectTransform_ToModelMatrix(RendererTransform *transform, mat4 *matrix);
-
-#pragma endregion Renderer Object Transform
-
 #pragma region Renderer Model
 
 /// @brief Creates a model from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
 /// @param name Name of the model to create.
 /// @param objFileSource Source code of the OBJ file.
+/// @param objFileSourceLineCount Number of lines in the OBJ file source.
 /// @param objFilePath The resources-relative path of the OBJ file.
-/// @param modelOffset Offset to freely adjust final model.
+/// @param positionOffset Position offset to freely adjust final model position.
+/// @param rotationOffset Rotation offset to freely adjust final model rotation.
+/// @param scaleOffset Scale offset to freely adjust final model scale.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, String objFilePath, RendererTransform modelOffset);
+RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t objFileSourceLineCount, String objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
 
 /// @brief Creates an empty model with no meshes.
 /// @param name Name of the model to create.
@@ -253,31 +198,39 @@ void RendererScene_Destroy(RendererScene *scene);
 /// @param camera Camera object to set as the main camera.
 void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera);
 
-#pragma endregion Renderer Scene
-
-#pragma region Renderer Batch
-
-/// @brief Creates renderer batch to store objects that are using the same mesh. Changes the scene.
+/// @brief Creates renderer batch to store objects that are using the same mesh. Changes the scene. Max object count is RENDERER_BATCH_MAX_OBJECT_COUNT macro.
 /// @param name Name of the batch.
 /// @param scene Pointer to the scene that the batch is belong to.
 /// @param model Pointer to the model that the batch is using.
 /// @param initialObjectCapacity The initial capacity for objects inside batch.
 /// @return The created batch.
-RendererBatch *RendererBatch_Create(String name, RendererScene *scene, RendererModel *model, size_t initialObjectCapacity);
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, RendererModel *model, size_t initialObjectCapacity);
 
 /// @brief Destroys the renderer batch and frees its resources.
 /// @param batch Batch to destroy.
-void RendererBatch_Destroy(RendererBatch *batch);
+void RendererScene_DestroyBatch(RendererBatch *batch);
+
+#pragma endregion Renderer Scene
+
+#pragma region Renderer Batch
+
+/// @brief Creates a renderable object in the specified batch. Max object count is RENDERER_BATCH_MAX_OBJECT_COUNT macro.
+/// @param batch The batch to create the renderable in.
+/// @return A newly created renderable object.
+RendererRenderable *RendererBatch_CreateRenderable(RendererBatch *batch);
+
+/// @brief Destroys a renderable object and frees its resources.
+/// @param object The renderable object to destroy.
+void RendererBatch_DestroyRenderable(RendererRenderable *object);
 
 #pragma endregion Renderer Batch
 
 #pragma region Renderer Camera
 
 /// @brief Creates a camera object to control the view. Changes the scene.
-/// @param name Name of the camera.
 /// @param scene Scene to attach camera.
 /// @return Created camera object.
-RendererCamera *RendererCamera_Create(String name, RendererScene *scene);
+RendererCamera *RendererCamera_Create(RendererScene *scene);
 
 /// @brief Destroys a camera object.
 /// @param camera Camera object to destroy.
@@ -293,24 +246,17 @@ void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float 
 
 /// @brief Updates the camera's properties to render.
 /// @param camera Camera to update
-void RendererCamera_Update(RendererCamera *camera);
+void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rotation);
 
 #pragma endregion Renderer Camera
 
-#pragma region Renderer Object
+#pragma region Renderer Renderable
 
-/// @brief Creates a render object that shares its VAO and VBO with other objects in the scene. Changes the batch.
-/// @param name Name of the render object.
-/// @param batch Pointer to the batch that the object belongs to.
-/// @return Created render object.
-RendererObject *RendererObject_Create(String name, RendererBatch *batch);
+/// @brief Updates the renderable object's transform matrix.
+/// @param renderable Renderable object to update.
+/// @param position New position for the renderable.
+/// @param rotation New rotation for the renderable.
+/// @param scale New scale for the renderable.
+void RendererRenderable_Update(RendererRenderable *renderable, Vector3 position, Vector3 rotation, Vector3 scale);
 
-/// @brief Destroyer function for render object
-/// @param object Object to destroy
-void RendererObject_Destroy(RendererObject *object);
-
-/// @brief Updater function for object transform, logic etc.
-/// @param object Object to update. (pointer for performance)
-void RendererObject_Update(RendererObject *object);
-
-#pragma endregion Renderer Object
+#pragma endregion Renderer Renderable

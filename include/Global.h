@@ -113,7 +113,7 @@ char *GetExecutablePath();
 #define DEBUG_TERMINATE_ON_ERROR true
 #define DEBUG_TERMINATE_ON_ASSERT true
 
-#define DEBUG_FLUSH_AFTER_LOG true
+#define DEBUG_FLUSH_AFTER_LOG false
 
 #define DEBUG_TIME_FORMAT "%H:%M:%S"
 #define DEBUG_FILE_NAME "debug.log"
