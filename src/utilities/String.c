@@ -99,18 +99,33 @@ int String_Compare(String string, String other)
     DebugAssertNullPointerCheck(string.characters);
     DebugAssertNullPointerCheck(other.characters);
 
-    int result = strncmp(string.characters, other.characters, string.length);
+    int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
+    if (result == 0)
+    {
+        if (string.length < other.length)
+        {
+            return -1;
+        }
+        else if (string.length > other.length)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
 
     return result;
 }
 
-void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, String *tokenBufferRet, size_t tokenBufferSize)
+void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, String *tokenBufferRet, size_t maxTokenCount)
 {
     size_t tokenCount = 0;
     size_t lastTokenIndex = 0;
     String *token = NULL;
 
-    for (size_t i = 0; i < string.length && tokenCount < tokenBufferSize; i++)
+    for (size_t i = 0; i < string.length && tokenCount < maxTokenCount; i++)
     {
         if (strncmp(string.characters + i, delimeter.characters, delimeter.length) == 0)
         {
@@ -129,7 +144,7 @@ void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, Str
         }
     }
 
-    if (lastTokenIndex < string.length && tokenCount < tokenBufferSize)
+    if (lastTokenIndex < string.length && tokenCount < maxTokenCount)
     {
         token = tokenBufferRet + tokenCount;
         token->characters = string.characters + lastTokenIndex;

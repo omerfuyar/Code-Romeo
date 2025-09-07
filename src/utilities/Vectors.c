@@ -52,7 +52,7 @@ Vector3 Vector3_Add(Vector3 vector1, Vector3 vector2)
     return (Vector3){vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z};
 }
 
-Vector3 Vector3_Multiply(Vector3 vector, float scalar)
+Vector3 Vector3_Scale(Vector3 vector, float scalar)
 {
     return (Vector3){vector.x * scalar, vector.y * scalar, vector.z * scalar};
 }
@@ -67,7 +67,7 @@ Vector3 Vector3_Normalized(Vector3 vector)
     float magnitude = Vector3_Magnitude(vector);
     if (magnitude == 0.0f)
         return (Vector3){0.0f, 0.0f, 0.0f};
-    return Vector3_Multiply(vector, 1.0f / magnitude);
+    return Vector3_Scale(vector, 1.0f / magnitude);
 }
 
 float Vector3_Magnitude(Vector3 vector)

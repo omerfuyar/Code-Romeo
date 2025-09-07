@@ -8,8 +8,8 @@ cmake_minimum_required(VERSION 3.22)
 # Project
 project(Code-Romeo C)
 
-option(ENABLE_ASAN "Enable Address Sanitizer" ON)
-option(ENABLE_UBSAN "Enable Undefined Behaviour Sanitizer" ON)
+option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
+option(ENABLE_UBSAN "Enable Undefined Behaviour Sanitizer" OFF)
 
 if((ENABLE_ASAN OR ENABLE_UBSAN) AND NOT CMAKE_C_COMPILER MATCHES "clang")
     message(FATAL_ERROR "Sanitizers are only compatible with LLVM")

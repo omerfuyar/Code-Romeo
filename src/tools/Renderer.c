@@ -141,7 +141,7 @@ RendererMaterial *RendererMaterial_Create(String name)
     RendererMaterial *material = (RendererMaterial *)malloc(sizeof(RendererMaterial));
     DebugAssertNullPointerCheck(material);
 
-    material->name = name;
+    material->name = scc(name);
     material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
     material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
     material->diffuseMap = (RendererTexture){0};
@@ -218,6 +218,11 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
     DebugAssertNullPointerCheck(RENDERER_MAIN_WINDOW);
 
     glfwMakeContextCurrent(RENDERER_MAIN_WINDOW);
+
+    // GLint maxUniformBlockSize;
+    // glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
+    // DebugCheckRenderer();
+    // DebugInfo("Max supported uniform block size in system : %d bytes, %d matrices\n", maxUniformBlockSize, maxUniformBlockSize / 64);
 
     glfwSetFramebufferSizeCallback(RENDERER_MAIN_WINDOW, RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
     DebugInfo("Main window created successfully.");
@@ -299,6 +304,8 @@ void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScree
     {
         glfwSetWindowMonitor(RENDERER_MAIN_WINDOW, NULL, 100, 100, RENDERER_MAIN_WINDOW_SIZE.x, RENDERER_MAIN_WINDOW_SIZE.y, 0);
     }
+
+    RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(RENDERER_MAIN_WINDOW, RENDERER_MAIN_WINDOW_SIZE.x, RENDERER_MAIN_WINDOW_SIZE.y);
 }
 
 void Renderer_StartRendering()
@@ -337,6 +344,8 @@ void Renderer_RenderScene(RendererScene *scene)
 
     glUniformMatrix4fv(scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
     glUniformMatrix4fv(scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
+    glUniform3fv(scene->camPosition, 1, (GLfloat *)&scene->camera->position);
+    glUniform3fv(scene->camRotation, 1, (GLfloat *)&scene->camera->rotation);
 
     for (size_t i = 0; i < scene->batches.count; i++)
     {
@@ -443,10 +452,10 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
     ListArray materials = {0}; // RendererMaterial*
 
-    String_Tokenize(objFileSource, strNewline, &objFileSourceLineCount, lines, objFileSourceLineCount * sizeof(String));
+    String_Tokenize(objFileSource, strNewline, &objFileSourceLineCount, lines, objFileSourceLineCount);
     for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
     {
-        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, sizeof(lineTokens));
+        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
         String firstToken = lineTokens[0];
 
@@ -472,9 +481,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
         }
         else if (String_Compare(firstToken, strMTLLIB) == 0) // .mtl file
         {
-            String tempStr = scc(lineTokens[1]);
-            Resource *mtlFileResource = Resource_Create(tempStr, objFilePath);
-            String_Destroy(&tempStr);
+            Resource *mtlFileResource = Resource_Create(lineTokens[1], objFilePath);
 
             size_t materialCount = 0;
 
@@ -494,12 +501,13 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
             String strD = scl("d");
             String strILLNUM = scl("illum");
             String strMAP_KD = scl("map_Kd");
+            // String strMAP_BUMP = scl("map_bump");
 
-            String_Tokenize(mtlFileResource->data, strNewline, &mtlLineCount, mtlLines, mtlFileResource->lineCount * sizeof(String));
+            String_Tokenize(mtlFileResource->data, strNewline, &mtlLineCount, mtlLines, mtlFileResource->lineCount);
 
             for (size_t j = 0; j < mtlLineCount; j++) // count
             {
-                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
+                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
                 String mtlFirstToken = mtlLineTokens[0];
 
@@ -514,15 +522,13 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
             for (size_t j = 0; j < mtlLineCount; j++) // compute
             {
-                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, sizeof(mtlLineTokens));
+                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
                 String mtlFirstToken = mtlLineTokens[0];
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
-                    String tempMatStr = scc(mtlLineTokens[1]);
-                    currentMaterial = RendererMaterial_Create(tempMatStr);
-                    String_Destroy(&tempMatStr);
+                    currentMaterial = RendererMaterial_Create(mtlLineTokens[1]);
                     ListArray_Add(&materials, &currentMaterial);
                 }
                 else if (String_Compare(mtlFirstToken, strNS) == 0)
@@ -580,7 +586,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
     for (size_t i = 0; i < objFileSourceLineCount; i++) // create global pools
     {
-        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, sizeof(lineTokens));
+        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
         String firstToken = lineTokens[0];
 
@@ -630,7 +636,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
     for (size_t i = 0; i < objFileSourceLineCount; i++) // add data to model
     {
-        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, sizeof(lineTokens));
+        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
         String firstToken = lineTokens[0];
 
@@ -640,7 +646,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
             {
                 String faceData[3];
                 size_t faceDataCount;
-                String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, sizeof(faceData));
+                String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
 
                 RendererMeshVertex vertex = *(RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)String_ToInt(faceData[0]) - 1);
 
@@ -669,6 +675,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
             for (size_t j = 0; j < materials.count; j++)
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materials, j);
+
                 if (String_Compare(material->name, lineTokens[1]) == 0)
                 {
                     currentMesh = RendererMesh_CreateEmpty(faceCounts[model->meshes.count] * 3, material);
@@ -698,7 +705,7 @@ RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity
     RendererModel *model = malloc(sizeof(RendererModel));
     DebugAssertNullPointerCheck(model);
 
-    model->name = name;
+    model->name = scc(name);
     model->vertices = ListArray_Create("Renderer Mesh Vertex", sizeof(RendererMeshVertex), initialVertexCapacity);
     model->meshes = ListArray_Create("Renderer Mesh Pointer", sizeof(RendererMesh *), initialMeshCapacity);
 
@@ -738,7 +745,7 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
     RendererScene *scene = malloc(sizeof(RendererScene));
     DebugAssertNullPointerCheck(scene);
 
-    scene->name = name;
+    scene->name = scc(name);
     scene->camera = NULL;
     scene->batches = ListArray_Create("Renderer Batch Pointer", sizeof(RendererBatch *), initialBatchCapacity);
 
@@ -770,6 +777,8 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
 
     scene->camProjectionMatrix = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camProjectionMatrix");
     scene->camViewMatrix = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camViewMatrix");
+    scene->camPosition = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camPosition");
+    scene->camRotation = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camRotation");
 
     scene->matAmbientColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matAmbientColor");
     scene->matDiffuseColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseColor");
@@ -822,6 +831,8 @@ void RendererScene_Destroy(RendererScene *scene)
 
     scene->camProjectionMatrix = 0;
     scene->camViewMatrix = 0;
+    scene->camPosition = 0;
+    scene->camRotation = 0;
     scene->objectMatricesHandle = 0;
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -850,7 +861,7 @@ RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, Rend
     RendererBatch *batch = malloc(sizeof(RendererBatch));
     DebugAssertNullPointerCheck(batch);
 
-    batch->name = name;
+    batch->name = scc(name);
     batch->model = model;
     batch->scene = scene;
     batch->objectMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
@@ -894,7 +905,7 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
 RendererRenderable *RendererBatch_CreateRenderable(RendererBatch *batch)
 {
     DebugAssertNullPointerCheck(batch);
-    DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
+    //    DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
 
     RendererRenderable *object = (RendererRenderable *)malloc(sizeof(RendererRenderable));
     DebugAssertNullPointerCheck(object);
@@ -978,9 +989,12 @@ void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rot
 
     glm_mat4_identity((vec4 *)&camera->viewMatrix);
 
-    Vector3 direction = NewVector3(cosf(rotation.x) * cosf(rotation.y),
-                                   sinf(rotation.x),
-                                   cosf(rotation.x) * sinf(rotation.y));
+    camera->position = position;
+    camera->rotation = Vector3_Scale(rotation, PI_M / 180.0f);
+
+    Vector3 direction = NewVector3(cosf(camera->rotation.x) * cosf(camera->rotation.y),
+                                   sinf(camera->rotation.x),
+                                   cosf(camera->rotation.x) * sinf(camera->rotation.y));
 
     direction = Vector3_Normalized(direction);
 

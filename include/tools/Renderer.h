@@ -47,7 +47,6 @@ typedef unsigned int RendererIBOHandle;
 typedef unsigned int RendererUBOHandle;
 
 typedef unsigned int RendererMeshIndex;
-typedef struct RendererScene RendererScene;
 
 #define RendererObjectTransformDefault
 
@@ -68,11 +67,17 @@ typedef struct RendererModel
     ListArray meshes;   // RendererMesh*
 } RendererModel;
 
+/// @brief A scene of render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The scene is resizable but object's vertices or indices are not because it holds one big mesh for all objects. Scene is only updatable all at once.
+typedef struct RendererScene RendererScene;
+
 /// @brief The camera object for the renderer.
 typedef struct RendererCamera
 {
     mat4 projectionMatrix;
     mat4 viewMatrix;
+
+    Vector3 position;
+    Vector3 rotation;
 
     RendererScene *scene;
 
@@ -96,6 +101,8 @@ typedef struct RendererScene
 
     RendererUniformLocationHandle camProjectionMatrix;
     RendererUniformLocationHandle camViewMatrix;
+    RendererUniformLocationHandle camPosition;
+    RendererUniformLocationHandle camRotation;
     RendererUniformLocationHandle matAmbientColor;
     RendererUniformLocationHandle matDiffuseColor;
     RendererUniformLocationHandle matSpecularColor;
@@ -248,6 +255,8 @@ void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float 
 
 /// @brief Updates the camera's properties to render.
 /// @param camera Camera to update
+/// @param position New position for the camera.
+/// @param rotation New rotation for the camera. In degrees.
 void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rotation);
 
 #pragma endregion Renderer Camera
@@ -257,7 +266,7 @@ void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rot
 /// @brief Updates the renderable object's transform matrix.
 /// @param renderable Renderable object to update.
 /// @param position New position for the renderable.
-/// @param rotation New rotation for the renderable.
+/// @param rotation New rotation for the renderable. In degrees.
 /// @param scale New scale for the renderable.
 void RendererRenderable_Update(RendererRenderable *renderable, Vector3 position, Vector3 rotation, Vector3 scale);
 

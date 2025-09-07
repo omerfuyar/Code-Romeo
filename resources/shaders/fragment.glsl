@@ -4,6 +4,9 @@ in vec2 fragUv;
 in vec3 fragPosition;
 in vec3 fragNormal;
 
+uniform vec3 camPosition;
+uniform vec3 camRotation;
+
 uniform sampler2D matDiffuseMap;
 uniform bool matHasDiffuseMap;
 
@@ -24,13 +27,13 @@ void main()
     vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
     
     // Hard-coded camera position (could be passed as uniform)
-    vec3 viewDir = normalize(vec3(0.0, 0.0, 0.0) - fragPosition);
+    vec3 viewDir = normalize(camPosition - fragPosition);
     
     // Calculate the reflection direction
     vec3 reflectDir = reflect(-lightDir, normal);
     
     // Calculate ambient component
-    vec3 ambient = matAmbientColor * 0.2;
+    vec3 ambient = matAmbientColor * 1.0;
     
     // Calculate diffuse component
     float diff = max(dot(normal, lightDir), 0.0);
@@ -53,4 +56,7 @@ void main()
     
     // Apply material opacity
     FragColor = vec4(result, matDissolve);
+
+    // Display normals as colors (normalized from -1,1 to 0,1 range)
+    //FragColor = vec4(normal * 0.5 + 0.5, 1.0);
 }

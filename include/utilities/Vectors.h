@@ -56,8 +56,11 @@ typedef struct Vector4Int
 
 #define NewVector2(x, y) \
     (Vector2) { x, y }
+
 #define NewVector3(x, y, z) \
     (Vector3) { x, y, z }
+#define NewVector3N(n) NewVector3(n, n, n)
+
 #define NewVector4(x, y, z, w) \
     (Vector4) { x, y, z, w }
 #define NewColor(x, y, z, w) \
@@ -127,7 +130,7 @@ Vector3 Vector3_Add(Vector3 vector1, Vector3 vector2);
 /// @param vector The vector to multiply.
 /// @param scalar The scalar value.
 /// @return The resulting vector after multiplication.
-Vector3 Vector3_Multiply(Vector3 vector, float scalar);
+Vector3 Vector3_Scale(Vector3 vector, float scalar);
 
 /// @brief Converts a 3D float vector to a 3D integer vector.
 /// @param vector The vector to convert.
