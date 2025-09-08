@@ -1,13 +1,14 @@
 #include "Global.h"
 #include "tools/Renderer.h"
 #include "tools/Resources.h"
+#include "tools/Input.h"
 #include "utilities/Timer.h"
 
 #define TEST_BENCH_TIME_SECONDS 10.0f
-#define TEST_OBJECT_ONE_SIDE 32
+#define TEST_OBJECT_ONE_SIDE 1
 #define TEST_VSYNC false
-#define TEST_FULL_SCREEN true
-#define TEST_BENCHMARK true
+#define TEST_FULL_SCREEN false
+#define TEST_BENCHMARK false
 
 typedef struct myObjectType
 {
@@ -28,25 +29,26 @@ typedef struct myCameraType
     RendererCamera *camera;
 } myCameraType;
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
     // todo input system
     Resource *vertexShaderResource = Resource_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
-    Renderer_CreateContext(scl("Juliette"),
-                           NewVector2Int(1080, 720),
-                           vertexShaderResource->data,
-                           fragmentShaderResource->data,
-                           TEST_VSYNC,
-                           TEST_FULL_SCREEN);
+    void *window = Renderer_CreateContext(scl("Juliette"),
+                                          NewVector2Int(1080, 720),
+                                          vertexShaderResource->data,
+                                          fragmentShaderResource->data,
+                                          TEST_VSYNC,
+                                          TEST_FULL_SCREEN);
+    Input_Initialize(window);
 
     RendererScene *myScene = RendererScene_Create(scl("My Scene"), 5);
 
     myCameraType mainCamera = {
         .name = scl("Main Camera"),
-        .position = NewVector3(-4.0f * Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 1.0f), 0.0f, 0.0f),
+        .position = NewVector3(-5.0f * Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 1.0f), 0.0f, 0.0f),
         .rotation = NewVector3(0.0f, 0.0f, 0.0f),
         .camera = RendererCamera_Create(myScene)};
 
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
                 .name = scl("Gun"),
                 .position = NewVector3(0.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2), (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2)),
                 .rotation = NewVector3N(0.0f),
-                .scale = NewVector3N(4.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 1.0f)),
+                .scale = NewVector3N(4.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 4.0f)),
                 .renderable = RendererBatch_CreateRenderable(objBatch)};
         }
     }
@@ -75,6 +77,14 @@ int main(int argc, char *argv[])
     {
         Timer_Start(&mainLoopTimer);
 
+        Input_Update();
+
+        if (Input_GetKey(InputKeyCode_Escape, InputKeyState_Down))
+        {
+            DebugInfo("Escape key pressed, exiting...");
+            break;
+        }
+
         // rendering
         Renderer_StartRendering();
 
@@ -85,9 +95,6 @@ int main(int argc, char *argv[])
             RendererRenderable_Update(objects[i].renderable, objects[i].position, objects[i].rotation, objects[i].scale);
         }
 
-        // myObj.rotation.y += mainLoopDeltaTime;
-        // RendererRenderable_Update(myObj.renderable, myObj.position, myObj.rotation, myObj.scale);
-
         RendererCamera_Update(mainCamera.camera, mainCamera.position, mainCamera.rotation);
         Renderer_RenderScene(myScene);
 
@@ -96,11 +103,14 @@ int main(int argc, char *argv[])
         Timer_Stop(&mainLoopTimer);
         mainLoopDeltaTime = (float)Timer_GetElapsedNanoseconds(mainLoopTimer) / 1000000000.0f;
 
-        benchMarkFrameCount++;
-        benchMarkTime += mainLoopDeltaTime;
-        if (benchMarkTime > TEST_BENCH_TIME_SECONDS)
+        if (TEST_BENCHMARK)
         {
-            DebugError("Time : %f seconds | Objects : %d | Vertices : %d | Average FPS : %f | Full Screen : %s", benchMarkTime, objBatch->objectMatrices.count, objModel->vertices.count * objBatch->objectMatrices.count, (float)benchMarkFrameCount / TEST_BENCH_TIME_SECONDS, TEST_FULL_SCREEN ? "true" : "false");
+            benchMarkFrameCount++;
+            benchMarkTime += mainLoopDeltaTime;
+            if (benchMarkTime > TEST_BENCH_TIME_SECONDS)
+            {
+                DebugError("Time : %f seconds | Objects : %d | Vertices : %d | Average FPS : %f | Full Screen : %s", benchMarkTime, objBatch->objectMatrices.count, objModel->vertices.count * objBatch->objectMatrices.count, (float)benchMarkFrameCount / TEST_BENCH_TIME_SECONDS, TEST_FULL_SCREEN ? "true" : "false");
+            }
         }
     }
 

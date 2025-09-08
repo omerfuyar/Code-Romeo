@@ -86,7 +86,7 @@ Vector2 Vector2_Add(Vector2 vector1, Vector2 vector2);
 /// @param vector The vector to multiply.
 /// @param scalar The scalar value.
 /// @return The resulting vector after multiplication.
-Vector2 Vector2_Multiply(Vector2 vector, float scalar);
+Vector2 Vector2_Scale(Vector2 vector, float scalar);
 
 /// @brief Converts a 2D float vector to a 2D integer vector.
 /// @param vector The vector to convert.
@@ -174,7 +174,7 @@ Vector4 Vector4_Add(Vector4 vector1, Vector4 vector2);
 /// @param vector The vector to multiply.
 /// @param scalar The scalar value.
 /// @return The resulting vector after multiplication.
-Vector4 Vector4_Multiply(Vector4 vector, float scalar);
+Vector4 Vector4_Scale(Vector4 vector, float scalar);
 
 /// @brief Converts a 4D float vector to a 4D integer vector.
 /// @param vector The vector to convert.
@@ -218,7 +218,7 @@ Vector2Int Vector2Int_Add(Vector2Int vector1, Vector2Int vector2);
 /// @param vector The vector to multiply.
 /// @param scalar The scalar value.
 /// @return The resulting vector after multiplication.
-Vector2Int Vector2Int_Multiply(Vector2Int vector, float scalar);
+Vector2Int Vector2Int_Scale(Vector2Int vector, float scalar);
 
 /// @brief Converts a 2D integer vector to a 2D float vector.
 /// @param vector The vector to convert.
@@ -250,7 +250,7 @@ Vector3Int Vector3Int_Add(Vector3Int vector1, Vector3Int vector2);
 /// @param vector The vector to multiply.
 /// @param scalar The scalar value.
 /// @return The resulting vector after multiplication.
-Vector3Int Vector3Int_Multiply(Vector3Int vector, float scalar);
+Vector3Int Vector3Int_Scale(Vector3Int vector, float scalar);
 
 /// @brief Converts a 3D integer vector to a 3D float vector.
 /// @param vector The vector to convert.
@@ -282,7 +282,7 @@ Vector4Int Vector4Int_Add(Vector4Int vector1, Vector4Int vector2);
 /// @param vector The vector to multiply.
 /// @param scalar The scalar value.
 /// @return The resulting vector after multiplication.
-Vector4Int Vector4Int_Multiply(Vector4Int vector, float scalar);
+Vector4Int Vector4Int_Scale(Vector4Int vector, float scalar);
 
 /// @brief Converts a 4D integer vector to a 4D float vector.
 /// @param vector The vector to convert.

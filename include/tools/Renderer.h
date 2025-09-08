@@ -141,7 +141,8 @@ typedef struct RendererRenderable
 /// @param fragmentShaderSource Source code of the main fragment shader.
 /// @param vSync Whether to enable vertical synchronization.
 /// @param fullScreen Whether the app will start in full screen mode or not.
-void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen);
+/// @return A pointer to the created context / window.
+void *Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();

@@ -106,7 +106,7 @@ ResourceImage *ResourceImage_Create(String title, String path)
     String_ConcatBegin(&fullPath, scl(GetExecutablePath()));
     String_ConcatEnd(&fullPath, resourceImage->name);
 
-    // stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
     DebugAssertNullPointerCheck(resourceImage->data);
 

@@ -8,7 +8,7 @@ Vector2 Vector2_Add(Vector2 vector1, Vector2 vector2)
     return (Vector2){vector1.x + vector2.x, vector1.y + vector2.y};
 }
 
-Vector2 Vector2_Multiply(Vector2 vector, float scalar)
+Vector2 Vector2_Scale(Vector2 vector, float scalar)
 {
     return (Vector2){vector.x * scalar, vector.y * scalar};
 }
@@ -23,7 +23,7 @@ Vector2 Vector2_Normalized(Vector2 vector)
     float magnitude = Vector2_Magnitude(vector);
     if (magnitude == 0.0f)
         return (Vector2){0.0f, 0.0f};
-    return Vector2_Multiply(vector, 1.0f / magnitude);
+    return Vector2_Scale(vector, 1.0f / magnitude);
 }
 
 float Vector2_Magnitude(Vector2 vector)
@@ -97,7 +97,7 @@ Vector4 Vector4_Add(Vector4 vector1, Vector4 vector2)
     return (Vector4){vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w};
 }
 
-Vector4 Vector4_Multiply(Vector4 vector, float scalar)
+Vector4 Vector4_Scale(Vector4 vector, float scalar)
 {
     return (Vector4){vector.x * scalar, vector.y * scalar, vector.z * scalar, vector.w * scalar};
 }
@@ -112,7 +112,7 @@ Vector4 Vector4_Normalized(Vector4 vector)
     float magnitude = Vector4_Magnitude(vector);
     if (magnitude == 0.0f)
         return (Vector4){0.0f, 0.0f, 0.0f, 0.0f};
-    return Vector4_Multiply(vector, 1.0f / magnitude);
+    return Vector4_Scale(vector, 1.0f / magnitude);
 }
 
 float Vector4_Magnitude(Vector4 vector)
@@ -143,7 +143,7 @@ Vector2Int Vector2Int_Add(Vector2Int vector1, Vector2Int vector2)
     return (Vector2Int){vector1.x + vector2.x, vector1.y + vector2.y};
 }
 
-Vector2Int Vector2Int_Multiply(Vector2Int vector, float scalar)
+Vector2Int Vector2Int_Scale(Vector2Int vector, float scalar)
 {
     return (Vector2Int){(int)((float)vector.x * scalar), (int)((float)vector.y * scalar)};
 }
@@ -172,7 +172,7 @@ Vector3Int Vector3Int_Add(Vector3Int vector1, Vector3Int vector2)
     return (Vector3Int){vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z};
 }
 
-Vector3Int Vector3Int_Multiply(Vector3Int vector, float scalar)
+Vector3Int Vector3Int_Scale(Vector3Int vector, float scalar)
 {
     return (Vector3Int){(int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar)};
 }
@@ -201,7 +201,7 @@ Vector4Int Vector4Int_Add(Vector4Int vector1, Vector4Int vector2)
     return (Vector4Int){vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w};
 }
 
-Vector4Int Vector4Int_Multiply(Vector4Int vector, float scalar)
+Vector4Int Vector4Int_Scale(Vector4Int vector, float scalar)
 {
     return (Vector4Int){(int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar), (int)((float)vector.w * scalar)};
 }

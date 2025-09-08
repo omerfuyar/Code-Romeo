@@ -205,7 +205,7 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
 #pragma region Renderer
 
-void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen)
+void *Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen)
 {
     DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
@@ -277,6 +277,8 @@ void Renderer_CreateContext(String title, Vector2Int windowSize, String vertexSh
     RENDERER_MAIN_WINDOW_TITLE = title;
 
     DebugInfo("Renderer initialized successfully.");
+
+    return (void *)RENDERER_MAIN_WINDOW;
 }
 
 void Renderer_Terminate()
@@ -324,15 +326,10 @@ void Renderer_StartRendering()
 void Renderer_FinishRendering(float deltaTime)
 {
     glfwSwapBuffers(RENDERER_MAIN_WINDOW);
-    glfwPollEvents();
-
-    // DebugInfo("Rendering finished");
 
     char titleBuffer[TEMP_BUFFER_SIZE];
     snprintf(titleBuffer, sizeof(titleBuffer), "%s | FPS: %f | Frame Time: %f ms", RENDERER_MAIN_WINDOW_TITLE.characters, 1.0f / deltaTime, deltaTime * 1000);
     glfwSetWindowTitle(RENDERER_MAIN_WINDOW, titleBuffer);
-
-    // DebugInfo("Rendering finished : FPS: %d | Frame Time: %f ms", (int)(1 / deltaTime), deltaTime * 1000);
 }
 
 void Renderer_RenderScene(RendererScene *scene)
