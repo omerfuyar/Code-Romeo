@@ -101,9 +101,20 @@ typedef enum InputState
     InputState_Up = 8
 } InputState;
 
-/// @brief Initialization function for the input system.
+typedef enum InputMouseMode
+{
+    InputMouseMode_Normal = 0x00034001,  // makes the cursor visible and behaving normally.
+    InputMouseMode_Hidden = 0x00034002,  // makes the cursor invisible when it is over the content area of the window but does not restrict the cursor from leaving.
+    InputMouseMode_Captured = 0x00034003 // hides and grabs the cursor, providing virtual and unlimited cursor movement. This is useful for implementing for example 3D camera controls
+} InputMouseMode;
+
+/// @brief Initialization function for the input system. Can be called multiple times if the GLFW window changes.
 /// @param window Pointer to the window to initialize.
 void Input_Initialize(void *window);
+
+/// @brief Configures the mouse mode of the main window.
+/// @param mode Mode to set.
+void Input_ConfigureMouseMode(InputMouseMode mode);
 
 /// @brief Updates the state of all input devices (keyboard, mouse) for the current frame
 /// @note This function should be called once per frame before any input queries

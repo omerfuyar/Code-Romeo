@@ -147,6 +147,11 @@ void Renderer_Terminate();
 /// @param fullScreen Whether the app will start in full screen mode or not
 void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScreen);
 
+/// @brief
+/// @param vertexShaderSource
+/// @param fragmentShaderSource
+void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource);
+
 /// @brief Should be called before using rendering functions.
 void Renderer_StartRendering();
 

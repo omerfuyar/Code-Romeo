@@ -34,8 +34,18 @@ typedef struct myCameraType
     float speed;
 } myCameraType;
 
+void mainTerminate(int exitCode, char *message)
+{
+    (void)exitCode;
+    (void)message;
+
+    Renderer_Terminate();
+}
+
 int main(int argc, char **argv)
 {
+    GlobalSetTerminateCallback(mainTerminate);
+
     Resource *vertexShaderResource = Resource_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
@@ -82,13 +92,16 @@ int main(int argc, char **argv)
     while (true)
     {
         Timer_Start(&DTimer);
-
         Input_Update();
+
+        if (Input_GetMouseButton(InputMouseButtonCode_Left, InputState_Down))
+        {
+            Input_ConfigureMouseMode(InputMouseMode_Captured);
+        }
 
         if (Input_GetKey(InputKeyCode_Escape, InputState_Down))
         {
-            DebugInfo("Escape key pressed, exiting...");
-            break;
+            GlobalTerminate(EXIT_SUCCESS, "Escape key pressed, exiting...");
         }
 
         // rendering

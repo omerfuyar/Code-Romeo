@@ -8,11 +8,16 @@
 #define GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 #endif
 
+#pragma region Source Only
+
 FILE *DEBUG_FILE = NULL;
 char *DEBUG_FILE_NAME_STR = NULL;
-char *EXECUTABLE_DIRECTORY_PATH = NULL;
+char *GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
+FuncIntCharPtrToVoid GLOBAL_TERMINATE_CALLBACK = NULL;
 
-void DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
+#pragma endregion Source Only
+
+void GlobalDebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
@@ -24,12 +29,12 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
 
     if (DEBUG_FILE == NULL)
     {
-        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(GetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
+        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(GlobalGetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
 
-        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(EXECUTABLE_DIRECTORY_PATH) * sizeof(char), EXECUTABLE_DIRECTORY_PATH);
-        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME) * sizeof(char), DEBUG_FILE_NAME);
+        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) * sizeof(char), GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME) * sizeof(char), DEBUG_FILE_NAME);
 
-        DEBUG_FILE_NAME_STR[strlen(EXECUTABLE_DIRECTORY_PATH) + strlen(DEBUG_FILE_NAME)] = '\0';
+        DEBUG_FILE_NAME_STR[strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) + strlen(DEBUG_FILE_NAME)] = '\0';
 
         remove(DEBUG_FILE_NAME_STR);
 
@@ -38,7 +43,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
             char buffer[TEMP_BUFFER_SIZE] = {0};
             snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             fprintf(stderr, "%s", buffer);
-            Terminate(EXIT_FAILURE, buffer);
+            GlobalTerminate(EXIT_FAILURE, buffer);
         }
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
@@ -48,7 +53,7 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
         char buffer[TEMP_BUFFER_SIZE] = {0};
         snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
         fprintf(stderr, "%s", buffer);
-        Terminate(EXIT_FAILURE, buffer);
+        GlobalTerminate(EXIT_FAILURE, buffer);
     }
 
     char messageBuffer[TEMP_BUFFER_SIZE * 4] = {0};
@@ -73,20 +78,32 @@ void DebugLog(bool terminate, const char *header, const char *file, int line, co
 
     if (terminate)
     {
-        Terminate(EXIT_FAILURE, finalBuffer);
+        GlobalTerminate(EXIT_FAILURE, finalBuffer);
     }
 }
 
-void Terminate(int exitCode, char *message)
+void GlobalTerminate(int exitCode, char *message)
 {
-    fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+    if (GLOBAL_TERMINATE_CALLBACK != NULL)
+    {
+        GLOBAL_TERMINATE_CALLBACK(exitCode, message);
+    }
+
+    DebugWarning("\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
 
     exit(exitCode);
 }
 
-char *GetExecutablePath()
+void GlobalSetTerminateCallback(FuncIntCharPtrToVoid terminateCallback)
 {
-    if (EXECUTABLE_DIRECTORY_PATH == NULL)
+    DebugAssertNullPointerCheck(terminateCallback);
+
+    GLOBAL_TERMINATE_CALLBACK = terminateCallback;
+}
+
+char *GlobalGetExecutablePath()
+{
+    if (GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
     {
         char buffer[TEMP_BUFFER_SIZE];
         GetExePath(buffer, sizeof(buffer));
@@ -99,14 +116,14 @@ char *GetExecutablePath()
         }
         currentIndex++;
 
-        EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
-        DebugAssertNullPointerCheck(EXECUTABLE_DIRECTORY_PATH);
+        GLOBAL_EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
+        DebugAssertNullPointerCheck(GLOBAL_EXECUTABLE_DIRECTORY_PATH);
 
-        MemoryCopy(EXECUTABLE_DIRECTORY_PATH, currentIndex * sizeof(char), buffer);
-        EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
+        MemoryCopy(GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex * sizeof(char), buffer);
+        GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
 
-        DebugInfo("Executable path detected : '%s'", EXECUTABLE_DIRECTORY_PATH);
+        DebugInfo("Executable path detected : '%s'", GLOBAL_EXECUTABLE_DIRECTORY_PATH);
     }
 
-    return EXECUTABLE_DIRECTORY_PATH;
+    return GLOBAL_EXECUTABLE_DIRECTORY_PATH;
 }

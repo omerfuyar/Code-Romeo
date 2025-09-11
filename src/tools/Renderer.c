@@ -238,42 +238,7 @@ void *Renderer_CreateContext(String title, Vector2Int windowSize, String vertexS
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    GLint glslHasCompiled = 0;
-    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
-    glCompileShader(vertexShader);
-
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
-
-    DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Vertex shader compiled successfully. Logs:\n%s", glslInfoLog);
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
-
-    DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Fragment shader compiled successfully. Logs:\n%s", glslInfoLog);
-
-    RENDERER_MAIN_SHADER_PROGRAM = glCreateProgram();
-    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, vertexShader);
-    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, fragmentShader);
-    glLinkProgram(RENDERER_MAIN_SHADER_PROGRAM);
-
-    glGetProgramiv(RENDERER_MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
-    glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
-
-    DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Shader program linked successfully. Logs:\n%s", glslInfoLog);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    Renderer_ConfigureShaders(vertexShaderSource, fragmentShaderSource);
 
     RENDERER_MAIN_WINDOW_TITLE = title;
 
@@ -311,12 +276,55 @@ void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScree
     RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(RENDERER_MAIN_WINDOW, RENDERER_MAIN_WINDOW_SIZE.x, RENDERER_MAIN_WINDOW_SIZE.y);
 }
 
+void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource)
+{
+    glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
+
+    GLint glslHasCompiled = 0;
+    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
+
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
+    glCompileShader(vertexShader);
+
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Vertex shader compiled successfully.");
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Fragment shader compiled successfully.");
+
+    RENDERER_MAIN_SHADER_PROGRAM = glCreateProgram();
+    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, vertexShader);
+    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, fragmentShader);
+    glLinkProgram(RENDERER_MAIN_SHADER_PROGRAM);
+
+    glGetProgramiv(RENDERER_MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
+    glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    DebugInfo("Shader program linked and created successfully.");
+}
+
 void Renderer_StartRendering()
 {
     if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW))
     {
         DebugInfo("Main window close input received");
-        Terminate(EXIT_SUCCESS, "Main window close input received");
+        GlobalTerminate(EXIT_SUCCESS, "Main window close input received");
     }
 
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);

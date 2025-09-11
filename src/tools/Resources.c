@@ -17,7 +17,7 @@ Resource *Resource_Create(String name, String relativePath)
 
     String fullPath = scc(resource->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
-    String_ConcatBegin(&fullPath, scl(GetExecutablePath()));
+    String_ConcatBegin(&fullPath, scl(GlobalGetExecutablePath()));
     String_ConcatEnd(&fullPath, resource->name);
 
     size_t lineCount = 0;
@@ -103,7 +103,7 @@ ResourceImage *ResourceImage_Create(String title, String path)
 
     String fullPath = scc(resourceImage->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
-    String_ConcatBegin(&fullPath, scl(GetExecutablePath()));
+    String_ConcatBegin(&fullPath, scl(GlobalGetExecutablePath()));
     String_ConcatEnd(&fullPath, resourceImage->name);
 
     stbi_set_flip_vertically_on_load(true);

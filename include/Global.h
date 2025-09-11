@@ -31,7 +31,7 @@
 #include <time.h>
 #include <limits.h>
 
-#pragma endregion Functions and Macros
+#pragma region Functions and Macros
 
 #define TEMP_BUFFER_SIZE 128
 
@@ -53,23 +53,29 @@
 
 #endif
 
-/// @brief Logs a debug message to the debug log file.
+/// @brief Logs a debug message to the debug log file. Use wrapper macros for ease of use.
 /// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
 /// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
-void DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
+void GlobalDebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 /// @brief Terminates and closes necessary utilities and exits the program.
 /// @param exitCode The code to pass to exit() function.
 /// @param message The message to show to the console.
-void Terminate(int exitCode, char *message);
+void GlobalTerminate(int exitCode, char *message);
+
+typedef void (*FuncIntCharPtrToVoid)(int, char *);
+
+/// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
+/// @param terminateCallback Function to call when terminate is called. Should not exit the program.
+void GlobalSetTerminateCallback(FuncIntCharPtrToVoid terminateCallback);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
-char *GetExecutablePath();
+char *GlobalGetExecutablePath();
 
-#pragma region Functions and Macros
+#pragma endregion Functions and Macros
 
 #pragma region Debug Log
 
@@ -89,30 +95,30 @@ char *GetExecutablePath();
 #if DEBUG_INFO_ENABLED == false
 #define DebugInfo(format, ...)
 #else
-#define DebugInfo(format, ...)                                                        \
-    do                                                                                \
-    {                                                                                 \
-        DebugLog(false, "INFO", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugInfo(format, ...)                                                              \
+    do                                                                                      \
+    {                                                                                       \
+        GlobalDebugLog(false, "INFO", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
 #if DEBUG_WARNING_ENABLED == false
 #define DebugWarning(format, ...)
 #else
-#define DebugWarning(format, ...)                                                        \
-    do                                                                                   \
-    {                                                                                    \
-        DebugLog(false, "WARNING", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugWarning(format, ...)                                                              \
+    do                                                                                         \
+    {                                                                                          \
+        GlobalDebugLog(false, "WARNING", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
 #if DEBUG_ERROR_ENABLED == false
 #define DebugError(format, ...)
 #else
-#define DebugError(format, ...)                                                                           \
-    do                                                                                                    \
-    {                                                                                                     \
-        DebugLog(DEBUG_TERMINATE_ON_ERROR, "ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugError(format, ...)                                                                                 \
+    do                                                                                                          \
+    {                                                                                                           \
+        GlobalDebugLog(DEBUG_TERMINATE_ON_ERROR, "ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
@@ -123,13 +129,13 @@ char *GetExecutablePath();
 #else
 #define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
 #define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
-#define DebugAssert(condition, format, ...)                                                                                \
-    do                                                                                                                     \
-    {                                                                                                                      \
-        if (!(condition))                                                                                                  \
-        {                                                                                                                  \
-            DebugLog(DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-        }                                                                                                                  \
+#define DebugAssert(condition, format, ...)                                                                                      \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        if (!(condition))                                                                                                        \
+        {                                                                                                                        \
+            GlobalDebugLog(DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+        }                                                                                                                        \
     } while (false)
 #endif
 
