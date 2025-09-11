@@ -13,7 +13,7 @@
 FILE *DEBUG_FILE = NULL;
 char *DEBUG_FILE_NAME_STR = NULL;
 char *GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
-FuncIntCharPtrToVoid GLOBAL_TERMINATE_CALLBACK = NULL;
+FunIntCharptrToVoid GLOBAL_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
@@ -89,12 +89,12 @@ void GlobalTerminate(int exitCode, char *message)
         GLOBAL_TERMINATE_CALLBACK(exitCode, message);
     }
 
-    DebugWarning("\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+    fprintf(stderr, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
 
     exit(exitCode);
 }
 
-void GlobalSetTerminateCallback(FuncIntCharPtrToVoid terminateCallback)
+void GlobalSetTerminateCallback(FunIntCharptrToVoid terminateCallback)
 {
     DebugAssertNullPointerCheck(terminateCallback);
 

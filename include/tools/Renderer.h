@@ -6,10 +6,10 @@
 #include "utilities/ListArray.h"
 #include "utilities/Vectors.h"
 
+#include "wrappers/Context.h"
+
 #include <cglm/mat4.h>
 
-#define RENDERER_OPENGL_VERSION_MAJOR 3
-#define RENDERER_OPENGL_VERSION_MINOR 3
 #define RENDERER_OPENGL_CLEAR_COLOR 0.1f, 0.1f, 0.1f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
@@ -136,16 +136,10 @@ typedef struct RendererRenderable
 /// @param vSync Whether to enable vertical synchronization.
 /// @param fullScreen Whether the app will start in full screen mode or not.
 /// @return A pointer to the created context / window.
-void *Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen);
+void Renderer_Initialize(ContextWindow *window);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();
-
-/// @brief Configure the main window of the app.
-/// @param windowSize Window size.
-/// @param vSync Whether to enable vertical synchronization.
-/// @param fullScreen Whether the app will start in full screen mode or not
-void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScreen);
 
 /// @brief
 /// @param vertexShaderSource
@@ -156,7 +150,7 @@ void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderS
 void Renderer_StartRendering();
 
 /// @brief Should be called after using rendering functions.
-void Renderer_FinishRendering(float deltaTime);
+void Renderer_FinishRendering();
 
 /// @brief Renders a scene of objects.
 /// @param scene The scene of objects to render.

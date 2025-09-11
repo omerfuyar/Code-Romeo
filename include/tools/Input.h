@@ -2,6 +2,7 @@
 
 #include "Global.h"
 #include "utilities/Vectors.h"
+#include "wrappers/Context.h"
 
 typedef enum InputKeyCode
 {
@@ -109,8 +110,8 @@ typedef enum InputMouseMode
 } InputMouseMode;
 
 /// @brief Initialization function for the input system. Can be called multiple times if the GLFW window changes.
-/// @param window Pointer to the window to initialize.
-void Input_Initialize(void *window);
+/// @param window Window to initialize.
+void Input_Initialize(ContextWindow *window);
 
 /// @brief Configures the mouse mode of the main window.
 /// @param mode Mode to set.

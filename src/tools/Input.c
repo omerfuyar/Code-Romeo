@@ -20,7 +20,7 @@ InputState INPUT_KEY_CONTROLS[INPUT_KEY_CONTROLS_COUNT] = {0};
 
 InputState INPUT_KEY_MOUSE_BUTTONS[INPUT_KEY_MOUSE_BUTTONS_COUNT] = {0};
 
-GLFWwindow *INPUT_MAIN_WINDOW = NULL;
+ContextWindow *INPUT_MAIN_WINDOW = NULL;
 float INPUT_MOUSE_SCROLL = 0.0f;
 Vector2Int INPUT_MOUSE_POSITION = {0};
 Vector2Int INPUT_PREVIOUS_MOUSE_POSITION = {0};
@@ -172,22 +172,22 @@ void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offs
 
 #pragma endregion Source Only
 
-void Input_Initialize(void *window)
+void Input_Initialize(ContextWindow *window)
 {
     DebugAssertNullPointerCheck(window);
 
-    INPUT_MAIN_WINDOW = (GLFWwindow *)window;
+    INPUT_MAIN_WINDOW = window;
 
-    glfwSetInputMode(INPUT_MAIN_WINDOW, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    glfwSetInputMode(INPUT_MAIN_WINDOW, GLFW_STICKY_KEYS, GLFW_FALSE);
-    glfwSetInputMode(INPUT_MAIN_WINDOW, GLFW_STICKY_MOUSE_BUTTONS, GLFW_FALSE);
-    glfwSetInputMode(INPUT_MAIN_WINDOW, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
-    glfwSetInputMode(INPUT_MAIN_WINDOW, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_STICKY_KEYS, GLFW_FALSE);
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_STICKY_MOUSE_BUTTONS, GLFW_FALSE);
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 
-    glfwSetKeyCallback(INPUT_MAIN_WINDOW, INPUT_KEY_CALLBACK);
-    glfwSetCursorPosCallback(INPUT_MAIN_WINDOW, INPUT_MOUSE_POSITION_CALLBACK);
-    glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW, INPUT_MOUSE_BUTTON_CALLBACK);
-    glfwSetScrollCallback(INPUT_MAIN_WINDOW, INPUT_MOUSE_SCROLL_CALLBACK);
+    glfwSetKeyCallback(INPUT_MAIN_WINDOW->handle, INPUT_KEY_CALLBACK);
+    glfwSetCursorPosCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_POSITION_CALLBACK);
+    glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_BUTTON_CALLBACK);
+    glfwSetScrollCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_SCROLL_CALLBACK);
 
     DebugInfo("Input system initialized successfully");
 }
@@ -195,7 +195,8 @@ void Input_Initialize(void *window)
 void Input_ConfigureMouseMode(InputMouseMode mode)
 {
     DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
-    glfwSetInputMode(INPUT_MAIN_WINDOW, GLFW_CURSOR, mode);
+
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, mode);
 }
 
 void Input_Update()

@@ -45,21 +45,19 @@ typedef struct RendererMesh
     RendererMaterial *material;
 } RendererMesh;
 
-GLFWwindow *RENDERER_MAIN_WINDOW = NULL;
-Vector2Int RENDERER_MAIN_WINDOW_SIZE = {0};
-
-String RENDERER_MAIN_WINDOW_TITLE = {0};
+ContextWindow *RENDERER_MAIN_WINDOW = NULL;
 RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
-
 RendererTexture RENDERER_MAIN_TEXTURES[RENDERER_TEXTURE_MAX_COUNT] = {0};
 size_t RENDERER_MAIN_TEXTURES_COUNT = 0;
 
-void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(GLFWwindow *window, int width, int height)
+void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 {
     DebugAssertNullPointerCheck(window);
-    RENDERER_MAIN_WINDOW_SIZE.x = width;
-    RENDERER_MAIN_WINDOW_SIZE.y = height;
-    glViewport(0, 0, width, height);
+
+    RENDERER_MAIN_WINDOW->size.x = width;
+    RENDERER_MAIN_WINDOW->size.y = height;
+
+    glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
 void TransformToModelMatrix(Vector3 position, Vector3 rotation, Vector3 scale, mat4 *matrix)
@@ -206,74 +204,28 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
 #pragma region Renderer
 
-void *Renderer_CreateContext(String title, Vector2Int windowSize, String vertexShaderSource, String fragmentShaderSource, bool vSync, bool fullScreen)
+void Renderer_Initialize(ContextWindow *window)
 {
-    DebugAssert(glfwInit(), "Failed to initialize GLFW");
+    DebugAssertNullPointerCheck(window);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, RENDERER_OPENGL_VERSION_MAJOR);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, RENDERER_OPENGL_VERSION_MINOR);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    DebugInfo("GLFW initialized successfully.");
-
-    RENDERER_MAIN_WINDOW = glfwCreateWindow(windowSize.x, windowSize.y, title.characters, NULL, NULL);
-    DebugAssertNullPointerCheck(RENDERER_MAIN_WINDOW);
-
-    glfwMakeContextCurrent(RENDERER_MAIN_WINDOW);
-
-    // GLint maxUniformBlockSize;
-    // glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
-    // DebugCheckRenderer();
-    // DebugInfo("Max supported uniform block size in system : %d bytes, %d matrices\n", maxUniformBlockSize, maxUniformBlockSize / 64);
-
-    glfwSetFramebufferSizeCallback(RENDERER_MAIN_WINDOW, RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
-    DebugInfo("Main window created successfully.");
+    RENDERER_MAIN_WINDOW = window;
 
     DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
     DebugInfo("GLAD initialized successfully.");
 
-    Renderer_ConfigureContext(windowSize, vSync, fullScreen);
+    Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Renderer_ConfigureShaders(vertexShaderSource, fragmentShaderSource);
-
-    RENDERER_MAIN_WINDOW_TITLE = title;
-
     DebugInfo("Renderer initialized successfully.");
-
-    return (void *)RENDERER_MAIN_WINDOW;
 }
 
 void Renderer_Terminate()
 {
-    String_Destroy(&RENDERER_MAIN_WINDOW_TITLE);
     glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
-    glfwDestroyWindow(RENDERER_MAIN_WINDOW);
-    glfwTerminate();
-}
-
-void Renderer_ConfigureContext(Vector2Int windowSize, bool vSync, bool fullScreen)
-{
-    RENDERER_MAIN_WINDOW_SIZE = windowSize;
-
-    glfwSwapInterval(vSync);
-
-    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-
-    if (fullScreen)
-    {
-        glfwSetWindowMonitor(RENDERER_MAIN_WINDOW, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-    }
-    else
-    {
-        glfwSetWindowMonitor(RENDERER_MAIN_WINDOW, NULL, 100, 100, RENDERER_MAIN_WINDOW_SIZE.x, RENDERER_MAIN_WINDOW_SIZE.y, 0);
-    }
-
-    RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(RENDERER_MAIN_WINDOW, RENDERER_MAIN_WINDOW_SIZE.x, RENDERER_MAIN_WINDOW_SIZE.y);
 }
 
 void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource)
@@ -321,7 +273,7 @@ void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderS
 
 void Renderer_StartRendering()
 {
-    if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW))
+    if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW->handle))
     {
         DebugInfo("Main window close input received");
         GlobalTerminate(EXIT_SUCCESS, "Main window close input received");
@@ -332,13 +284,9 @@ void Renderer_StartRendering()
     glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
 }
 
-void Renderer_FinishRendering(float deltaTime)
+void Renderer_FinishRendering()
 {
-    glfwSwapBuffers(RENDERER_MAIN_WINDOW);
-
-    char titleBuffer[TEMP_BUFFER_SIZE];
-    snprintf(titleBuffer, sizeof(titleBuffer), "%s | FPS: %f | Frame Time: %f ms", RENDERER_MAIN_WINDOW_TITLE.characters, 1.0f / deltaTime, deltaTime * 1000);
-    glfwSetWindowTitle(RENDERER_MAIN_WINDOW, titleBuffer);
+    glfwSwapBuffers(RENDERER_MAIN_WINDOW->handle);
 }
 
 void Renderer_RenderScene(RendererScene *scene)
@@ -404,7 +352,7 @@ void Renderer_RenderScene(RendererScene *scene)
         }
     }
 
-    DebugCheckRenderer();
+    // DebugCheckRenderer();
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1000,15 +948,15 @@ void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rot
     if (camera->isPerspective)
     {
         glm_perspective(DegToRad(camera->size),
-                        (float)RENDERER_MAIN_WINDOW_SIZE.x / (float)RENDERER_MAIN_WINDOW_SIZE.y,
+                        (float)RENDERER_MAIN_WINDOW->size.x / (float)RENDERER_MAIN_WINDOW->size.y,
                         camera->nearClipPlane,
                         camera->farClipPlane,
                         (vec4 *)&projectionMatrix);
     }
     else
     {
-        float sizeX = (float)RENDERER_MAIN_WINDOW_SIZE.x * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        float sizeY = (float)RENDERER_MAIN_WINDOW_SIZE.y * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeX = (float)RENDERER_MAIN_WINDOW->size.x * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeY = (float)RENDERER_MAIN_WINDOW->size.y * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
         glm_ortho(-sizeX, sizeX, -sizeY, sizeY, camera->nearClipPlane, camera->farClipPlane, (vec4 *)&projectionMatrix);
     }
 

@@ -40,6 +40,7 @@ void mainTerminate(int exitCode, char *message)
     (void)message;
 
     Renderer_Terminate();
+    Context_Terminate();
 }
 
 int main(int argc, char **argv)
@@ -50,20 +51,20 @@ int main(int argc, char **argv)
     Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
-    void *window = Renderer_CreateContext(scl("Juliette"),
-                                          NewVector2Int(1080, 720),
-                                          vertexShaderResource->data,
-                                          fragmentShaderResource->data,
-                                          TEST_VSYNC,
-                                          TEST_FULL_SCREEN);
-    Input_Initialize(window);
+    ContextWindow *mainWindow = Context_Initialize();
+    Context_Configure(scl("Juliette"), NewVector2Int(1080, 720), TEST_VSYNC, TEST_FULL_SCREEN, NULL);
+
+    Renderer_Initialize(mainWindow);
+    Renderer_ConfigureShaders(vertexShaderResource->data, fragmentShaderResource->data);
+
+    Input_Initialize(mainWindow);
 
     RendererScene *myScene = RendererScene_Create(scl("My Scene"), 5);
 
     myCameraType mainCamera = {
         .name = scl("Main Camera"),
-        .position = NewVector3(-5.0f * Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 1.0f), 0.0f, 0.0f),
-        .rotation = NewVector3(0.0f, 0.0f, 0.0f),
+        .position = Vector3_Zero,
+        .rotation = Vector3_Zero,
         .camera = RendererCamera_Create(myScene),
         .speed = 10.0f,
         .rotationSpeed = 75.0f};
@@ -94,19 +95,6 @@ int main(int argc, char **argv)
         Timer_Start(&DTimer);
         Input_Update();
 
-        if (Input_GetMouseButton(InputMouseButtonCode_Left, InputState_Down))
-        {
-            Input_ConfigureMouseMode(InputMouseMode_Captured);
-        }
-
-        if (Input_GetKey(InputKeyCode_Escape, InputState_Down))
-        {
-            GlobalTerminate(EXIT_SUCCESS, "Escape key pressed, exiting...");
-        }
-
-        // rendering
-        Renderer_StartRendering();
-
         for (size_t i = 0; i < TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE; i++)
         {
             objects[i].rotation.y += DT;
@@ -114,38 +102,52 @@ int main(int argc, char **argv)
             RendererRenderable_Update(objects[i].renderable, objects[i].position, objects[i].rotation, objects[i].scale);
         }
 
-        Vector2Int mousePositionDelta = Input_GetMousePositionDelta();
-        Vector3 movementVector = Input_GetMovementVector();
-
-        mainCamera.rotation.y += (float)mousePositionDelta.x * mainCamera.rotationSpeed * DT;
-        mainCamera.rotation.x -= (float)mousePositionDelta.y * mainCamera.rotationSpeed * DT;
-        mainCamera.rotation.x = Clamp(mainCamera.rotation.x, -89.0f, 89.0f);
-
-        Vector3 direction = Vector3_Normalized(NewVector3(
-            Cos(mainCamera.rotation.x) * Cos(mainCamera.rotation.y),
-            Sin(mainCamera.rotation.x),
-            Cos(mainCamera.rotation.x) * Sin(mainCamera.rotation.y)));
-
-        Vector3 right = Vector3_Normalized(Vector3_Cross(direction, Vector3_Up));
-
-        Vector3 move = Vector3_Scale(direction, movementVector.y);
-        move = Vector3_Add(move, Vector3_Scale(right, movementVector.x));
-        move.y += movementVector.z;
-
-        if (Vector3_Magnitude(move) > 0.0f)
+        if (Input_GetMouseButton(InputMouseButtonCode_Left, InputState_Pressed))
         {
-            move = Vector3_Normalized(move);
-            mainCamera.position = Vector3_Add(mainCamera.position, Vector3_Scale(move, mainCamera.speed * DT));
+            Input_ConfigureMouseMode(InputMouseMode_Captured);
+
+            Vector2Int mousePositionDelta = Input_GetMousePositionDelta();
+            Vector3 movementVector = Input_GetMovementVector();
+
+            mainCamera.rotation.y += (float)mousePositionDelta.x * mainCamera.rotationSpeed * DT;
+            mainCamera.rotation.x -= (float)mousePositionDelta.y * mainCamera.rotationSpeed * DT;
+            mainCamera.rotation.x = Clamp(mainCamera.rotation.x, -89.0f, 89.0f);
+
+            Vector3 direction = Vector3_Normalized(NewVector3(
+                Cos(mainCamera.rotation.x) * Cos(mainCamera.rotation.y),
+                Sin(mainCamera.rotation.x),
+                Cos(mainCamera.rotation.x) * Sin(mainCamera.rotation.y)));
+
+            Vector3 right = Vector3_Normalized(Vector3_Cross(direction, Vector3_Up));
+
+            Vector3 move = Vector3_Scale(direction, movementVector.y);
+            move = Vector3_Add(move, Vector3_Scale(right, movementVector.x));
+            move.y += movementVector.z;
+
+            if (Vector3_Magnitude(move) > 0.0f)
+            {
+                move = Vector3_Normalized(move);
+                mainCamera.position = Vector3_Add(mainCamera.position, Vector3_Scale(move, mainCamera.speed * DT));
+            }
+        }
+        else
+        {
+            Input_ConfigureMouseMode(InputMouseMode_Normal);
         }
 
         RendererCamera_Update(mainCamera.camera, mainCamera.position, mainCamera.rotation);
 
+        // rendering
+        Renderer_StartRendering();
         Renderer_RenderScene(myScene);
-
-        Renderer_FinishRendering(DT);
+        Renderer_FinishRendering();
 
         Timer_Stop(&DTimer);
         DT = (float)Timer_GetElapsedNanoseconds(DTimer) / 1000000000.0f;
+
+        char titleBuffer[TEMP_BUFFER_SIZE];
+        snprintf(titleBuffer, sizeof(titleBuffer), "%s | FPS: %f | Frame Time: %f ms", "Juliette", 1.0f / DT, DT * 1000);
+        Context_ConfigureTitle(scl(titleBuffer));
 
         if (TEST_BENCHMARK)
         {
@@ -153,7 +155,12 @@ int main(int argc, char **argv)
             benchMarkTime += DT;
             if (benchMarkTime > TEST_BENCH_TIME_SECONDS)
             {
-                DebugError("Time : %f seconds | Objects : %d | Vertices : %d | Average FPS : %f | Full Screen : %s", benchMarkTime, objBatch->objectMatrices.count, objModel->vertices.count * objBatch->objectMatrices.count, (float)benchMarkFrameCount / TEST_BENCH_TIME_SECONDS, TEST_FULL_SCREEN ? "true" : "false");
+                DebugError("Time : %f seconds | Objects : %d | Vertices : %d | Average FPS : %f | Full Screen : %s",
+                           benchMarkTime,
+                           objBatch->objectMatrices.count,
+                           objModel->vertices.count * objBatch->objectMatrices.count,
+                           (float)benchMarkFrameCount / TEST_BENCH_TIME_SECONDS,
+                           TEST_FULL_SCREEN ? "true" : "false");
             }
         }
     }

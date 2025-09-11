@@ -65,11 +65,11 @@ void GlobalDebugLog(bool terminate, const char *header, const char *file, int li
 /// @param message The message to show to the console.
 void GlobalTerminate(int exitCode, char *message);
 
-typedef void (*FuncIntCharPtrToVoid)(int, char *);
+typedef void (*FunIntCharptrToVoid)(int, char *);
 
 /// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
 /// @param terminateCallback Function to call when terminate is called. Should not exit the program.
-void GlobalSetTerminateCallback(FuncIntCharPtrToVoid terminateCallback);
+void GlobalSetTerminateCallback(FunIntCharptrToVoid terminateCallback);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
