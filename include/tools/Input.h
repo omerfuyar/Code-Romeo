@@ -92,12 +92,13 @@ typedef enum InputMouseButtonCode
     InputMouseButtonCode_Fn5 = 7
 } InputMouseButtonCode;
 
+/// @brief States of a key or button. Can be used with flags in parameters.
 typedef enum InputState
 {
-    InputKeyState_Released = 0,
-    InputKeyState_Down = 1,
-    InputKeyState_Pressed = 2,
-    InputKeyState_Up = 3
+    InputState_Released = 1,
+    InputState_Down = 2,
+    InputState_Pressed = 4,
+    InputState_Up = 8
 } InputState;
 
 /// @brief Initialization function for the input system.
@@ -108,13 +109,13 @@ void Input_Initialize(void *window);
 /// @note This function should be called once per frame before any input queries
 void Input_Update();
 
-/// @brief Checks if a keyboard key is in the specified state
+/// @brief Checks if a keyboard key is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state.
 /// @param key The key code to check
 /// @param state The input state to check against (Down, Pressed, Up, Released)
 /// @return true if the key is in the specified state, false otherwise
 bool Input_GetKey(InputKeyCode key, InputState state);
 
-/// @brief Checks if a mouse button is in the specified state
+/// @brief Checks if a mouse button is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state.
 /// @param button The mouse button code to check
 /// @param state The input state to check against (Down, Pressed, Up, Released)
 /// @return true if the mouse button is in the specified state, false otherwise
@@ -136,8 +137,12 @@ float Input_GetMouseButtonScroll();
 
 /// @brief Gets the current mouse cursor position in screen coordinates. Relative to the top-left corner of the window.
 /// @return A Vector2Int containing the (x, y) coordinates of the mouse cursor
-Vector2Int GetMousePosition();
+Vector2Int Input_GetMousePosition();
 
 /// @brief Gets the change in mouse position since the last frame. Relative to the top-left corner of the window.
 /// @return A Vector2Int containing the (deltaX, deltaY) of the mouse movement
-Vector2Int GetMousePositionDelta();
+Vector2Int Input_GetMousePositionDelta();
+
+/// @brief Gets the movement vector of the user. X axis is D-A / RightArrow-LeftArrow, Y axis is W-S / UpArrow-DownArrow, Z axis is Space-(LeftControl/RightControl).
+/// @return The built vector from user input. Final vector is normalized;
+Vector3 Input_GetMovementVector();

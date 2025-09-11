@@ -1,4 +1,4 @@
-#include "utilities/Algebra.h"
+#include "utilities/Maths.h"
 #include <math.h>
 
 float Log(float value, float base)
@@ -29,4 +29,29 @@ float SquareRoot(float value)
 float CubeRoot(float value)
 {
     return cbrtf(value);
+}
+
+float Sin(float deg)
+{
+    return sinf(DegToRad(deg));
+}
+
+float Cos(float deg)
+{
+    return cosf(DegToRad(deg));
+}
+
+float Tan(float deg)
+{
+    return tanf(DegToRad(deg));
+}
+
+float Cot(float deg)
+{
+    return 1.0f / Tan(deg);
+}
+
+float ATan2(float x, float y)
+{
+    return RadToDeg(atan2f(y, x));
 }

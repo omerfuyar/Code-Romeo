@@ -1,4 +1,5 @@
 #include "utilities/ListArray.h"
+#include "utilities/Maths.h"
 
 ListArray ListArray_Create(char *nameOfType, size_t sizeOfItem, size_t initialCapacity)
 {

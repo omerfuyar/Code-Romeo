@@ -2,6 +2,7 @@
 #include "tools/Resources.h"
 
 #include "utilities/Timer.h"
+#include "utilities/Maths.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -338,11 +339,6 @@ void Renderer_RenderScene(RendererScene *scene)
     glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
     glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
-
-    glUniformMatrix4fv(scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
-    glUniformMatrix4fv(scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
-    glUniform3fv(scene->camPosition, 1, (GLfloat *)&scene->camera->position);
-    glUniform3fv(scene->camRotation, 1, (GLfloat *)&scene->camera->rotation);
 
     for (size_t i = 0; i < scene->batches.count; i++)
     {
@@ -951,9 +947,6 @@ RendererCamera *RendererCamera_Create(RendererScene *scene)
     camera->nearClipPlane = RENDERER_CAMERA_DEFAULT_NEAR_CLIP_PLANE;
     camera->farClipPlane = RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE;
 
-    glm_mat4_identity((vec4 *)&camera->projectionMatrix);
-    glm_mat4_identity((vec4 *)&camera->viewMatrix);
-
     return camera;
 }
 
@@ -962,9 +955,6 @@ void RendererCamera_Destroy(RendererCamera *camera)
     DebugAssertNullPointerCheck(camera);
 
     camera->size = -1.0f;
-
-    glm_mat4_identity((vec4 *)&camera->projectionMatrix);
-    glm_mat4_identity((vec4 *)&camera->viewMatrix);
 
     free(camera);
     camera = NULL;
@@ -983,38 +973,43 @@ void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float 
 void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rotation)
 {
     DebugAssertNullPointerCheck(camera);
+    DebugAssertNullPointerCheck(camera->scene);
 
-    glm_mat4_identity((vec4 *)&camera->viewMatrix);
+    mat4 viewMatrix = {0};
+    mat4 projectionMatrix = {0};
 
-    camera->position = position;
-    camera->rotation = Vector3_Scale(rotation, PI_M / 180.0f);
+    glm_mat4_identity((vec4 *)&viewMatrix);
+    glm_mat4_identity((vec4 *)&projectionMatrix);
 
-    Vector3 direction = NewVector3(cosf(camera->rotation.x) * cosf(camera->rotation.y),
-                                   sinf(camera->rotation.x),
-                                   cosf(camera->rotation.x) * sinf(camera->rotation.y));
-
-    direction = Vector3_Normalized(direction);
+    Vector3 direction = Vector3_Normalized(NewVector3(Cos(rotation.x) * Cos(rotation.y),
+                                                      Sin(rotation.x),
+                                                      Cos(rotation.x) * Sin(rotation.y)));
 
     Vector3 center = Vector3_Add(position, Vector3_Normalized(direction));
 
-    glm_lookat((float *)&position, (float *)&center, (vec3){0, 1, 0}, (vec4 *)&camera->viewMatrix);
-
-    glm_mat4_identity((vec4 *)&camera->projectionMatrix);
+    glm_lookat((float *)&position, (float *)&center, (vec3){0, 1, 0}, (vec4 *)&viewMatrix);
 
     if (camera->isPerspective)
     {
-        glm_perspective(camera->size * PI_M / 180,
+        glm_perspective(DegToRad(camera->size),
                         (float)RENDERER_MAIN_WINDOW_SIZE.x / (float)RENDERER_MAIN_WINDOW_SIZE.y,
                         camera->nearClipPlane,
                         camera->farClipPlane,
-                        (vec4 *)&camera->projectionMatrix);
+                        (vec4 *)&projectionMatrix);
     }
     else
     {
         float sizeX = (float)RENDERER_MAIN_WINDOW_SIZE.x * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
         float sizeY = (float)RENDERER_MAIN_WINDOW_SIZE.y * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        glm_ortho(-sizeX, sizeX, -sizeY, sizeY, camera->nearClipPlane, camera->farClipPlane, (vec4 *)&camera->projectionMatrix);
+        glm_ortho(-sizeX, sizeX, -sizeY, sizeY, camera->nearClipPlane, camera->farClipPlane, (vec4 *)&projectionMatrix);
     }
+
+    rotation = Vector3_Scale(rotation, PI_M / 180.0f);
+
+    glUniformMatrix4fv(camera->scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&projectionMatrix);
+    glUniformMatrix4fv(camera->scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&viewMatrix);
+    glUniform3fv(camera->scene->camPosition, 1, (GLfloat *)&position);
+    glUniform3fv(camera->scene->camRotation, 1, (GLfloat *)&rotation);
 
     // DebugInfo("Renderer Camera '%s' updated", camera->name.characters);
 }

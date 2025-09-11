@@ -35,10 +35,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_NUMBERS[key - InputKeyCode_Num0] = InputKeyState_Down;
+            INPUT_KEY_NUMBERS[key - InputKeyCode_Num0] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_NUMBERS[key - InputKeyCode_Num0] = InputKeyState_Up;
+            INPUT_KEY_NUMBERS[key - InputKeyCode_Num0] = InputState_Up;
             break;
         default:
             break;
@@ -49,10 +49,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_ALPHABETS[key - InputKeyCode_A] = InputKeyState_Down;
+            INPUT_KEY_ALPHABETS[key - InputKeyCode_A] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_ALPHABETS[key - InputKeyCode_A] = InputKeyState_Up;
+            INPUT_KEY_ALPHABETS[key - InputKeyCode_A] = InputState_Up;
             break;
         default:
             break;
@@ -63,10 +63,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_SPECIALS[key - InputKeyCode_Escape] = InputKeyState_Down;
+            INPUT_KEY_SPECIALS[key - InputKeyCode_Escape] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_SPECIALS[key - InputKeyCode_Escape] = InputKeyState_Up;
+            INPUT_KEY_SPECIALS[key - InputKeyCode_Escape] = InputState_Up;
             break;
         default:
             break;
@@ -77,10 +77,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_FUNCTIONS[key - InputKeyCode_F1] = InputKeyState_Down;
+            INPUT_KEY_FUNCTIONS[key - InputKeyCode_F1] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_FUNCTIONS[key - InputKeyCode_F1] = InputKeyState_Up;
+            INPUT_KEY_FUNCTIONS[key - InputKeyCode_F1] = InputState_Up;
             break;
         default:
             break;
@@ -91,10 +91,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_CONTROLS[key - InputKeyCode_LeftShift] = InputKeyState_Down;
+            INPUT_KEY_CONTROLS[key - InputKeyCode_LeftShift] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_CONTROLS[key - InputKeyCode_LeftShift] = InputKeyState_Up;
+            INPUT_KEY_CONTROLS[key - InputKeyCode_LeftShift] = InputState_Up;
             break;
         default:
             break;
@@ -105,10 +105,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_SPACE = InputKeyState_Down;
+            INPUT_KEY_SPACE = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_SPACE = InputKeyState_Up;
+            INPUT_KEY_SPACE = InputState_Up;
             break;
         default:
             break;
@@ -142,10 +142,10 @@ void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_MOUSE_BUTTONS[button] = InputKeyState_Down;
+            INPUT_KEY_MOUSE_BUTTONS[button] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_MOUSE_BUTTONS[button] = InputKeyState_Up;
+            INPUT_KEY_MOUSE_BUTTONS[button] = InputState_Up;
             break;
         default:
             break;
@@ -162,7 +162,7 @@ void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offs
     (void)window;
     (void)offsetX;
 
-    DebugInfo("Mouse scrolled with offset (%.2f, %.2f)", offsetX, offsetY);
+    // DebugInfo("Mouse scrolled with offset (%.2f, %.2f)", offsetX, offsetY);
 
     INPUT_MOUSE_SCROLL = (float)offsetY;
 }
@@ -191,11 +191,11 @@ void Input_Update()
 
     switch (INPUT_KEY_SPACE)
     {
-    case InputKeyState_Up:
-        INPUT_KEY_SPACE = InputKeyState_Released;
+    case InputState_Up:
+        INPUT_KEY_SPACE = InputState_Released;
         break;
-    case InputKeyState_Down:
-        INPUT_KEY_SPACE = InputKeyState_Pressed;
+    case InputState_Down:
+        INPUT_KEY_SPACE = InputState_Pressed;
         break;
     default:
         break;
@@ -205,11 +205,11 @@ void Input_Update()
     {
         switch (INPUT_KEY_NUMBERS[i])
         {
-        case InputKeyState_Up:
-            INPUT_KEY_NUMBERS[i] = InputKeyState_Released;
+        case InputState_Up:
+            INPUT_KEY_NUMBERS[i] = InputState_Released;
             break;
-        case InputKeyState_Down:
-            INPUT_KEY_NUMBERS[i] = InputKeyState_Pressed;
+        case InputState_Down:
+            INPUT_KEY_NUMBERS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -220,11 +220,11 @@ void Input_Update()
     {
         switch (INPUT_KEY_ALPHABETS[i])
         {
-        case InputKeyState_Up:
-            INPUT_KEY_ALPHABETS[i] = InputKeyState_Released;
+        case InputState_Up:
+            INPUT_KEY_ALPHABETS[i] = InputState_Released;
             break;
-        case InputKeyState_Down:
-            INPUT_KEY_ALPHABETS[i] = InputKeyState_Pressed;
+        case InputState_Down:
+            INPUT_KEY_ALPHABETS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -235,11 +235,11 @@ void Input_Update()
     {
         switch (INPUT_KEY_SPECIALS[i])
         {
-        case InputKeyState_Up:
-            INPUT_KEY_SPECIALS[i] = InputKeyState_Released;
+        case InputState_Up:
+            INPUT_KEY_SPECIALS[i] = InputState_Released;
             break;
-        case InputKeyState_Down:
-            INPUT_KEY_SPECIALS[i] = InputKeyState_Pressed;
+        case InputState_Down:
+            INPUT_KEY_SPECIALS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -250,11 +250,11 @@ void Input_Update()
     {
         switch (INPUT_KEY_FUNCTIONS[i])
         {
-        case InputKeyState_Up:
-            INPUT_KEY_FUNCTIONS[i] = InputKeyState_Released;
+        case InputState_Up:
+            INPUT_KEY_FUNCTIONS[i] = InputState_Released;
             break;
-        case InputKeyState_Down:
-            INPUT_KEY_FUNCTIONS[i] = InputKeyState_Pressed;
+        case InputState_Down:
+            INPUT_KEY_FUNCTIONS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -265,11 +265,11 @@ void Input_Update()
     {
         switch (INPUT_KEY_CONTROLS[i])
         {
-        case InputKeyState_Up:
-            INPUT_KEY_CONTROLS[i] = InputKeyState_Released;
+        case InputState_Up:
+            INPUT_KEY_CONTROLS[i] = InputState_Released;
             break;
-        case InputKeyState_Down:
-            INPUT_KEY_CONTROLS[i] = InputKeyState_Pressed;
+        case InputState_Down:
+            INPUT_KEY_CONTROLS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -280,11 +280,11 @@ void Input_Update()
     {
         switch (INPUT_KEY_MOUSE_BUTTONS[i])
         {
-        case InputKeyState_Up:
-            INPUT_KEY_MOUSE_BUTTONS[i] = InputKeyState_Released;
+        case InputState_Up:
+            INPUT_KEY_MOUSE_BUTTONS[i] = InputState_Released;
             break;
-        case InputKeyState_Down:
-            INPUT_KEY_MOUSE_BUTTONS[i] = InputKeyState_Pressed;
+        case InputState_Down:
+            INPUT_KEY_MOUSE_BUTTONS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -296,7 +296,7 @@ void Input_Update()
 
 bool Input_GetKey(InputKeyCode key, InputState state)
 {
-    return Input_GetKeyState(key) == state;
+    return (Input_GetKeyState(key) & state) != 0;
 }
 
 bool Input_GetMouseButton(InputMouseButtonCode button, InputState state)
@@ -333,7 +333,7 @@ InputState Input_GetKeyState(InputKeyCode key)
     else
     {
         DebugWarning("Unhandled key input: %d", key);
-        return InputKeyState_Released;
+        return InputState_Released;
     }
 }
 
@@ -346,7 +346,7 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button)
     else
     {
         DebugWarning("Unhandled mouse button input: %d", button);
-        return InputKeyState_Released;
+        return InputState_Released;
     }
 }
 
@@ -355,12 +355,54 @@ float Input_GetMouseButtonScroll()
     return INPUT_MOUSE_SCROLL;
 }
 
-Vector2Int GetMousePosition()
+Vector2Int Input_GetMousePosition()
 {
     return INPUT_MOUSE_POSITION;
 }
 
-Vector2Int GetMousePositionDelta()
+Vector2Int Input_GetMousePositionDelta()
 {
     return Vector2Int_Add(INPUT_MOUSE_POSITION, Vector2Int_Scale(INPUT_PREVIOUS_MOUSE_POSITION, -1.0f));
+}
+
+Vector3 Input_GetMovementVector()
+{
+    Vector3 input = {0};
+
+    if (Input_GetKey(InputKeyCode_W, InputState_Down | InputState_Pressed) ||
+        Input_GetKey(InputKeyCode_UpArrow, InputState_Down | InputState_Pressed))
+    {
+        input.y += 1.0f;
+    }
+
+    if (Input_GetKey(InputKeyCode_S, InputState_Down | InputState_Pressed) ||
+        Input_GetKey(InputKeyCode_DownArrow, InputState_Down | InputState_Pressed))
+    {
+        input.y -= 1.0f;
+    }
+
+    if (Input_GetKey(InputKeyCode_D, InputState_Down | InputState_Pressed) ||
+        Input_GetKey(InputKeyCode_RightArrow, InputState_Down | InputState_Pressed))
+    {
+        input.x += 1.0f;
+    }
+
+    if (Input_GetKey(InputKeyCode_A, InputState_Down | InputState_Pressed) ||
+        Input_GetKey(InputKeyCode_LeftArrow, InputState_Down | InputState_Pressed))
+    {
+        input.x -= 1.0f;
+    }
+
+    if (Input_GetKey(InputKeyCode_Space, InputState_Down | InputState_Pressed))
+    {
+        input.z += 1.0f;
+    }
+
+    if (Input_GetKey(InputKeyCode_LeftControl, InputState_Down | InputState_Pressed) ||
+        Input_GetKey(InputKeyCode_RightControl, InputState_Down | InputState_Pressed))
+    {
+        input.z -= 1.0f;
+    }
+
+    return Vector3_Normalized(input);
 }

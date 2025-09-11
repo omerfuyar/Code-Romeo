@@ -31,35 +31,6 @@
 #include <time.h>
 #include <limits.h>
 
-#pragma region Math Constants
-// These constants have a suffix of '_M' to not conflict with any system variables or macros.
-
-// The value of Pi
-#define PI_M 3.14159265f
-
-// The value of Euler's number
-#define E_M 2.71828183f
-
-// The square root of 2_
-#define SQRT2_M 1.41421356f
-
-// The square root of 3
-#define SQRT3_M 1.73205081f
-
-// The square root of 5
-#define SQRT5_M 2.23606798f
-
-// The Earth's gravity in m/s^2
-#define GRAVITY_M 9.80665f
-
-// The Universal gravitational constant in m^3 kg^-1 s^-2
-#define G_M 6.67430e-11f
-
-// The speed of light in m/s
-#define C_M 299792458.0f
-
-#pragma endregion Constants
-
 #pragma endregion Functions and Macros
 
 #define TEMP_BUFFER_SIZE 128
@@ -81,9 +52,6 @@
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 
 #endif
-
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 /// @brief Logs a debug message to the debug log file.
 /// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.

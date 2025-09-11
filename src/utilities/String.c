@@ -1,4 +1,5 @@
 #include "utilities/String.h"
+#include "utilities/Maths.h"
 
 String String_CreateCopy(char *string)
 {

@@ -54,23 +54,39 @@ typedef struct Vector4Int
     int w;
 } Vector4Int;
 
-#define NewVector2(x, y) \
-    (Vector2) { x, y }
+#define NewVector2(x, y) ((Vector2){(x), (y)})
+#define NewVector3(x, y, z) ((Vector3){(x), (y), (z)})
+#define NewVector4(x, y, z, w) ((Vector4){(x), (y), (z), (w)})
+#define NewVector2Int(x, y) ((Vector2Int){(x), (y)})
+#define NewVector3Int(x, y, z) ((Vector3Int){(x), (y), (z)})
+#define NewVector4Int(x, y, z, w) ((Vector4Int){(x), (y), (z), (w)})
 
-#define NewVector3(x, y, z) \
-    (Vector3) { x, y, z }
-#define NewVector3N(n) NewVector3(n, n, n)
+#define NewVector2N(n) (NewVector2(n, n))
+#define NewVector3N(n) (NewVector3(n, n, n))
+#define NewVector4N(n) (NewVector4(n, n, n, n))
+#define NewVector2IntN(n) (NewVector2Int(n, n))
+#define NewVector3IntN(n) (NewVector3Int(n, n, n))
+#define NewVector4IntN(n) (NewVector4Int(n, n, n, n))
 
-#define NewVector4(x, y, z, w) \
-    (Vector4) { x, y, z, w }
-#define NewColor(x, y, z, w) \
-    NewVector4(x, y, z, w)
-#define NewVector2Int(x, y) \
-    (Vector2Int) { x, y }
-#define NewVector3Int(x, y, z) \
-    (Vector3Int) { x, y, z }
-#define NewVector4Int(x, y, z, w) \
-    (Vector4Int) { x, y, z, w }
+#define Vector2_Zero NewVector2N(0.0f)
+#define Vector3_Zero NewVector3N(0.0f)
+#define Vector4_Zero NewVector4N(0.0f)
+
+#define Vector2_One NewVector2N(1.0f)
+#define Vector3_One NewVector3N(1.0f)
+#define Vector4_One NewVector4N(1.0f)
+
+#define Vector2_Up NewVector2(0.0f, 1.0f)
+#define Vector2_Down NewVector2(0.0f, -1.0f)
+#define Vector2_Right NewVector2(1.0f, 0.0f)
+#define Vector2_Left NewVector2(-1.0f, 0.0f)
+
+#define Vector3_Up NewVector3(0.0f, 1.0f, 0.0f)
+#define Vector3_Down NewVector3(0.0f, -1.0f, 0.0f)
+#define Vector3_Right NewVector3(1.0f, 0.0f, 0.0f)
+#define Vector3_Left NewVector3(-1.0f, 0.0f, 0.0f)
+#define Vector3_Forward NewVector3(0.0f, 0.0f, 1.0f)
+#define Vector3_Backward NewVector3(0.0f, 0.0f, -1.0f)
 
 #pragma endregion typedefs
 
@@ -153,7 +169,13 @@ float Vector3_Magnitude(Vector3 vector);
 /// @return The dot product of the two vectors.
 float Vector3_Dot(Vector3 vector1, Vector3 vector2);
 
-/// @brief Linearly interpolates between two 3D vectors.
+/// @brief Calculates the cross product of two Vector3 vectors.
+/// @param vector1 The first vector.
+/// @param vector2 The second vector.
+/// @return The cross product of the two vectors.
+Vector3 Vector3_Cross(Vector3 vector1, Vector3 vector2);
+
+/// @brief Linearly interpolates between two vectors.
 /// @param startVector The starting vector.
 /// @param endVector The ending vector.
 /// @param time The interpolation factor (0.0 to 1.0).

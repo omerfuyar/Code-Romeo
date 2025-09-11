@@ -73,12 +73,6 @@ typedef struct RendererScene RendererScene;
 /// @brief The camera object for the renderer.
 typedef struct RendererCamera
 {
-    mat4 projectionMatrix;
-    mat4 viewMatrix;
-
-    Vector3 position;
-    Vector3 rotation;
-
     RendererScene *scene;
 
     float size; // fov if perspective, orthographic size if orthographic
