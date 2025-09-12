@@ -19,6 +19,14 @@
         DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
     } while (0)
 
+//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
+typedef struct RendererMeshVertex
+{
+    Vector3 vertexPosition;
+    Vector3 vertexNormal;
+    Vector2 vertexUV;
+} RendererMeshVertex;
+
 typedef struct RendererTexture
 {
     size_t index;
@@ -60,19 +68,19 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
-void TransformToModelMatrix(Vector3 position, Vector3 rotation, Vector3 scale, mat4 *matrix)
+void TransformToModelMatrix(Vector3 *position, Vector3 *rotation, Vector3 *scale, mat4 *matrix)
 {
     DebugAssertNullPointerCheck(matrix);
 
     glm_mat4_identity((vec4 *)matrix);
 
-    glm_translate((vec4 *)matrix, (vec3){position.x, position.y, position.z});
+    glm_translate((vec4 *)matrix, (vec3){position->x, position->y, position->z});
 
-    glm_rotate((vec4 *)matrix, rotation.x, (vec3){1, 0, 0});
-    glm_rotate((vec4 *)matrix, rotation.y, (vec3){0, 1, 0});
-    glm_rotate((vec4 *)matrix, rotation.z, (vec3){0, 0, 1});
+    glm_rotate((vec4 *)matrix, rotation->x, (vec3){1, 0, 0});
+    glm_rotate((vec4 *)matrix, rotation->y, (vec3){0, 1, 0});
+    glm_rotate((vec4 *)matrix, rotation->z, (vec3){0, 0, 1});
 
-    glm_scale((vec4 *)matrix, (vec3){scale.x, scale.y, scale.z});
+    glm_scale((vec4 *)matrix, (vec3){scale->x, scale->y, scale->z});
 }
 
 #pragma region Renderer Texture
@@ -276,7 +284,7 @@ void Renderer_StartRendering()
     if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW->handle))
     {
         DebugInfo("Main window close input received");
-        GlobalTerminate(EXIT_SUCCESS, "Main window close input received");
+        Global_Terminate(EXIT_SUCCESS, "Main window close input received");
     }
 
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
@@ -291,14 +299,21 @@ void Renderer_FinishRendering()
 
 void Renderer_RenderScene(RendererScene *scene)
 {
+    DebugAssertNullPointerCheck(scene);
+
     glBindVertexArray(scene->vao);
     glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
     glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
 
+    glUniformMatrix4fv(scene->camera->scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
+    glUniformMatrix4fv(scene->camera->scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
+    glUniform3fv(scene->camera->scene->camPosition, 1, (GLfloat *)scene->camera->positionReference);
+    glUniform3fv(scene->camera->scene->camRotation, 1, (GLfloat *)scene->camera->rotationReference);
+
     for (size_t i = 0; i < scene->batches.count; i++)
     {
-        RendererBatch *batch = *(RendererBatch **)ListArray_Get(scene->batches, i);
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
         RendererMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
@@ -372,7 +387,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     Timer_Start(&modelTimer);
 
     mat4 offsetMatrix;
-    TransformToModelMatrix(positionOffset, rotationOffset, scaleOffset, &offsetMatrix);
+    TransformToModelMatrix(&positionOffset, &rotationOffset, &scaleOffset, &offsetMatrix);
 
     size_t meshCount = 0;
 
@@ -696,7 +711,7 @@ RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
 
     scene->name = scc(name);
     scene->camera = NULL;
-    scene->batches = ListArray_Create("Renderer Batch Pointer", sizeof(RendererBatch *), initialBatchCapacity);
+    scene->batches = ListArray_Create("Renderer Batch", sizeof(RendererBatch), initialBatchCapacity);
 
     glGenVertexArrays(1, &scene->vao);
     glGenBuffers(1, &scene->vboModelVertices);
@@ -764,7 +779,7 @@ void RendererScene_Destroy(RendererScene *scene)
 
     for (size_t i = scene->batches.count - 1; i >= 0; i--)
     {
-        RendererBatch *batch = *(RendererBatch **)ListArray_Get(scene->batches, i);
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
         RendererScene_DestroyBatch(batch);
     }
 
@@ -794,12 +809,13 @@ void RendererScene_Destroy(RendererScene *scene)
     DebugInfo("Renderer Scene '%s' destroyed.", tempTitle);
 }
 
-void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera)
+void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *camera)
 {
     DebugAssertNullPointerCheck(scene);
     DebugAssertNullPointerCheck(camera);
 
     scene->camera = camera;
+    camera->scene = scene;
 }
 
 RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, RendererModel *model, size_t initialObjectCapacity)
@@ -807,19 +823,18 @@ RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, Rend
     DebugAssertNullPointerCheck(scene);
     DebugAssertNullPointerCheck(model);
 
-    RendererBatch *batch = malloc(sizeof(RendererBatch));
-    DebugAssertNullPointerCheck(batch);
+    RendererBatch batch = {0};
 
-    batch->name = scc(name);
-    batch->model = model;
-    batch->scene = scene;
-    batch->objectMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
+    batch.name = scc(name);
+    batch.model = model;
+    batch.scene = scene;
+    batch.batchOffsetInScene = scene->batches.count;
+    batch.objectMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
+    batch.components = ListArray_Create("Renderer Component", sizeof(RendererComponent), initialObjectCapacity);
 
-    ListArray_Add(&scene->batches, &batch);
+    DebugInfo("Renderer Batch '%s' created.", batch.name.characters);
 
-    DebugInfo("Renderer Batch '%s' created.", batch->name.characters);
-
-    return batch;
+    return (RendererBatch *)ListArray_Add(&scene->batches, &batch);
 }
 
 void RendererScene_DestroyBatch(RendererBatch *batch)
@@ -829,73 +844,125 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
     char tempTitle[TEMP_BUFFER_SIZE];
     MemoryCopy(tempTitle, sizeof(tempTitle), batch->name.characters);
 
-    ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
-        RendererBatch *nextBatch = *(RendererBatch **)ListArray_Get(batch->scene->batches, i);
+        RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(batch->scene->batches, i);
         nextBatch->batchOffsetInScene--;
     }
+
+    ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
 
     String_Destroy(&batch->name);
     batch->model = NULL;
 
     ListArray_Destroy(&batch->objectMatrices);
-
-    free(batch);
-    batch = NULL;
+    ListArray_Destroy(&batch->components);
 
     DebugInfo("Renderer Batch '%s' destroyed.", tempTitle);
+}
+
+void RendererScene_Update(RendererScene *scene)
+{
+    DebugAssertNullPointerCheck(scene);
+    DebugAssertNullPointerCheck(scene->camera);
+
+    glm_mat4_identity((vec4 *)&scene->camera->viewMatrix);
+    glm_mat4_identity((vec4 *)&scene->camera->projectionMatrix);
+
+    Vector3 direction = Vector3_Normalized(NewVector3(Cos(scene->camera->rotationReference->x) * Cos(scene->camera->rotationReference->y),
+                                                      Sin(scene->camera->rotationReference->x),
+                                                      Cos(scene->camera->rotationReference->x) * Sin(scene->camera->rotationReference->y)));
+
+    Vector3 center = Vector3_Add(*scene->camera->positionReference, Vector3_Normalized(direction));
+
+    glm_lookat((float *)scene->camera->positionReference, (float *)&center, (vec3){0, 1, 0}, (vec4 *)&scene->camera->viewMatrix);
+
+    if (scene->camera->isPerspective)
+    {
+        glm_perspective(DegToRad(scene->camera->size),
+                        (float)RENDERER_MAIN_WINDOW->size.x / (float)RENDERER_MAIN_WINDOW->size.y,
+                        scene->camera->nearClipPlane,
+                        scene->camera->farClipPlane,
+                        (vec4 *)&scene->camera->projectionMatrix);
+    }
+    else
+    {
+        float sizeX = (float)RENDERER_MAIN_WINDOW->size.x * scene->camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeY = (float)RENDERER_MAIN_WINDOW->size.y * scene->camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+
+        glm_ortho(-sizeX, sizeX,
+                  -sizeY, sizeY,
+                  scene->camera->nearClipPlane,
+                  scene->camera->farClipPlane,
+                  (vec4 *)&scene->camera->projectionMatrix);
+    }
+
+    for (size_t i = 0; i < scene->batches.count; i++)
+    {
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
+        for (size_t j = 0; j < batch->objectMatrices.count; j++)
+        {
+            RendererComponent *component = (RendererComponent *)ListArray_Get(batch->components, j);
+            TransformToModelMatrix(component->positionReference,
+                                   component->rotationReference,
+                                   component->scaleReference,
+                                   (mat4 *)ListArray_Get(batch->objectMatrices, j));
+        }
+    }
 }
 
 #pragma endregion Renderer Scene
 
 #pragma region Renderer Batch
 
-RendererRenderable *RendererBatch_CreateRenderable(RendererBatch *batch)
+RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference)
 {
     DebugAssertNullPointerCheck(batch);
     //    DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
 
-    RendererRenderable *object = (RendererRenderable *)malloc(sizeof(RendererRenderable));
-    DebugAssertNullPointerCheck(object);
+    RendererComponent component = {0};
 
-    object->batch = batch;
-    object->matrixOffsetInBatch = object->batch->objectMatrices.count;
+    component.positionReference = positionReference;
+    component.rotationReference = rotationReference;
+    component.scaleReference = scaleReference;
+    component.batch = batch;
+    component.componentOffsetInBatch = batch->objectMatrices.count;
 
     mat4 temp; // dummy, just to allocate the space in list
-    ListArray_Add(&object->batch->objectMatrices, &temp);
+    ListArray_Add(&batch->objectMatrices, &temp);
 
-    // DebugInfo("Renderer Object '%s' created.", object->name.characters);
+    // DebugInfo("Renderer Component created.");
 
-    return object;
+    return (RendererComponent *)ListArray_Add(&component.batch->components, &component);
 }
 
-void RendererBatch_DestroyRenderable(RendererRenderable *object)
+void RendererBatch_DestroyComponent(RendererComponent *component)
 {
-    DebugAssertNullPointerCheck(object);
+    DebugAssertNullPointerCheck(component);
 
-    ListArray_RemoveAtIndex(&object->batch->objectMatrices, object->matrixOffsetInBatch);
-    for (size_t i = object->matrixOffsetInBatch; i < object->batch->objectMatrices.count - object->matrixOffsetInBatch; i++)
+    for (size_t i = component->componentOffsetInBatch; i < component->batch->components.count - component->componentOffsetInBatch; i++)
     {
-        RendererRenderable *nextObject = (RendererRenderable *)ListArray_Get(object->batch->objectMatrices, i);
-        nextObject->matrixOffsetInBatch--;
+        RendererComponent *nextComponent = (RendererComponent *)ListArray_Get(component->batch->components, i);
+        nextComponent->componentOffsetInBatch--;
     }
 
-    free(object);
-    object = NULL;
+    ListArray_RemoveAtIndex(&component->batch->objectMatrices, component->componentOffsetInBatch);
+    ListArray_RemoveAtIndex(&component->batch->components, component->componentOffsetInBatch);
 }
 
 #pragma endregion Renderer Batch
 
 #pragma region Renderer Camera
 
-RendererCamera *RendererCamera_Create(RendererScene *scene)
+RendererCameraComponent *RendererCameraComponent_Create(Vector3 *positionReference, Vector3 *rotationReference)
 {
-    RendererCamera *camera = malloc(sizeof(RendererCamera));
+    RendererCameraComponent *camera = malloc(sizeof(RendererCameraComponent));
     DebugAssertNullPointerCheck(camera);
 
-    camera->scene = scene;
-    scene->camera = camera;
+    camera->scene = NULL;
+
+    camera->positionReference = positionReference;
+    camera->rotationReference = rotationReference;
 
     camera->isPerspective = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE;
     camera->size = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE ? RENDERER_CAMERA_DEFAULT_FOV : RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE;
@@ -906,7 +973,7 @@ RendererCamera *RendererCamera_Create(RendererScene *scene)
     return camera;
 }
 
-void RendererCamera_Destroy(RendererCamera *camera)
+void RendererCameraComponent_Destroy(RendererCameraComponent *camera)
 {
     DebugAssertNullPointerCheck(camera);
 
@@ -916,7 +983,7 @@ void RendererCamera_Destroy(RendererCamera *camera)
     camera = NULL;
 }
 
-void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane)
+void RendererCameraComponent_Configure(RendererCameraComponent *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane)
 {
     DebugAssertNullPointerCheck(camera);
 
@@ -926,59 +993,4 @@ void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float 
     camera->farClipPlane = farClipPlane;
 }
 
-void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rotation)
-{
-    DebugAssertNullPointerCheck(camera);
-    DebugAssertNullPointerCheck(camera->scene);
-
-    mat4 viewMatrix = {0};
-    mat4 projectionMatrix = {0};
-
-    glm_mat4_identity((vec4 *)&viewMatrix);
-    glm_mat4_identity((vec4 *)&projectionMatrix);
-
-    Vector3 direction = Vector3_Normalized(NewVector3(Cos(rotation.x) * Cos(rotation.y),
-                                                      Sin(rotation.x),
-                                                      Cos(rotation.x) * Sin(rotation.y)));
-
-    Vector3 center = Vector3_Add(position, Vector3_Normalized(direction));
-
-    glm_lookat((float *)&position, (float *)&center, (vec3){0, 1, 0}, (vec4 *)&viewMatrix);
-
-    if (camera->isPerspective)
-    {
-        glm_perspective(DegToRad(camera->size),
-                        (float)RENDERER_MAIN_WINDOW->size.x / (float)RENDERER_MAIN_WINDOW->size.y,
-                        camera->nearClipPlane,
-                        camera->farClipPlane,
-                        (vec4 *)&projectionMatrix);
-    }
-    else
-    {
-        float sizeX = (float)RENDERER_MAIN_WINDOW->size.x * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        float sizeY = (float)RENDERER_MAIN_WINDOW->size.y * camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        glm_ortho(-sizeX, sizeX, -sizeY, sizeY, camera->nearClipPlane, camera->farClipPlane, (vec4 *)&projectionMatrix);
-    }
-
-    rotation = Vector3_Scale(rotation, PI_M / 180.0f);
-
-    glUniformMatrix4fv(camera->scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&projectionMatrix);
-    glUniformMatrix4fv(camera->scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&viewMatrix);
-    glUniform3fv(camera->scene->camPosition, 1, (GLfloat *)&position);
-    glUniform3fv(camera->scene->camRotation, 1, (GLfloat *)&rotation);
-
-    // DebugInfo("Renderer Camera '%s' updated", camera->name.characters);
-}
-
 #pragma endregion Renderer Camera
-
-#pragma region Renderer Renderable
-
-void RendererRenderable_Update(RendererRenderable *renderable, Vector3 position, Vector3 rotation, Vector3 scale)
-{
-    mat4 *matrix = (mat4 *)ListArray_Get(renderable->batch->objectMatrices, renderable->matrixOffsetInBatch);
-
-    TransformToModelMatrix(position, rotation, scale, matrix);
-}
-
-#pragma endregion Renderer Renderable

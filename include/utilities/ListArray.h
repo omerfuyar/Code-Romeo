@@ -3,10 +3,10 @@
 #include "Global.h"
 
 // The resize multiplier used when the ListArray size reached to the capacity when adding new item
-#define ARRAY_LIST_RESIZE_MULTIPLIER 2.0
+#define ARRAY_LIST_RESIZE_MULTIPLIER 2.0f
 
 // The limit for resizing the ListArray when it's size is less than 1/x of the capacity
-#define ARRAY_LIST_MIN_DECIMAL_LIMIT 4.0
+#define ARRAY_LIST_MIN_DECIMAL_LIMIT 4.0f
 
 /// @brief A dynamic array list implementation. Can be used in any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct ListArray
@@ -54,7 +54,8 @@ void ListArray_Set(ListArray list, size_t index, const void *item);
 /// @brief Adder function for ListArray. Copies {sizeOfItem} amount of data from parameter {item} to the end of the array. Uses memcpy.
 /// @param list ListArray to add item.
 /// @param item Item to add to ListArray.
-void ListArray_Add(ListArray *list, const void *item);
+/// @return The address of the added item
+void *ListArray_Add(ListArray *list, const void *item);
 
 /// @brief Adds a range of items to the ListArray. Uses memcpy to copy the items to the last index.
 /// @param list ListArray to add items to.

@@ -79,13 +79,13 @@ void ListArray_Set(ListArray list, size_t index, const void *item)
     MemoryCopy(targetLocation, list.sizeOfItem, item);
 }
 
-void ListArray_Add(ListArray *list, const void *item)
+void *ListArray_Add(ListArray *list, const void *item)
 {
     DebugAssertNullPointerCheck(list);
 
     while (list->count + 1 > list->capacity)
     {
-        DebugWarning("ListArray '%s' is full. Resizing it from %zu to %zu.", list->nameOfType, list->capacity, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
+        DebugWarning("ListArray '%s' is full. Resizing it from %zu to %zu.", list->nameOfType, list->capacity, (size_t)((float)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity * ARRAY_LIST_RESIZE_MULTIPLIER));
     }
 
@@ -95,6 +95,8 @@ void ListArray_Add(ListArray *list, const void *item)
     MemoryCopy(targetLocation, list->sizeOfItem, item);
 
     list->count++;
+
+    return targetLocation;
 }
 
 void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)

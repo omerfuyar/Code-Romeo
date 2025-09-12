@@ -29,7 +29,7 @@ String String_CreateCopyS(char *string, size_t length)
     createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(createdString.characters);
 
-    MemoryCopy(createdString.characters, createdString.length * sizeof(char), string);
+    MemoryCopy(createdString.characters, (createdString.length + 1) * sizeof(char), string);
     createdString.characters[createdString.length] = '\0';
 
     createdString.isOwner = true;

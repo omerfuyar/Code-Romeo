@@ -17,7 +17,7 @@ FunIntCharptrToVoid GLOBAL_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
-void GlobalDebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
+void Global_DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
@@ -29,7 +29,7 @@ void GlobalDebugLog(bool terminate, const char *header, const char *file, int li
 
     if (DEBUG_FILE == NULL)
     {
-        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(GlobalGetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
+        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(Global_GetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
 
         MemoryCopy(DEBUG_FILE_NAME_STR, strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) * sizeof(char), GLOBAL_EXECUTABLE_DIRECTORY_PATH);
         MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME) * sizeof(char), DEBUG_FILE_NAME);
@@ -43,7 +43,7 @@ void GlobalDebugLog(bool terminate, const char *header, const char *file, int li
             char buffer[TEMP_BUFFER_SIZE] = {0};
             snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             fprintf(stderr, "%s", buffer);
-            GlobalTerminate(EXIT_FAILURE, buffer);
+            Global_Terminate(EXIT_FAILURE, buffer);
         }
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
@@ -53,7 +53,7 @@ void GlobalDebugLog(bool terminate, const char *header, const char *file, int li
         char buffer[TEMP_BUFFER_SIZE] = {0};
         snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
         fprintf(stderr, "%s", buffer);
-        GlobalTerminate(EXIT_FAILURE, buffer);
+        Global_Terminate(EXIT_FAILURE, buffer);
     }
 
     char messageBuffer[TEMP_BUFFER_SIZE * 4] = {0};
@@ -78,11 +78,11 @@ void GlobalDebugLog(bool terminate, const char *header, const char *file, int li
 
     if (terminate)
     {
-        GlobalTerminate(EXIT_FAILURE, finalBuffer);
+        Global_Terminate(EXIT_FAILURE, finalBuffer);
     }
 }
 
-void GlobalTerminate(int exitCode, char *message)
+void Global_Terminate(int exitCode, char *message)
 {
     if (GLOBAL_TERMINATE_CALLBACK != NULL)
     {
@@ -94,14 +94,14 @@ void GlobalTerminate(int exitCode, char *message)
     exit(exitCode);
 }
 
-void GlobalSetTerminateCallback(FunIntCharptrToVoid terminateCallback)
+void Global_SetTerminateCallback(FunIntCharptrToVoid terminateCallback)
 {
     DebugAssertNullPointerCheck(terminateCallback);
 
     GLOBAL_TERMINATE_CALLBACK = terminateCallback;
 }
 
-char *GlobalGetExecutablePath()
+char *Global_GetExecutablePath()
 {
     if (GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
     {

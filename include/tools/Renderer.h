@@ -48,17 +48,6 @@ typedef unsigned int RendererUBOHandle;
 
 typedef unsigned int RendererMeshIndex;
 
-#define RendererObjectTransformDefault
-
-//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
-/// @brief Represents a primal vertex in 3D space.
-typedef struct RendererMeshVertex
-{
-    Vector3 vertexPosition;
-    Vector3 vertexNormal;
-    Vector2 vertexUV;
-} RendererMeshVertex;
-
 /// @brief A complete model that holds multiple mesh data inside
 typedef struct RendererModel
 {
@@ -71,22 +60,28 @@ typedef struct RendererModel
 typedef struct RendererScene RendererScene;
 
 /// @brief The camera object for the renderer.
-typedef struct RendererCamera
+typedef struct RendererCameraComponent
 {
     RendererScene *scene;
+
+    Vector3 *positionReference;
+    Vector3 *rotationReference;
+
+    mat4 projectionMatrix;
+    mat4 viewMatrix;
 
     float size; // fov if perspective, orthographic size if orthographic
     float nearClipPlane;
     float farClipPlane;
     bool isPerspective;
-} RendererCamera;
+} RendererCameraComponent;
 
 /// @brief A scene of render objects of the same format that share the same vertex array object (VAO) and vertex buffer object (VBO). The scene is resizable but object's vertices or indices are not because it holds one big mesh for all objects. Scene is only updatable all at once.
 typedef struct RendererScene
 {
     String name;
-    RendererCamera *camera;
-    ListArray batches; // RendererBatch*
+    RendererCameraComponent *camera;
+    ListArray batches; // RendererBatch
 
     RendererVAOHandle vao;
     RendererVBOHandle vboModelVertices;
@@ -111,6 +106,7 @@ typedef struct RendererBatch
 {
     String name;
     RendererModel *model;
+    ListArray components;     // RendererComponent
     ListArray objectMatrices; // mat4, data must be continuous
 
     RendererScene *scene;
@@ -118,11 +114,15 @@ typedef struct RendererBatch
 } RendererBatch;
 
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
-typedef struct RendererRenderable
+typedef struct RendererComponent
 {
+    Vector3 *positionReference;
+    Vector3 *rotationReference;
+    Vector3 *scaleReference;
+
     RendererBatch *batch;
-    size_t matrixOffsetInBatch;
-} RendererRenderable;
+    size_t componentOffsetInBatch;
+} RendererComponent;
 
 #pragma endregion typedefs
 
@@ -199,32 +199,36 @@ void RendererScene_Destroy(RendererScene *scene);
 /// @brief Sets the main camera for the renderer.
 /// @param scene Scene to set main camera.
 /// @param camera Camera object to set as the main camera.
-void RendererScene_SetMainCamera(RendererScene *scene, RendererCamera *camera);
+void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *camera);
 
-/// @brief Creates renderer batch to store objects that are using the same mesh. Changes the scene. Max object count is RENDERER_BATCH_MAX_OBJECT_COUNT macro.
+/// @brief Creates a renderer batch to store components that use the same model.
+/// @param scene Pointer to the scene that the batch will belong to.
 /// @param name Name of the batch.
-/// @param scene Pointer to the scene that the batch is belong to.
-/// @param model Pointer to the model that the batch is using.
-/// @param initialObjectCapacity The initial capacity for objects inside batch.
+/// @param model Pointer to the model that the components in the batch will use.
+/// @param initialComponentCapacity The initial capacity for components inside the batch.
 /// @return The created batch.
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, RendererModel *model, size_t initialObjectCapacity);
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, RendererModel *model, size_t initialComponentCapacity);
 
 /// @brief Destroys the renderer batch and frees its resources.
 /// @param batch Batch to destroy.
 void RendererScene_DestroyBatch(RendererBatch *batch);
 
+/// @brief Updates the renderer scene.
+/// @param scene Scene to update.
+void RendererScene_Update(RendererScene *scene);
+
 #pragma endregion Renderer Scene
 
 #pragma region Renderer Batch
 
-/// @brief Creates a renderable object in the specified batch. Max object count is RENDERER_BATCH_MAX_OBJECT_COUNT macro.
-/// @param batch The batch to create the renderable in.
-/// @return A newly created renderable object.
-RendererRenderable *RendererBatch_CreateRenderable(RendererBatch *batch);
+/// @brief Creates a component in the specified batch. The total number of components in a batch cannot exceed RENDERER_BATCH_MAX_OBJECT_COUNT.
+/// @param batch The batch to create the component in.
+/// @return A newly created component.
+RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference);
 
-/// @brief Destroys a renderable object and frees its resources.
-/// @param object The renderable object to destroy.
-void RendererBatch_DestroyRenderable(RendererRenderable *object);
+/// @brief Destroys a component and frees its resources.
+/// @param component The component to destroy.
+void RendererBatch_DestroyComponent(RendererComponent *component);
 
 #pragma endregion Renderer Batch
 
@@ -233,11 +237,11 @@ void RendererBatch_DestroyRenderable(RendererRenderable *object);
 /// @brief Creates a camera object to control the view. Changes the scene.
 /// @param scene Scene to attach camera.
 /// @return Created camera object.
-RendererCamera *RendererCamera_Create(RendererScene *scene);
+RendererCameraComponent *RendererCameraComponent_Create(Vector3 *positionReference, Vector3 *rotationReference);
 
 /// @brief Destroys a camera object.
 /// @param camera Camera object to destroy.
-void RendererCamera_Destroy(RendererCamera *camera);
+void RendererCameraComponent_Destroy(RendererCameraComponent *camera);
 
 /// @brief Configure the renderer camera.
 /// @param camera Camera to configure
@@ -245,23 +249,6 @@ void RendererCamera_Destroy(RendererCamera *camera);
 /// @param value fov if perspective, orthographicSize if orthographic.
 /// @param nearClipPlane Near clipping plane for the camera.
 /// @param farClipPlane Far clipping plane for the camera.
-void RendererCamera_Configure(RendererCamera *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane);
-
-/// @brief Updates the camera's properties to render.
-/// @param camera Camera to update
-/// @param position New position for the camera.
-/// @param rotation New rotation for the camera. In degrees.
-void RendererCamera_Update(RendererCamera *camera, Vector3 position, Vector3 rotation);
+void RendererCameraComponent_Configure(RendererCameraComponent *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane);
 
 #pragma endregion Renderer Camera
-
-#pragma region Renderer Renderable
-
-/// @brief Updates the renderable object's transform matrix.
-/// @param renderable Renderable object to update.
-/// @param position New position for the renderable.
-/// @param rotation New rotation for the renderable. In degrees.
-/// @param scale New scale for the renderable.
-void RendererRenderable_Update(RendererRenderable *renderable, Vector3 position, Vector3 rotation, Vector3 scale);
-
-#pragma endregion Renderer Renderable

@@ -32,6 +32,7 @@
 
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
+#define Abs(a) ((a) < 0 ? -(a) : (a))
 #define Clamp(value, minValue, maxValue) (Min(Max(value, minValue), maxValue))
 #define DegToRad(deg) (deg * PI_M / 180.0f)
 #define RadToDeg(rad) (rad * 180.0f / PI_M)

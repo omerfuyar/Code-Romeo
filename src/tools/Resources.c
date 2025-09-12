@@ -1,5 +1,6 @@
 #include "tools/Resources.h"
 #include "utilities/Timer.h"
+#include "utilities/Maths.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -17,7 +18,7 @@ Resource *Resource_Create(String name, String relativePath)
 
     String fullPath = scc(resource->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
-    String_ConcatBegin(&fullPath, scl(GlobalGetExecutablePath()));
+    String_ConcatBegin(&fullPath, scl(Global_GetExecutablePath()));
     String_ConcatEnd(&fullPath, resource->name);
 
     size_t lineCount = 0;
@@ -77,7 +78,7 @@ void Resource_Destroy(Resource *resource)
     DebugAssertNullPointerCheck(resource->name.characters);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, resource->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resource->name.length), resource->name.characters);
 
     String_Destroy(&resource->name);
     String_Destroy(&resource->path);
@@ -103,7 +104,7 @@ ResourceImage *ResourceImage_Create(String title, String path)
 
     String fullPath = scc(resourceImage->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
-    String_ConcatBegin(&fullPath, scl(GlobalGetExecutablePath()));
+    String_ConcatBegin(&fullPath, scl(Global_GetExecutablePath()));
     String_ConcatEnd(&fullPath, resourceImage->name);
 
     stbi_set_flip_vertically_on_load(true);
@@ -124,7 +125,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     DebugAssertNullPointerCheck(resourceImage);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, TEMP_BUFFER_SIZE, resourceImage->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resourceImage->name.length), resourceImage->name.characters);
 
     String_Destroy(&resourceImage->name);
     String_Destroy(&resourceImage->path);
