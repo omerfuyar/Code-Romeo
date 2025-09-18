@@ -74,10 +74,10 @@ char String_GetChar(String string, size_t index);
 
 /// @brief Converts a String object to a float.
 /// @param string Pointer to the String object to convert.
-/// @return Converted float value.
+/// @return Converted float value. 0.0f if string doesn't contain any numbers.
 float String_ToFloat(String string);
 
 /// @brief Converts a String object to an int.
 /// @param string Pointer to the String object to convert.
-/// @return Converted int value.
+/// @return Converted int value. 0 if string doesn't contain any numbers.
 int String_ToInt(String string);

@@ -41,6 +41,7 @@
 
 #define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
+#define MemorySet(destination, value, size) memset(destination, value, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
 
 #elif PLATFORM_UNIX
@@ -48,7 +49,8 @@
 #define PATH_DELIMETER_STR "/"
 
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
-#define MemoryCopy(destination, size, source) memcpy(destination, source, size)
+#define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
+#define MemorySet(destination, value, size) memset(destination, value, size) a
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 
 #endif

@@ -1,6 +1,5 @@
 # Blender 3.5.0
 # www.blender.org
-mtllib maxwell.mtl
 o Plane
 v -117.017845 -0.133978 -26.257092
 v -31.015268 -0.303297 -118.234871

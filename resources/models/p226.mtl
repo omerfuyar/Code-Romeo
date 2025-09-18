@@ -1,0 +1,42 @@
+newmtl 5_Material0020d2_1.0
+Kd 0.800000 0.800000 0.800000
+Ka 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+d 1.000000
+map_Kd slide.tga
+
+newmtl 5_Material00308d_1.0
+Kd 0.800000 0.800000 0.800000
+Ka 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+d 1.000000
+map_Kd frame.tga
+
+newmtl 5_Material000001_1.0
+Kd 0.800000 0.800000 0.800000
+Ka 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+d 1.000000
+map_Kd frame.tga
+
+newmtl 5_Material000cad_1.0
+Kd 0.800000 0.800000 0.800000
+Ka 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+d 1.000000
+map_Kd slide.tga
+
+newmtl 5_Material002de5_1.0
+Kd 0.800000 0.800000 0.800000
+Ka 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+d 1.000000
+map_Kd slide.tga
+
+newmtl 5_Material003020_1.0
+Kd 0.800000 0.800000 0.800000
+Ka 0.0 0.0 0.0
+Ks 0.0 0.0 0.0
+d 1.000000
+map_Kd frame.tga
+

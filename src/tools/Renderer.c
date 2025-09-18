@@ -233,7 +233,10 @@ void Renderer_Initialize(ContextWindow *window)
 
 void Renderer_Terminate()
 {
-    glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
+    if (RENDERER_MAIN_SHADER_PROGRAM != 0)
+    {
+        glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
+    }
 }
 
 void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource)
@@ -395,8 +398,6 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     size_t totalVertexNormalCount = 0;
     size_t totalVertexUvCount = 0;
 
-    size_t faceCounts[RENDERER_MODEL_MAX_CHILD_MESH_COUNT] = {0};
-
     String *lines = (String *)malloc(objFileSourceLineCount * sizeof(String));
     DebugAssertNullPointerCheck(lines);
 
@@ -417,6 +418,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     ListArray materials = {0}; // RendererMaterial*
 
     String_Tokenize(objFileSource, strNewline, &objFileSourceLineCount, lines, objFileSourceLineCount);
+
     for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
     {
         String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
@@ -426,10 +428,6 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
             totalVertexPositionCount++;
-        }
-        else if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
-        {
-            faceCounts[meshCount - 1]++;
         }
         else if (String_Compare(firstToken, strVT) == 0) // vt 0.073128 0.431854
         {
@@ -544,6 +542,24 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
         }
     }
 
+    size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
+    MemorySet(faceCounts, 0, meshCount * sizeof(size_t));
+    size_t tempMeshIndex = 0;
+    for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
+    {
+        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+
+        String firstToken = lineTokens[0];
+        if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        {
+            faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
+        }
+        if (String_Compare(firstToken, strUSEMTL) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        {
+            tempMeshIndex++;
+        }
+    }
+
     RendererModel *model = RendererModel_CreateEmpty(name, meshCount, totalVertexPositionCount);
     ListArray globalVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexNormalCount); // Vector3
     ListArray globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);         // Vector3
@@ -606,36 +622,88 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
-            for (size_t j = 1; j < lineTokenCount; j++)
+            if (lineTokenCount == 4)
             {
-                String faceData[3];
-                size_t faceDataCount;
-                String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
-
-                RendererMeshVertex vertex = *(RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)String_ToInt(faceData[0]) - 1);
-
-                // 15
-
-                if (faceDataCount == 2) // 15/16
+                for (size_t j = 1; j < lineTokenCount; j++)
                 {
-                    vertex.vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
+                    String faceData[3];
+                    size_t faceDataCount;
+                    String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
+
+                    int createdVertexIndex = String_ToInt(faceData[0]);
+                    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
+
+                    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
+
+                    if (faceDataCount > 1 && faceData[1].length != 0)
+                    {
+                        int createdUIndex = String_ToInt(faceData[1]);
+                        unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool.count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
+
+                        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
+                    }
+
+                    if (faceDataCount > 2 && faceData[2].length != 0)
+                    {
+                        int createdNormalIndex = String_ToInt(faceData[2]);
+                        unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool.count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
+
+                        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
+                    }
+
+                    ListArray_Add(&currentMesh->indices, &vertexIndex);
                 }
-                else if (faceDataCount > 2) // 15/16/17 ...
+            }
+            else if (lineTokenCount == 5)
+            {
+                for (size_t j = 1; j < lineTokenCount; j++)
                 {
-                    vertex.vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)String_ToInt(faceData[1]) - 1);
-                    vertex.vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)String_ToInt(faceData[2]) - 1);
+                    String faceData[3];
+                    size_t faceDataCount;
+                    String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
+
+                    int createdVertexIndex = String_ToInt(faceData[0]);
+                    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
+
+                    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
+
+                    if (faceDataCount > 1 && faceData[1].length != 0)
+                    {
+                        int createdUIndex = String_ToInt(faceData[1]);
+                        unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool.count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
+
+                        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
+                    }
+
+                    if (faceDataCount > 2 && faceData[2].length != 0)
+                    {
+                        int createdNormalIndex = String_ToInt(faceData[2]);
+                        unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool.count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
+
+                        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
+                    }
+
+                    ListArray_Add(&currentMesh->indices, &vertexIndex);
                 }
 
-                int createdIndex = (int)String_ToInt(faceData[0]);
-                unsigned int index = 0;
+                // wrap for square faces, add 0, add 2
+                for (size_t j = 1; j < 4; j += 2)
+                {
+                    String faceData[3];
+                    size_t faceDataCount;
+                    String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
 
-                index = createdIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdIndex : (unsigned int)createdIndex - 1;
+                    int createdVertexIndex = String_ToInt(faceData[0]);
+                    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
 
-                ListArray_Add(&currentMesh->indices, &index);
+                    ListArray_Add(&currentMesh->indices, &vertexIndex);
+                }
             }
         }
         else if (String_Compare(firstToken, strUSEMTL) == 0) // use material and create object
         {
+            DebugAssertNullPointerCheck(materials.data);
+
             for (size_t j = 0; j < materials.count; j++)
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materials, j);
@@ -656,6 +724,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     ListArray_Destroy(&materials);
 
     free(lines);
+    free(faceCounts);
 
     Timer_Stop(&modelTimer);
 

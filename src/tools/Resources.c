@@ -16,6 +16,15 @@ Resource *Resource_Create(String name, String relativePath)
     resource->name = scc(name);
     resource->path = scc(relativePath);
 
+    // size_t pathCount = 0;
+    // String pathBuffer[TEMP_BUFFER_SIZE / 32];
+    // String_Tokenize(relativePath, scl(PATH_DELIMETER_STR), &pathCount, pathBuffer, TEMP_BUFFER_SIZE / 32);
+    //
+    // for (size_t i = 0; i < pathCount - 1; i++)
+    //{
+    //    String_ConcatEnd(&resource->path, pathBuffer[i]);
+    //}
+
     String fullPath = scc(resource->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(Global_GetExecutablePath()));
@@ -85,8 +94,11 @@ void Resource_Destroy(Resource *resource)
     String_Destroy(&resource->data);
     resource->lineCount = 0;
 
-    free(resource);
-    resource = NULL;
+    if (resource != NULL)
+    {
+        free(resource);
+        resource = NULL;
+    }
 
     DebugInfo("Resource '%s' destroyed successfully.", tempTitle);
 }
