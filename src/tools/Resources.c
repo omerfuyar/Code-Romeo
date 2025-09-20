@@ -87,7 +87,7 @@ void Resource_Destroy(Resource *resource)
     DebugAssertNullPointerCheck(resource->name.characters);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resource->name.length), resource->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resource->name.length + 1), resource->name.characters);
 
     String_Destroy(&resource->name);
     String_Destroy(&resource->path);
@@ -137,7 +137,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     DebugAssertNullPointerCheck(resourceImage);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resourceImage->name.length), resourceImage->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resourceImage->name.length + 1), resourceImage->name.characters);
 
     String_Destroy(&resourceImage->name);
     String_Destroy(&resourceImage->path);

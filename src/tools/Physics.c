@@ -218,7 +218,7 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
     DebugAssertNullPointerCheck(scene);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, sizeof(tempTitle), scene->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
 
     String_Destroy(&scene->name);
     for (size_t i = scene->components.count - 1; i >= 0; i--)

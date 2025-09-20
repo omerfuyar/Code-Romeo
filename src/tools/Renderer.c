@@ -750,7 +750,7 @@ void RendererModel_Destroy(RendererModel *model)
     DebugAssertNullPointerCheck(model);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, sizeof(tempTitle), model->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, model->name.length + 1), model->name.characters);
 
     String_Destroy(&model->name);
 
@@ -841,7 +841,7 @@ void RendererScene_Destroy(RendererScene *scene)
     DebugAssertNullPointerCheck(scene);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, sizeof(tempTitle), scene->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
@@ -911,7 +911,7 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
     DebugAssertNullPointerCheck(batch);
 
     char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, sizeof(tempTitle), batch->name.characters);
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, batch->name.length + 1), batch->name.characters);
 
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {

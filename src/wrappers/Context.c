@@ -28,10 +28,10 @@ ContextWindow *Context_Initialize()
 void Context_Configure(String title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback)
 {
     Context_ConfigureTitle(title);
+    Context_ConfigureResizeCallback(resizeCallback);
     Context_ConfigureSize(windowSize);
     Context_ConfigureVSync(vSync);
     Context_ConfigureFullScreen(fullScreen);
-    Context_ConfigureResizeCallback(resizeCallback);
 }
 
 void Context_ConfigureTitle(String title)
@@ -84,6 +84,8 @@ void Context_ConfigureResizeCallback(FunVoidptrIntIntToVoid callback)
     CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = callback;
 
     glfwSetFramebufferSizeCallback(CONTEXT_MAIN_WINDOW.handle, (GLFWframebuffersizefun)CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK);
+
+    Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
 }
 
 void Context_Terminate()
