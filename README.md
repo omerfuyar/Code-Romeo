@@ -74,7 +74,7 @@ cmake --build .
 ```
 
 #### Note
-* If running on Windows with sanitizers, you will need to copy runtime to the .exe directory (change the architecture and paths):
+* If running on Windows with sanitizers, you will need to copy runtime to the .exe directory (change the name, architecture and paths):
 ``` powershell
 $asanDll = Get-ChildItem -Path "path\to\LLVM" -Recurse -Filter "clang_rt.asan_dynamic-x86_64.dll" | Select-Object -First 1
 Copy-Item $asanDll.FullName -Destination "path\to\exe"

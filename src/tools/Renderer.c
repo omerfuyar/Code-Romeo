@@ -27,6 +27,13 @@ typedef struct RendererMeshVertex
     Vector2 vertexUV;
 } RendererMeshVertex;
 
+//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (RENDERER DEBUG INITIALIZE)
+typedef struct RendererDebugVertex
+{
+    Vector3 vertexPosition;
+    Color vertexColor;
+} RendererDebugVertex;
+
 typedef struct RendererTexture
 {
     size_t index;
@@ -57,6 +64,13 @@ ContextWindow *RENDERER_MAIN_WINDOW = NULL;
 RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
 RendererTexture RENDERER_MAIN_TEXTURES[RENDERER_TEXTURE_MAX_COUNT] = {0};
 size_t RENDERER_MAIN_TEXTURES_COUNT = 0;
+
+RendererVAOHandle RENDERER_DEBUG_VAO = 0;
+RendererVBOHandle RENDERER_DEBUG_VBO = 0;
+ListArray RENDERER_DEBUG_VERTICES = {0}; // RendererDebugVertex
+RendererShaderProgramHandle RENDERER_DEBUG_SHADER_PROGRAM = 0;
+RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
+RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
 
 void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 {
@@ -241,7 +255,10 @@ void Renderer_Terminate()
 
 void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource)
 {
-    glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
+    if (RENDERER_MAIN_SHADER_PROGRAM != 0)
+    {
+        glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
+    }
 
     GLint glslHasCompiled = 0;
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
@@ -381,6 +398,166 @@ void Renderer_RenderScene(RendererScene *scene)
 }
 
 #pragma endregion Renderer
+
+#pragma region Renderer Debug
+
+void RendererDebug_Initialize(String vertexShaderSource, String fragmentShaderSource, size_t initialVertexCapacity)
+{
+    RENDERER_DEBUG_VERTICES = ListArray_Create("Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
+
+    glGenVertexArrays(1, &RENDERER_DEBUG_VAO);
+    glGenBuffers(1, &RENDERER_DEBUG_VBO);
+
+    GLint glslHasCompiled = 0;
+    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
+
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
+    glCompileShader(vertexShader);
+
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Debug Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Debug Vertex shader compiled successfully.");
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Debug Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    DebugInfo("Debug Fragment shader compiled successfully.");
+
+    RENDERER_DEBUG_SHADER_PROGRAM = glCreateProgram();
+    glAttachShader(RENDERER_DEBUG_SHADER_PROGRAM, vertexShader);
+    glAttachShader(RENDERER_DEBUG_SHADER_PROGRAM, fragmentShader);
+    glLinkProgram(RENDERER_DEBUG_SHADER_PROGRAM);
+
+    glGetProgramiv(RENDERER_DEBUG_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
+    glGetProgramInfoLog(RENDERER_DEBUG_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    DebugAssert(glslHasCompiled != GL_FALSE, "Debug Shader program linking failed. Logs:\n%s", glslInfoLog);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = glGetUniformLocation(RENDERER_DEBUG_SHADER_PROGRAM, "camProjectionMatrix");
+    RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = glGetUniformLocation(RENDERER_DEBUG_SHADER_PROGRAM, "camViewMatrix");
+
+    glBindVertexArray(RENDERER_DEBUG_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RENDERER_DEBUG_VBO);
+
+    size_t offset = 0;
+
+    glVertexAttribPointer(RENDERER_DEBUG_VBO_POSITION_BINDING, 3, GL_FLOAT, GL_FALSE, sizeof(RendererDebugVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_DEBUG_VBO_POSITION_BINDING);
+    offset += sizeof(Vector3);
+
+    glVertexAttribPointer(RENDERER_DEBUG_VBO_COLOR_BINDING, 4, GL_FLOAT, GL_FALSE, sizeof(RendererDebugVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_DEBUG_VBO_COLOR_BINDING);
+    offset += sizeof(Color);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    DebugInfo("Debug Renderer initialized successfully.");
+}
+
+void RendererDebug_Terminate()
+{
+    glDeleteBuffers(1, &RENDERER_DEBUG_VBO);
+    glDeleteVertexArrays(1, &RENDERER_DEBUG_VAO);
+
+    if (RENDERER_DEBUG_SHADER_PROGRAM != 0)
+    {
+        glDeleteProgram(RENDERER_DEBUG_SHADER_PROGRAM);
+    }
+
+    RENDERER_DEBUG_VAO = 0;
+    RENDERER_DEBUG_VBO = 0;
+    RENDERER_DEBUG_SHADER_PROGRAM = 0;
+    RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
+    RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
+
+    DebugInfo("Debug Renderer terminated successfully.");
+}
+
+void RendererDebug_StartRendering()
+{
+    glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
+}
+
+void RendererDebug_FinishRendering(mat4 *camProjectionMatrix, mat4 *camViewMatrix)
+{
+    if (RENDERER_DEBUG_VERTICES.count == 0)
+    {
+        return;
+    }
+
+    glUseProgram(RENDERER_DEBUG_SHADER_PROGRAM);
+    glUniformMatrix4fv(RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX, 1, GL_FALSE, (GLfloat *)camProjectionMatrix);
+    glUniformMatrix4fv(RENDERER_DEBUG_UNIFORM_VIEW_MATRIX, 1, GL_FALSE, (GLfloat *)camViewMatrix);
+
+    glBindVertexArray(RENDERER_DEBUG_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RENDERER_DEBUG_VBO);
+    glBufferData(GL_ARRAY_BUFFER, RENDERER_DEBUG_VERTICES.sizeOfItem * RENDERER_DEBUG_VERTICES.count, RENDERER_DEBUG_VERTICES.data, OPENGL_DRAW_TYPE);
+
+    glDrawArrays(GL_LINES, 0, RENDERER_DEBUG_VERTICES.count);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    ListArray_Clear(&RENDERER_DEBUG_VERTICES);
+}
+
+void RendererDebug_DrawLine(Vector3 start, Vector3 end, Color color)
+{
+    RendererDebugVertex startVertex = (RendererDebugVertex){.vertexColor = color, .vertexPosition = start};
+    RendererDebugVertex endVertex = (RendererDebugVertex){.vertexColor = color, .vertexPosition = end};
+
+    ListArray_Add(&RENDERER_DEBUG_VERTICES, &startVertex);
+    ListArray_Add(&RENDERER_DEBUG_VERTICES, &endVertex);
+}
+
+void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
+{
+    Vector3 halfSize = Vector3_Scale(size, 0.5f);
+    Vector3 min = Vector3_Add(position, Vector3_Scale(halfSize, -1.0f));
+    Vector3 max = Vector3_Add(position, halfSize);
+
+    Vector3 corners[8] = {
+        {min.x, min.y, min.z},
+        {max.x, min.y, min.z},
+        {max.x, max.y, min.z},
+        {min.x, max.y, min.z},
+        {min.x, min.y, max.z},
+        {max.x, min.y, max.z},
+        {max.x, max.y, max.z},
+        {min.x, max.y, max.z}};
+
+    // Bottom face
+    RendererDebug_DrawLine(corners[0], corners[1], color);
+    RendererDebug_DrawLine(corners[1], corners[2], color);
+    RendererDebug_DrawLine(corners[2], corners[3], color);
+    RendererDebug_DrawLine(corners[3], corners[0], color);
+
+    // Top face
+    RendererDebug_DrawLine(corners[4], corners[5], color);
+    RendererDebug_DrawLine(corners[5], corners[6], color);
+    RendererDebug_DrawLine(corners[6], corners[7], color);
+    RendererDebug_DrawLine(corners[7], corners[4], color);
+
+    // Connecting edges
+    RendererDebug_DrawLine(corners[0], corners[4], color);
+    RendererDebug_DrawLine(corners[1], corners[5], color);
+    RendererDebug_DrawLine(corners[2], corners[6], color);
+    RendererDebug_DrawLine(corners[3], corners[7], color);
+}
+
+#pragma endregion Renderer Debug
 
 #pragma region Renderer Model
 

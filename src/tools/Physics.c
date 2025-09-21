@@ -232,24 +232,16 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
     DebugInfo("Physics Scene '%s' destroyed.", tempTitle);
 }
 
-void PhysicsScene_UpdateComponentPositions(PhysicsScene *scene, float deltaTime)
+void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime)
 {
     for (size_t i = 0; i < scene->components.count; i++)
     {
         PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(scene->components, i);
-
-        if (component->isStatic)
-        {
-            continue;
-        }
-
-        component->velocity = Vector3_Add(component->velocity, NewVector3(0.0f, scene->gravity * deltaTime, 0.0f));
-        component->velocity = Vector3_Scale(component->velocity, 1.0f - scene->drag);
-        *component->position = Vector3_Add(*component->position, Vector3_Scale(component->velocity, deltaTime));
+        PhysicsComponent_Update(component, deltaTime);
     }
 }
 
-void PhysicsScene_DetectAndResolveCollisions(PhysicsScene *scene)
+void PhysicsScene_ResolveCollisions(PhysicsScene *scene)
 {
     // for (size_t iter = 0; iter < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iter++)
     //{
@@ -300,6 +292,18 @@ void PhysicsScene_DestroyComponent(PhysicsComponent *component)
 #pragma endregion Physics Scene
 
 #pragma region Physics Component
+
+void PhysicsComponent_Update(PhysicsComponent *component, float deltaTime)
+{
+    if (component->isStatic)
+    {
+        return;
+    }
+
+    component->velocity = Vector3_Add(component->velocity, NewVector3(0.0f, component->scene->gravity * deltaTime, 0.0f));
+    component->velocity = Vector3_Scale(component->velocity, 1.0f - component->scene->drag);
+    *component->position = Vector3_Add(*component->position, Vector3_Scale(component->velocity, deltaTime));
+}
 
 void PhysicsComponent_Configure(PhysicsComponent *firstComponent, Vector3 newColliderSize, float newMass, bool newIsStatic)
 {

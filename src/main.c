@@ -9,10 +9,10 @@
 #include "utilities/Maths.h"
 
 #define TEST_BENCH_TIME_SECONDS 10.0f
-#define TEST_OBJECT_ONE_SIDE 1
-#define TEST_ELASTICITY 0.1f
+#define TEST_OBJECT_ONE_SIDE 5
+#define TEST_ELASTICITY 1.0f
 #define TEST_DRAG 0.0f
-#define TEST_GRAVITY -GRAVITY_M
+#define TEST_GRAVITY -(GRAVITY_M * 5)
 #define TEST_WINDOW_SIZE NewVector2Int(1080, 720)
 #define TEST_VSYNC false
 #define TEST_FULL_SCREEN false
@@ -52,9 +52,14 @@ void mainTerminate(int exitCode, char *message)
 int main(int argc, char **argv)
 {
     Global_SetTerminateCallback(mainTerminate);
+    srand((unsigned int)time(NULL));
 
     Resource *vertexShaderResource = Resource_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
+
+    Resource *debugVertexShaderResource = Resource_Create(scl("debugVertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    Resource *debugFragmentShaderResource = Resource_Create(scl("debugFragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
+
     Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
     ContextWindow *mainWindow = Context_Initialize();
@@ -63,6 +68,7 @@ int main(int argc, char **argv)
     Input_Initialize(mainWindow);
     Renderer_Initialize(mainWindow);
     Renderer_ConfigureShaders(vertexShaderResource->data, fragmentShaderResource->data);
+    RendererDebug_Initialize(debugVertexShaderResource->data, debugFragmentShaderResource->data, 128);
 
     RendererScene *myRendererScene = RendererScene_Create(scl("My Scene"), TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);
     RendererModel *objModel = RendererModel_CreateOBJ(scl("Object Model"), objResource->data, objResource->lineCount, objResource->path, NewVector3N(0.0f), NewVector3N(0.0f), NewVector3N(1.0f));
@@ -86,9 +92,9 @@ int main(int argc, char **argv)
         {
             myObjectType *obj = &objects[x * TEST_OBJECT_ONE_SIDE + y];
             obj->name = scl("Gun");
-            obj->position = NewVector3(0.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2), (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2));
+            obj->position = NewVector3((rand() % 100) / 50.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2) + (rand() % 100) / 50.0f, (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2));
             obj->rotation = NewVector3N(0.0f);
-            obj->scale = NewVector3N(4.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 4.0f));
+            obj->scale = NewVector3N(6.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 4.0f));
             obj->renderable = RendererBatch_CreateComponent(objBatch, &obj->position, &obj->rotation, &obj->scale);
             obj->collider = PhysicsScene_CreateComponent(myPhysicsScene, &obj->position, NewVector3N(1.0f), 1.0f, false);
         }
@@ -99,35 +105,35 @@ int main(int argc, char **argv)
     floor.position = NewVector3(0.0f, -5.0f, 0.0f);
     floor.rotation = NewVector3N(0.0f);
     floor.scale = NewVector3N(1.0f);
-    floor.collider = PhysicsScene_CreateComponent(myPhysicsScene, &floor.position, NewVector3(50.0f, 1.0f, 50.0f), 1.0f, true);
+    floor.collider = PhysicsScene_CreateComponent(myPhysicsScene, &floor.position, NewVector3(9.0f, 1.0f, 9.0f), 1.0f, true);
 
     myObjectType rightWall = {0};
     rightWall.name = scl("Right Wall");
     rightWall.position = NewVector3(5.0f, 0.0f, 0.0f);
     rightWall.rotation = NewVector3N(0.0f);
     rightWall.scale = NewVector3N(1.0f);
-    rightWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &rightWall.position, NewVector3(1.0f, 50.0f, 50.0f), 1.0f, true);
+    rightWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &rightWall.position, NewVector3(1.0f, 9.0f, 9.0f), 1.0f, true);
 
     myObjectType leftWall = {0};
     leftWall.name = scl("Left Wall");
     leftWall.position = NewVector3(-5.0f, 0.0f, 0.0f);
     leftWall.rotation = NewVector3N(0.0f);
     leftWall.scale = NewVector3N(1.0f);
-    leftWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &leftWall.position, NewVector3(1.0f, 50.0f, 50.0f), 1.0f, true);
+    leftWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &leftWall.position, NewVector3(1.0f, 9.0f, 9.0f), 1.0f, true);
 
     myObjectType frontWall = {0};
     frontWall.name = scl("Front Wall");
     frontWall.position = NewVector3(0.0f, 0.0f, 5.0f);
     frontWall.rotation = NewVector3N(0.0f);
     frontWall.scale = NewVector3N(1.0f);
-    frontWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &frontWall.position, NewVector3(50.0f, 50.0f, 1.0f), 1.0f, true);
+    frontWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &frontWall.position, NewVector3(9.0f, 9.0f, 1.0f), 1.0f, true);
 
     myObjectType backWall = {0};
     backWall.name = scl("Back Wall");
     backWall.position = NewVector3(0.0f, 0.0f, -5.0f);
     backWall.rotation = NewVector3N(0.0f);
     backWall.scale = NewVector3N(1.0f);
-    backWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &backWall.position, NewVector3(50.0f, 50.0f, 1.0f), 1.0f, true);
+    backWall.collider = PhysicsScene_CreateComponent(myPhysicsScene, &backWall.position, NewVector3(9.0f, 9.0f, 1.0f), 1.0f, true);
 
     Timer DTimer = Timer_Create("Main Loop Timer");
     float DT = 0.0f;
@@ -141,7 +147,12 @@ int main(int argc, char **argv)
 
         for (size_t i = 0; i < TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE; i++)
         {
-            objects[i].rotation.y += DT;
+            objects[i].rotation.y += DT / 2.0f;
+        }
+
+        if (Input_GetKey(InputKeyCode_F, InputState_Down))
+        {
+            Context_ConfigureFullScreen(!mainWindow->fullScreen);
         }
 
         if (Input_GetMouseButton(InputMouseButtonCode_Left, InputState_Pressed))
@@ -179,16 +190,29 @@ int main(int argc, char **argv)
             Vector3 movementVector = Input_GetMovementVector();
 
             objects[0].position.x += movementVector.x * DT * mainCamera.speed;
-            objects[0].position.z += movementVector.y * DT * mainCamera.speed;
+            objects[0].position.z -= movementVector.y * DT * mainCamera.speed;
         }
 
-        PhysicsScene_UpdateComponentPositions(myPhysicsScene, DT);
-        PhysicsScene_DetectAndResolveCollisions(myPhysicsScene);
+        PhysicsScene_UpdateComponents(myPhysicsScene, DT);
+        // user check collisions
+        PhysicsScene_ResolveCollisions(myPhysicsScene);
         RendererScene_Update(myRendererScene);
 
         // rendering
         Renderer_StartRendering();
         Renderer_RenderScene(myRendererScene);
+
+        RendererDebug_StartRendering();
+
+        for (size_t i = 0; i < myPhysicsScene->components.count; i++)
+        {
+            PhysicsComponent *collider = (PhysicsComponent *)ListArray_Get(myPhysicsScene->components, i);
+
+            RendererDebug_DrawBoxLines(*collider->position, collider->colliderSize, Color_Green);
+        }
+
+        RendererDebug_FinishRendering(&mainCamera.camera->projectionMatrix, &mainCamera.camera->viewMatrix);
+
         Renderer_FinishRendering();
 
         Timer_Stop(&DTimer);

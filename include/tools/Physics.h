@@ -62,11 +62,11 @@ void PhysicsScene_Destroy(PhysicsScene *scene);
 /// @brief Updates the positions of all non-static components in the scene based on their velocity, gravity, and drag.
 /// @param scene The scene to update.
 /// @param deltaTime The time elapsed since the last frame.
-void PhysicsScene_UpdateComponentPositions(PhysicsScene *scene, float deltaTime);
+void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime);
 
 /// @brief Detects and resolves collisions between components in the scene.
 /// @param scene The scene to process.
-void PhysicsScene_DetectAndResolveCollisions(PhysicsScene *scene);
+void PhysicsScene_ResolveCollisions(PhysicsScene *scene);
 
 /// @brief Creates a new physics component and adds it to the scene.
 /// @param scene The scene to add the component to.
@@ -84,6 +84,8 @@ void PhysicsScene_DestroyComponent(PhysicsComponent *component);
 #pragma endregion Physics Scene
 
 #pragma region Physics Component
+
+void PhysicsComponent_Update(PhysicsComponent *scene, float deltaTime);
 
 void PhysicsComponent_Configure(PhysicsComponent *firstComponent, Vector3 newColliderSize, float newMass, bool newIsStatic);
 

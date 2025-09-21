@@ -57,6 +57,7 @@ typedef struct Vector4Int
 #define NewVector2(x, y) ((Vector2){(x), (y)})
 #define NewVector3(x, y, z) ((Vector3){(x), (y), (z)})
 #define NewVector4(x, y, z, w) ((Vector4){(x), (y), (z), (w)})
+#define NewColor(x, y, z, w) NewVector4(x, y, z, w)
 #define NewVector2Int(x, y) ((Vector2Int){(x), (y)})
 #define NewVector3Int(x, y, z) ((Vector3Int){(x), (y), (z)})
 #define NewVector4Int(x, y, z, w) ((Vector4Int){(x), (y), (z), (w)})
@@ -87,6 +88,17 @@ typedef struct Vector4Int
 #define Vector3_Left NewVector3(-1.0f, 0.0f, 0.0f)
 #define Vector3_Forward NewVector3(0.0f, 0.0f, 1.0f)
 #define Vector3_Backward NewVector3(0.0f, 0.0f, -1.0f)
+
+#define Color_White NewColor(1.0f, 1.0f, 1.0f, 1.0f)
+#define Color_Black NewColor(0.0f, 0.0f, 0.0f, 1.0f)
+#define Color_Red NewColor(1.0f, 0.0f, 0.0f, 1.0f)
+#define Color_Green NewColor(0.0f, 1.0f, 0.0f, 1.0f)
+#define Color_Blue NewColor(0.0f, 0.0f, 1.0f, 1.0f)
+#define Color_Yellow NewColor(1.0f, 1.0f, 0.0f, 1.0f)
+#define Color_Cyan NewColor(0.0f, 1.0f, 1.0f, 1.0f)
+#define Color_Magenta NewColor(1.0f, 0.0f, 1.0f, 1.0f)
+#define Color_Gray NewColor(0.5f, 0.5f, 0.5f, 1.0f)
+#define Color_Clear NewColor(0.0f, 0.0f, 0.0f, 0.0f)
 
 #pragma endregion typedefs
 

@@ -19,6 +19,9 @@
 
 #define RENDERER_UBO_MATRICES_BINDING 0
 
+#define RENDERER_DEBUG_VBO_POSITION_BINDING 0
+#define RENDERER_DEBUG_VBO_COLOR_BINDING 1
+
 #define RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE true
 #define RENDERER_CAMERA_DEFAULT_FOV 90.0f
 #define RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE 10.0f
@@ -34,18 +37,28 @@
 
 #pragma region typedefs
 
+/// @brief Handle for a shader object.
 typedef unsigned int RendererShaderHandle;
+/// @brief Handle for a shader program object.
 typedef unsigned int RendererShaderProgramHandle;
+/// @brief Handle for a texture object.
 typedef unsigned int RendererTextureHandle;
 
+/// @brief Handle for a uniform location in a shader program.
 typedef int RendererUniformLocationHandle;
+/// @brief Handle for a uniform block in a shader program.
 typedef unsigned int RendererUniformBlockHandle;
 
+/// @brief Handle for a Vertex Array Object.
 typedef unsigned int RendererVAOHandle;
+/// @brief Handle for a Vertex Buffer Object.
 typedef unsigned int RendererVBOHandle;
+/// @brief Handle for an Index Buffer Object.
 typedef unsigned int RendererIBOHandle;
+/// @brief Handle for a Uniform Buffer Object.
 typedef unsigned int RendererUBOHandle;
 
+/// @brief Index of a mesh within a model.
 typedef unsigned int RendererMeshIndex;
 
 /// @brief A complete model that holds multiple mesh data inside
@@ -102,6 +115,7 @@ typedef struct RendererScene
     RendererUniformBlockHandle objectMatricesHandle;
 } RendererScene;
 
+/// @brief A batch of render components that use the same model.
 typedef struct RendererBatch
 {
     String name;
@@ -141,9 +155,9 @@ void Renderer_Initialize(ContextWindow *window);
 /// @brief Terminator for renderer.
 void Renderer_Terminate();
 
-/// @brief
-/// @param vertexShaderSource
-/// @param fragmentShaderSource
+/// @brief Configures the main shaders for the renderer.
+/// @param vertexShaderSource Source code of the main vertex shader.
+/// @param fragmentShaderSource Source code of the main fragment shader.
 void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource);
 
 /// @brief Should be called before using rendering functions.
@@ -157,6 +171,39 @@ void Renderer_FinishRendering();
 void Renderer_RenderScene(RendererScene *scene);
 
 #pragma endregion Renderer
+
+#pragma region Renderer Debug
+
+/// @brief Initialize function for renderer debug functions. Should be called after the Renderer_Initialize function.
+/// @param vertexShaderSource The source file for debug vertex shader.
+/// @param fragmentShaderSource The source file for debug fragment shader.
+/// @param initialVertexCapacity The initial capacity for the vertex buffer.
+void RendererDebug_Initialize(String vertexShaderSource, String fragmentShaderSource, size_t initialVertexCapacity);
+
+/// @brief Terminator for renderer debug functions.
+void RendererDebug_Terminate();
+
+/// @brief Should be called before using debug rendering functions, and after main renderer's rendering functions.
+void RendererDebug_StartRendering();
+
+/// @brief Should be called before Renderer_FinishRendering to draw all debug shapes.
+/// @param camProjectionMatrix The projection matrix of the camera.
+/// @param camViewMatrix The view matrix of the camera.
+void RendererDebug_FinishRendering(mat4 *camProjectionMatrix, mat4 *camViewMatrix);
+
+/// @brief Draws a line in 3D space for debugging purposes.
+/// @param start The starting point of the line.
+/// @param end The ending point of the line.
+/// @param color The color of the line.
+void RendererDebug_DrawLine(Vector3 start, Vector3 end, Color color);
+
+/// @brief Draws the wireframe of a box in 3D space for debugging purposes.
+/// @param position The center position of the box.
+/// @param size The size of the box on each axis.
+/// @param color The color of the lines.
+void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
+
+#pragma endregion Renderer Debug
 
 #pragma region Renderer Model
 

@@ -1,8 +1,8 @@
 #version 330 core
 
-in vec2 fragUv;
-in vec3 fragPosition;
-in vec3 fragNormal;
+in vec2 oVertUv;
+in vec3 oVertPosition;
+in vec3 oVertNormal;
 
 uniform vec3 camPosition;
 uniform vec3 camRotation;
@@ -21,13 +21,13 @@ out vec4 FragColor;
 void main()
 {
     // Normalize the fragment normal
-    vec3 normal = normalize(fragNormal);
+    vec3 normal = normalize(oVertNormal);
     
     // Hard-coded light direction (could be passed as uniform)
     vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
     
     // Hard-coded camera position (could be passed as uniform)
-    vec3 viewDir = normalize(camPosition - fragPosition);
+    vec3 viewDir = normalize(camPosition - oVertPosition);
     
     // Calculate the reflection direction
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -46,7 +46,7 @@ void main()
     // Get base color from texture or material
     vec3 baseColor;
     if (matHasDiffuseMap) {
-        baseColor = texture(matDiffuseMap, fragUv).rgb;
+        baseColor = texture(matDiffuseMap, oVertUv).rgb;
     } else {
         baseColor = matDiffuseColor;
     }
