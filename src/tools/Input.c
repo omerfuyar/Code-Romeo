@@ -202,6 +202,7 @@ void Input_ConfigureMouseMode(InputMouseMode mode)
 void Input_Update()
 {
     INPUT_PREVIOUS_MOUSE_POSITION = INPUT_MOUSE_POSITION;
+    INPUT_MOUSE_SCROLL = 0.0f;
 
     switch (INPUT_KEY_SPACE)
     {

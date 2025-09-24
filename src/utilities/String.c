@@ -177,8 +177,8 @@ float String_ToFloat(String string)
     DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    MemoryCopy(buffer, Min(sizeof(buffer), string.length), string.characters);
-    buffer[string.length] = '\0';
+    MemoryCopy(buffer, Min(sizeof(buffer), string.length) + 1, string.characters);
+    buffer[Min(sizeof(buffer), string.length)] = '\0';
     float result = (float)atof(buffer);
 
     return result;
@@ -189,8 +189,8 @@ int String_ToInt(String string)
     DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    MemoryCopy(buffer, Min(sizeof(buffer), string.length), string.characters);
-    buffer[string.length] = '\0';
+    MemoryCopy(buffer, Min(sizeof(buffer), string.length) + 1, string.characters);
+    buffer[Min(sizeof(buffer), string.length)] = '\0';
     int result = atoi(buffer);
 
     return result;

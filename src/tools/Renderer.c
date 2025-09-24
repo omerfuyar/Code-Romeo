@@ -236,6 +236,7 @@ void Renderer_Initialize(ContextWindow *window)
     DebugInfo("GLAD initialized successfully.");
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
+    Context_ConfigureFullScreen(window->fullScreen);
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -561,6 +562,34 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
 
 #pragma region Renderer Model
 
+void ProcessFaceVertex(String faceComponent, RendererModel *model, RendererMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
+{
+    String faceData[4]; // v/vt/vn/w
+    size_t faceDataCount;
+    String_Tokenize(faceComponent, scl("/"), &faceDataCount, faceData, 4);
+
+    int createdVertexIndex = String_ToInt(faceData[0]);
+    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
+
+    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
+
+    if (faceDataCount > 1 && faceData[1].length != 0)
+    {
+        int createdUIndex = String_ToInt(faceData[1]);
+        unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool->count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
+        vertex->vertexUV = *(Vector2 *)ListArray_Get(*globalVertexUvPool, (size_t)uvIndex);
+    }
+
+    if (faceDataCount > 2 && faceData[2].length != 0)
+    {
+        int createdNormalIndex = String_ToInt(faceData[2]);
+        unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool->count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
+        vertex->vertexNormal = *(Vector3 *)ListArray_Get(*globalVertexNormalPool, (size_t)normalIndex);
+    }
+
+    ListArray_Add(&currentMesh->indices, &vertexIndex);
+}
+
 RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t objFileSourceLineCount, String objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
     Timer modelTimer = Timer_Create("Model Import Timer");
@@ -799,82 +828,23 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
-            if (lineTokenCount == 4)
+            if (lineTokenCount == 4) // 3 vertex face (triangle)
             {
-                for (size_t j = 1; j < lineTokenCount; j++)
-                {
-                    String faceData[3];
-                    size_t faceDataCount;
-                    String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
-
-                    int createdVertexIndex = String_ToInt(faceData[0]);
-                    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
-
-                    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
-
-                    if (faceDataCount > 1 && faceData[1].length != 0)
-                    {
-                        int createdUIndex = String_ToInt(faceData[1]);
-                        unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool.count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
-
-                        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
-                    }
-
-                    if (faceDataCount > 2 && faceData[2].length != 0)
-                    {
-                        int createdNormalIndex = String_ToInt(faceData[2]);
-                        unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool.count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
-
-                        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
-                    }
-
-                    ListArray_Add(&currentMesh->indices, &vertexIndex);
-                }
+                ProcessFaceVertex(lineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(lineTokens[2], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(lineTokens[3], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
             }
-            else if (lineTokenCount == 5)
+            else if (lineTokenCount == 5) // 4 vertex face (quad), triangulate it
             {
-                for (size_t j = 1; j < lineTokenCount; j++)
-                {
-                    String faceData[3];
-                    size_t faceDataCount;
-                    String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
+                // First triangle: vertices 1, 2, 3
+                ProcessFaceVertex(lineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(lineTokens[2], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(lineTokens[3], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
 
-                    int createdVertexIndex = String_ToInt(faceData[0]);
-                    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
-
-                    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
-
-                    if (faceDataCount > 1 && faceData[1].length != 0)
-                    {
-                        int createdUIndex = String_ToInt(faceData[1]);
-                        unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool.count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
-
-                        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
-                    }
-
-                    if (faceDataCount > 2 && faceData[2].length != 0)
-                    {
-                        int createdNormalIndex = String_ToInt(faceData[2]);
-                        unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool.count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
-
-                        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
-                    }
-
-                    ListArray_Add(&currentMesh->indices, &vertexIndex);
-                }
-
-                // wrap for square faces, add 0, add 2
-                for (size_t j = 1; j < 4; j += 2)
-                {
-                    String faceData[3];
-                    size_t faceDataCount;
-                    String_Tokenize(lineTokens[j], scl("/"), &faceDataCount, faceData, 3);
-
-                    int createdVertexIndex = String_ToInt(faceData[0]);
-                    unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
-
-                    ListArray_Add(&currentMesh->indices, &vertexIndex);
-                }
+                // Second triangle: vertices 1, 3, 4
+                ProcessFaceVertex(lineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(lineTokens[3], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(lineTokens[4], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
             }
         }
         else if (String_Compare(firstToken, strUSEMTL) == 0) // use material and create object

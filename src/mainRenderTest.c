@@ -81,7 +81,7 @@ int main(int argc, char **argv)
         {
             myObjectType *obj = &objects[x * TEST_OBJECT_ONE_SIDE + y];
             obj->name = scl("Gun");
-            obj->position = NewVector3((rand() % 100) / 50.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2) + (rand() % 100) / 50.0f, (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2));
+            obj->position = NewVector3(0.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2), (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2));
             obj->rotation = NewVector3N(0.0f);
             obj->scale = NewVector3N(6.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 4.0f));
             obj->renderable = RendererBatch_CreateComponent(objBatch, &obj->position, &obj->rotation, &obj->scale);
@@ -107,6 +107,8 @@ int main(int argc, char **argv)
         {
             Context_ConfigureFullScreen(!mainWindow->fullScreen);
         }
+
+        mainCamera.camera->size -= Input_GetMouseButtonScroll();
 
         if (Input_GetMouseButton(InputMouseButtonCode_Left, InputState_Pressed))
         {
