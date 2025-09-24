@@ -5,12 +5,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-Resource *Resource_Create(String name, String relativePath)
+ResourceText *ResourceText_Create(StringView name, StringView relativePath)
 {
-    Timer timer = Timer_Create("Resource Loading");
-    Timer_Start(&timer);
-
-    Resource *resource = (Resource *)malloc(sizeof(Resource));
+    ResourceText *resource = (ResourceText *)malloc(sizeof(ResourceText));
     DebugAssertNullPointerCheck(resource);
 
     resource->name = scc(name);
@@ -28,7 +25,7 @@ Resource *Resource_Create(String name, String relativePath)
     String fullPath = scc(resource->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(Global_GetExecutablePath()));
-    String_ConcatEnd(&fullPath, resource->name);
+    String_ConcatEnd(&fullPath, scv(resource->name));
 
     size_t lineCount = 0;
     int character = 0;
@@ -74,14 +71,12 @@ Resource *Resource_Create(String name, String relativePath)
 
     String_Destroy(&fullPath);
 
-    Timer_Stop(&timer);
-
-    DebugInfo("Resource '%s' loaded in %f seconds.", resource->name.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
+    DebugInfo("Resource '%s' loaded.", resource->name.characters);
 
     return resource;
 }
 
-void Resource_Destroy(Resource *resource)
+void ResourceText_Destroy(ResourceText *resource)
 {
     DebugAssertNullPointerCheck(resource);
     DebugAssertNullPointerCheck(resource->name.characters);
@@ -103,11 +98,8 @@ void Resource_Destroy(Resource *resource)
     DebugInfo("Resource '%s' destroyed successfully.", tempTitle);
 }
 
-ResourceImage *ResourceImage_Create(String title, String path)
+ResourceImage *ResourceImage_Create(StringView title, StringView path)
 {
-    Timer timer = Timer_Create("Resource Loading");
-    Timer_Start(&timer);
-
     ResourceImage *resourceImage = (ResourceImage *)malloc(sizeof(ResourceImage));
     DebugAssertNullPointerCheck(resourceImage);
 
@@ -117,7 +109,7 @@ ResourceImage *ResourceImage_Create(String title, String path)
     String fullPath = scc(resourceImage->path);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(Global_GetExecutablePath()));
-    String_ConcatEnd(&fullPath, resourceImage->name);
+    String_ConcatEnd(&fullPath, scv(resourceImage->name));
 
     stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
@@ -125,9 +117,7 @@ ResourceImage *ResourceImage_Create(String title, String path)
 
     String_Destroy(&fullPath);
 
-    Timer_Stop(&timer);
-
-    DebugInfo("Resource Image '%.*s' loaded in %f seconds.", resourceImage->name.length, resourceImage->name.characters, (double)Timer_GetElapsedNanoseconds(timer) / 1000000000.0);
+    DebugInfo("Resource Image '%s' loaded.", resourceImage->name.characters);
 
     return resourceImage;
 }

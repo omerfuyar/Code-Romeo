@@ -198,7 +198,7 @@ bool Physics_IsColliding(PhysicsComponent *component1, PhysicsComponent *compone
 
 #pragma region Physics Scene
 
-PhysicsScene *PhysicsScene_Create(String name, size_t initialColliderCapacity, float drag, float gravity, float elasticity)
+PhysicsScene *PhysicsScene_Create(StringView name, size_t initialColliderCapacity, float drag, float gravity, float elasticity)
 {
     PhysicsScene *scene = (PhysicsScene *)malloc(sizeof(PhysicsScene));
     DebugAssertNullPointerCheck(scene);

@@ -49,29 +49,31 @@ int main(int argc, char **argv)
     Global_SetTerminateCallback(mainTerminate);
     srand((unsigned int)time(NULL));
 
-    Resource *vertexShaderResource = Resource_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
-    Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *vertexShaderResource = ResourceText_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *fragmentShaderResource = ResourceText_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
 
-    Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
+    ResourceText *objResource = argc == 1 ? ResourceText_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : ResourceText_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
     ContextWindow *mainWindow = Context_Initialize();
     Context_Configure(scl("Juliette"), TEST_WINDOW_SIZE, TEST_VSYNC, TEST_FULL_SCREEN, NULL);
 
     Input_Initialize(mainWindow);
     Renderer_Initialize(mainWindow);
-    Renderer_ConfigureShaders(vertexShaderResource->data, fragmentShaderResource->data);
+    Renderer_ConfigureShaders(scv(vertexShaderResource->data), scv(fragmentShaderResource->data));
+    ResourceText_Destroy(vertexShaderResource);
+    ResourceText_Destroy(fragmentShaderResource);
 
+    RendererModel *objModel = RendererModel_CreateOBJ(scl("Object Model"), scv(objResource->data), objResource->lineCount, scv(objResource->path), NewVector3N(0.0f), NewVector3N(0.0f), NewVector3N(1.0f));
     RendererScene *myRendererScene = RendererScene_Create(scl("My Scene"), TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);
-    RendererModel *objModel = RendererModel_CreateOBJ(scl("Object Model"), objResource->data, objResource->lineCount, objResource->path, NewVector3N(0.0f), NewVector3N(0.0f), NewVector3N(1.0f));
     RendererBatch *objBatch = RendererScene_CreateBatch(myRendererScene, scl("Object Batch"), objModel, TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);
 
-    myCameraType mainCamera = {
-        .name = scl("Main Camera"),
-        .position = Vector3_Zero,
-        .rotation = Vector3_Zero,
-        .camera = RendererCameraComponent_Create(&mainCamera.position, &mainCamera.rotation),
-        .speed = 10.0f,
-        .rotationSpeed = 75.0f};
+    myCameraType mainCamera = {0};
+    mainCamera.name = scc(scl("Main Camera"));
+    mainCamera.position = Vector3_Zero;
+    mainCamera.rotation = Vector3_Zero;
+    mainCamera.camera = RendererCameraComponent_Create(&mainCamera.position, &mainCamera.rotation);
+    mainCamera.speed = 10.0f;
+    mainCamera.rotationSpeed = 75.0f;
     RendererCameraComponent_Configure(mainCamera.camera, true, 90.0f, 0.1f, 1000.0f);
     RendererScene_SetMainCamera(myRendererScene, mainCamera.camera);
 
@@ -80,7 +82,7 @@ int main(int argc, char **argv)
         for (int y = 0; y < TEST_OBJECT_ONE_SIDE; y++)
         {
             myObjectType *obj = &objects[x * TEST_OBJECT_ONE_SIDE + y];
-            obj->name = scl("Gun");
+            obj->name = scc(scl("Gun"));
             obj->position = NewVector3(0.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2), (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2));
             obj->rotation = NewVector3N(0.0f);
             obj->scale = NewVector3N(6.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 4.0f));

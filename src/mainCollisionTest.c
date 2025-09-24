@@ -54,13 +54,13 @@ int main(int argc, char **argv)
     Global_SetTerminateCallback(mainTerminate);
     srand((unsigned int)time(NULL));
 
-    Resource *vertexShaderResource = Resource_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
-    Resource *fragmentShaderResource = Resource_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *vertexShaderResource = ResourceText_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *fragmentShaderResource = ResourceText_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
 
-    Resource *debugVertexShaderResource = Resource_Create(scl("debugVertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
-    Resource *debugFragmentShaderResource = Resource_Create(scl("debugFragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *debugVertexShaderResource = ResourceText_Create(scl("debugVertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *debugFragmentShaderResource = ResourceText_Create(scl("debugFragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
 
-    Resource *objResource = argc == 1 ? Resource_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : Resource_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
+    ResourceText *objResource = argc == 1 ? ResourceText_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : ResourceText_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
     ContextWindow *mainWindow = Context_Initialize();
     Context_Configure(scl("Juliette"), TEST_WINDOW_SIZE, TEST_VSYNC, TEST_FULL_SCREEN, NULL);

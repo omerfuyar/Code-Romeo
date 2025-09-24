@@ -25,7 +25,7 @@ ContextWindow *Context_Initialize()
     return &CONTEXT_MAIN_WINDOW;
 }
 
-void Context_Configure(String title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback)
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback)
 {
     Context_ConfigureTitle(title);
     Context_ConfigureResizeCallback(resizeCallback);
@@ -34,10 +34,9 @@ void Context_Configure(String title, Vector2Int windowSize, bool vSync, bool ful
     Context_ConfigureFullScreen(fullScreen);
 }
 
-void Context_ConfigureTitle(String title)
+void Context_ConfigureTitle(StringView title)
 {
-    String_Destroy(&CONTEXT_MAIN_WINDOW.title);
-    CONTEXT_MAIN_WINDOW.title = scc(title);
+    String_Change(&CONTEXT_MAIN_WINDOW.title, title);
 
     glfwSetWindowTitle(CONTEXT_MAIN_WINDOW.handle, CONTEXT_MAIN_WINDOW.title.characters);
 }

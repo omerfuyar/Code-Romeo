@@ -53,7 +53,7 @@ bool Physics_IsColliding(PhysicsComponent *component1, PhysicsComponent *compone
 /// @param gravity The gravity to be applied to components.
 /// @param elasticity The elasticity to be applied to components (0-1).
 /// @return A pointer to the newly created physics scene.
-PhysicsScene *PhysicsScene_Create(String name, size_t initialColliderCapacity, float drag, float gravity, float elasticity);
+PhysicsScene *PhysicsScene_Create(StringView name, size_t initialColliderCapacity, float drag, float gravity, float elasticity);
 
 /// @brief Destroys a physics scene and all its components.
 /// @param scene The scene to destroy.

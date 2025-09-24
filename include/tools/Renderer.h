@@ -158,7 +158,7 @@ void Renderer_Terminate();
 /// @brief Configures the main shaders for the renderer.
 /// @param vertexShaderSource Source code of the main vertex shader.
 /// @param fragmentShaderSource Source code of the main fragment shader.
-void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource);
+void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource);
 
 /// @brief Should be called before using rendering functions.
 void Renderer_StartRendering();
@@ -178,7 +178,7 @@ void Renderer_RenderScene(RendererScene *scene);
 /// @param vertexShaderSource The source file for debug vertex shader.
 /// @param fragmentShaderSource The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(String vertexShaderSource, String fragmentShaderSource, size_t initialVertexCapacity);
+void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragmentShaderSource, size_t initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate();
@@ -216,14 +216,14 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
 /// @param rotationOffset Rotation offset to freely adjust final model rotation.
 /// @param scaleOffset Scale offset to freely adjust final model scale.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t objFileSourceLineCount, String objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
+RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource, size_t objFileSourceLineCount, StringView objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
 
 /// @brief Creates an empty model with no meshes.
 /// @param name Name of the model to create.
 /// @param initialMeshCapacity Initial capacity for the mesh array.
 /// @param initialVertexCapacity Initial capacity for the vertex array.
 /// @return Created empty model.
-RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity, size_t initialVertexCapacity);
+RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity);
 
 /// @brief Destroyer function for renderer model.
 /// @param model Model to destroy.
@@ -237,7 +237,7 @@ void RendererModel_Destroy(RendererModel *model);
 /// @param name Name of the scene.
 /// @param initialBatchCapacity The initial capacity of the batch list in scene.
 /// @return Created scene of render objects.
-RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity);
+RendererScene *RendererScene_Create(StringView name, size_t initialBatchCapacity);
 
 /// @brief Destroyer function for object scene
 /// @param scene Scene to destroy
@@ -254,7 +254,7 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *
 /// @param model Pointer to the model that the components in the batch will use.
 /// @param initialComponentCapacity The initial capacity for components inside the batch.
 /// @return The created batch.
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, RendererModel *model, size_t initialComponentCapacity);
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, StringView name, RendererModel *model, size_t initialComponentCapacity);
 
 /// @brief Destroys the renderer batch and frees its resources.
 /// @param batch Batch to destroy.

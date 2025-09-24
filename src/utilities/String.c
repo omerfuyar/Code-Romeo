@@ -1,25 +1,7 @@
 #include "utilities/String.h"
 #include "utilities/Maths.h"
 
-String String_CreateCopy(char *string)
-{
-    DebugAssertNullPointerCheck(string);
-
-    String createdString = {0};
-
-    createdString.length = strlen(string);
-    createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
-    DebugAssertNullPointerCheck(createdString.characters);
-
-    MemoryCopy(createdString.characters, createdString.length * sizeof(char), string);
-    createdString.characters[createdString.length] = '\0';
-
-    createdString.isOwner = true;
-
-    return createdString;
-}
-
-String String_CreateCopyS(char *string, size_t length)
+String String_CreateCopyS(const char *string, size_t length)
 {
     DebugAssertNullPointerCheck(string);
 
@@ -29,10 +11,8 @@ String String_CreateCopyS(char *string, size_t length)
     createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(createdString.characters);
 
-    MemoryCopy(createdString.characters, (createdString.length + 1) * sizeof(char), string);
+    MemoryCopy(createdString.characters, createdString.length * sizeof(char), string);
     createdString.characters[createdString.length] = '\0';
-
-    createdString.isOwner = true;
 
     return createdString;
 }
@@ -43,30 +23,25 @@ void String_Destroy(String *string)
 
     string->length = 0;
 
-    if (string->isOwner)
-    {
-        free(string->characters);
-        string->characters = NULL;
-    }
+    free(string->characters);
+    string->characters = NULL;
 }
 
-void String_Change(String *string, char *newString, size_t newLength)
+void String_Change(String *string, StringView newString)
 {
     DebugAssertNullPointerCheck(string);
-    DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
-    string->length = newLength;
+    string->length = newString.length;
     string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters, string->length * sizeof(char), newString);
+    MemoryCopy(string->characters, string->length * sizeof(char), newString.characters);
     string->characters[string->length] = '\0';
 }
 
-void String_ConcatEnd(String *string, String other)
+void String_ConcatEnd(String *string, StringView other)
 {
     DebugAssertNullPointerCheck(string);
-    DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
@@ -76,17 +51,16 @@ void String_ConcatEnd(String *string, String other)
     string->characters[string->length] = '\0';
 }
 
-void String_ConcatBegin(String *string, String other)
+void String_ConcatBegin(String *string, StringView other)
 {
     DebugAssertNullPointerCheck(string);
-    DebugAssert(string->isOwner, "Cannot modify a referenced string");
 
-    String buffer = String_CreateCopy(string->characters);
+    String buffer = String_CreateCopyS(string->characters, string->length);
 
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + other.length, (string->length + 1) * sizeof(char), buffer.characters);
+    MemoryCopy(string->characters + other.length, (buffer.length + 1) * sizeof(char), buffer.characters);
     MemoryCopy(string->characters, other.length * sizeof(char), other.characters);
 
     string->length += other.length;
@@ -95,7 +69,7 @@ void String_ConcatBegin(String *string, String other)
     String_Destroy(&buffer);
 }
 
-int String_Compare(String string, String other)
+int String_Compare(StringView string, StringView other)
 {
     DebugAssertNullPointerCheck(string.characters);
     DebugAssertNullPointerCheck(other.characters);
@@ -120,11 +94,11 @@ int String_Compare(String string, String other)
     return result;
 }
 
-void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, String *tokenBufferRet, size_t maxTokenCount)
+void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t maxTokenCount)
 {
     size_t tokenCount = 0;
     size_t lastTokenIndex = 0;
-    String *token = NULL;
+    StringView *token = NULL;
 
     for (size_t i = 0; i < string.length && tokenCount < maxTokenCount; i++)
     {
@@ -134,7 +108,6 @@ void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, Str
 
             token->characters = string.characters + lastTokenIndex;
             token->length = i - lastTokenIndex;
-            token->isOwner = false;
 
             lastTokenIndex = i + delimeter.length;
             i = lastTokenIndex - 1;
@@ -150,7 +123,6 @@ void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, Str
         token = tokenBufferRet + tokenCount;
         token->characters = string.characters + lastTokenIndex;
         token->length = string.length - lastTokenIndex;
-        token->isOwner = false;
 
         // DebugInfo("Token %zu: '%.*s'", tokenCount, (int)token->length, token->characters);
 
@@ -163,7 +135,7 @@ void String_Tokenize(String string, String delimeter, size_t *tokenCountRet, Str
     }
 }
 
-char String_GetChar(String string, size_t index)
+char String_GetChar(StringView string, size_t index)
 {
     DebugAssertNullPointerCheck(string.characters);
 
@@ -172,25 +144,27 @@ char String_GetChar(String string, size_t index)
     return string.characters[index];
 }
 
-float String_ToFloat(String string)
+float String_ToFloat(StringView string)
 {
     DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    MemoryCopy(buffer, Min(sizeof(buffer), string.length) + 1, string.characters);
-    buffer[Min(sizeof(buffer), string.length)] = '\0';
+    size_t copyLength = Min(sizeof(buffer) - 1, string.length);
+    MemoryCopy(buffer, copyLength, string.characters);
+    buffer[copyLength] = '\0';
     float result = (float)atof(buffer);
 
     return result;
 }
 
-int String_ToInt(String string)
+int String_ToInt(StringView string)
 {
     DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    MemoryCopy(buffer, Min(sizeof(buffer), string.length) + 1, string.characters);
-    buffer[Min(sizeof(buffer), string.length)] = '\0';
+    size_t copyLength = Min(sizeof(buffer) - 1, string.length);
+    MemoryCopy(buffer, copyLength, string.characters);
+    buffer[copyLength] = '\0';
     int result = atoi(buffer);
 
     return result;

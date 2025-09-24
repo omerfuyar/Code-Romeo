@@ -9,9 +9,9 @@
 
 typedef struct ContextWindow
 {
-    void *handle;
     String title;
     Vector2Int size;
+    void *handle;
     bool vSync;
     bool fullScreen;
 } ContextWindow;
@@ -20,9 +20,9 @@ typedef void (*FunVoidptrIntIntToVoid)(void *, int, int);
 
 ContextWindow *Context_Initialize();
 
-void Context_Configure(String title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback);
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback);
 
-void Context_ConfigureTitle(String title);
+void Context_ConfigureTitle(StringView title);
 
 void Context_ConfigureSize(Vector2Int size);
 

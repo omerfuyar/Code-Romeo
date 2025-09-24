@@ -99,11 +99,11 @@ void TransformToModelMatrix(Vector3 *position, Vector3 *rotation, Vector3 *scale
 
 #pragma region Renderer Texture
 
-RendererTexture RendererTexture_Create(String name, String path)
+RendererTexture RendererTexture_Create(StringView name, StringView path)
 {
     for (size_t i = 0; i < RENDERER_TEXTURE_MAX_COUNT; i++)
     {
-        if (RENDERER_MAIN_TEXTURES[i].image != NULL && String_Compare(RENDERER_MAIN_TEXTURES[i].image->name, name) == 0)
+        if (RENDERER_MAIN_TEXTURES[i].image != NULL && String_Compare(scv(RENDERER_MAIN_TEXTURES[i].image->name), name) == 0)
         {
             return RENDERER_MAIN_TEXTURES[i];
         }
@@ -157,7 +157,7 @@ void RendererTexture_Destroy(RendererTexture *texture)
 
 #pragma region Renderer Material
 
-RendererMaterial *RendererMaterial_Create(String name)
+RendererMaterial *RendererMaterial_Create(StringView name)
 {
     RendererMaterial *material = (RendererMaterial *)malloc(sizeof(RendererMaterial));
     DebugAssertNullPointerCheck(material);
@@ -254,7 +254,7 @@ void Renderer_Terminate()
     }
 }
 
-void Renderer_ConfigureShaders(String vertexShaderSource, String fragmentShaderSource)
+void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource)
 {
     if (RENDERER_MAIN_SHADER_PROGRAM != 0)
     {
@@ -402,7 +402,7 @@ void Renderer_RenderScene(RendererScene *scene)
 
 #pragma region Renderer Debug
 
-void RendererDebug_Initialize(String vertexShaderSource, String fragmentShaderSource, size_t initialVertexCapacity)
+void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragmentShaderSource, size_t initialVertexCapacity)
 {
     RENDERER_DEBUG_VERTICES = ListArray_Create("Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
 
@@ -562,27 +562,27 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
 
 #pragma region Renderer Model
 
-void ProcessFaceVertex(String faceComponent, RendererModel *model, RendererMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
+void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
 {
-    String faceData[4]; // v/vt/vn/w
+    StringView faceData[4]; // v/vt/vn/w
     size_t faceDataCount;
     String_Tokenize(faceComponent, scl("/"), &faceDataCount, faceData, 4);
 
-    int createdVertexIndex = String_ToInt(faceData[0]);
+    int createdVertexIndex = String_ToInt(scv(faceData[0]));
     unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
 
     RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
 
     if (faceDataCount > 1 && faceData[1].length != 0)
     {
-        int createdUIndex = String_ToInt(faceData[1]);
+        int createdUIndex = String_ToInt(scv(faceData[1]));
         unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool->count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
         vertex->vertexUV = *(Vector2 *)ListArray_Get(*globalVertexUvPool, (size_t)uvIndex);
     }
 
     if (faceDataCount > 2 && faceData[2].length != 0)
     {
-        int createdNormalIndex = String_ToInt(faceData[2]);
+        int createdNormalIndex = String_ToInt(scv(faceData[2]));
         unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool->count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
         vertex->vertexNormal = *(Vector3 *)ListArray_Get(*globalVertexNormalPool, (size_t)normalIndex);
     }
@@ -590,11 +590,8 @@ void ProcessFaceVertex(String faceComponent, RendererModel *model, RendererMesh 
     ListArray_Add(&currentMesh->indices, &vertexIndex);
 }
 
-RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t objFileSourceLineCount, String objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
+RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource, size_t objFileSourceLineCount, StringView objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
-    Timer modelTimer = Timer_Create("Model Import Timer");
-    Timer_Start(&modelTimer);
-
     mat4 offsetMatrix;
     TransformToModelMatrix(&positionOffset, &rotationOffset, &scaleOffset, &offsetMatrix);
 
@@ -604,22 +601,22 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     size_t totalVertexNormalCount = 0;
     size_t totalVertexUvCount = 0;
 
-    String *lines = (String *)malloc(objFileSourceLineCount * sizeof(String));
+    StringView *lines = (StringView *)malloc(objFileSourceLineCount * sizeof(StringView));
     DebugAssertNullPointerCheck(lines);
 
     size_t lineTokenCount = 0;
-    String lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+    StringView lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
 
-    String strNewline = scl("\n");
-    String strSpace = scl(" ");
-    String strV = scl("v");
-    String strF = scl("f");
-    String strVT = scl("vt");
-    String strVN = scl("vn");
-    // String strO = scl("o");
-    // String strG = scl("g");
-    String strMTLLIB = scl("mtllib");
-    String strUSEMTL = scl("usemtl");
+    StringView strNewline = scl("\n");
+    StringView strSpace = scl(" ");
+    StringView strV = scl("v");
+    StringView strF = scl("f");
+    StringView strVT = scl("vt");
+    StringView strVN = scl("vn");
+    // StringView strO = scl("o");
+    // StringView strG = scl("g");
+    StringView strMTLLIB = scl("mtllib");
+    StringView strUSEMTL = scl("usemtl");
 
     ListArray materials = {0}; // RendererMaterial*
 
@@ -627,9 +624,9 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
 
     for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
     {
-        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        String firstToken = lineTokens[0];
+        StringView firstToken = lineTokens[0];
 
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
@@ -649,35 +646,35 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
         }
         else if (String_Compare(firstToken, strMTLLIB) == 0) // .mtl file
         {
-            Resource *mtlFileResource = Resource_Create(lineTokens[1], objFilePath);
+            ResourceText *mtlFileResource = ResourceText_Create(lineTokens[1], objFilePath);
 
             size_t materialCount = 0;
 
             size_t mtlLineCount = 0;
-            String *mtlLines = (String *)malloc(mtlFileResource->lineCount * sizeof(String));
+            StringView *mtlLines = (StringView *)malloc(mtlFileResource->lineCount * sizeof(StringView));
             DebugAssertNullPointerCheck(mtlLines);
 
             size_t mtlLineTokenCount = 0;
-            String mtlLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+            StringView mtlLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
 
-            String strNEWMTL = scl("newmtl");
-            String strNS = scl("Ns");
-            String strKA = scl("Ka");
-            String strKD = scl("Kd");
-            String strKS = scl("Ks");
-            String strNI = scl("Ni");
-            String strD = scl("d");
-            String strILLNUM = scl("illum");
-            String strMAP_KD = scl("map_Kd");
-            // String strMAP_BUMP = scl("map_bump");
+            StringView strNEWMTL = scl("newmtl");
+            StringView strNS = scl("Ns");
+            StringView strKA = scl("Ka");
+            StringView strKD = scl("Kd");
+            StringView strKS = scl("Ks");
+            StringView strNI = scl("Ni");
+            StringView strD = scl("d");
+            StringView strILLNUM = scl("illum");
+            StringView strMAP_KD = scl("map_Kd");
+            // StringView strMAP_BUMP = scl("map_bump");
 
-            String_Tokenize(mtlFileResource->data, strNewline, &mtlLineCount, mtlLines, mtlFileResource->lineCount);
+            String_Tokenize(scv(mtlFileResource->data), strNewline, &mtlLineCount, mtlLines, mtlFileResource->lineCount);
 
             for (size_t j = 0; j < mtlLineCount; j++) // count
             {
                 String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-                String mtlFirstToken = mtlLineTokens[0];
+                StringView mtlFirstToken = mtlLineTokens[0];
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
@@ -692,7 +689,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
             {
                 String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-                String mtlFirstToken = mtlLineTokens[0];
+                StringView mtlFirstToken = mtlLineTokens[0];
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
@@ -738,11 +735,11 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
                 }
                 else if (String_Compare(mtlFirstToken, strMAP_KD) == 0)
                 {
-                    currentMaterial->diffuseMap = RendererTexture_Create(scc(mtlLineTokens[1]), objFilePath); // try find in existing textures
+                    currentMaterial->diffuseMap = RendererTexture_Create(mtlLineTokens[1], objFilePath); // try find in existing textures
                 }
             }
 
-            Resource_Destroy(mtlFileResource);
+            ResourceText_Destroy(mtlFileResource);
 
             free(mtlLines);
         }
@@ -755,7 +752,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     {
         String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        String firstToken = lineTokens[0];
+        StringView firstToken = lineTokens[0];
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
             faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
@@ -774,7 +771,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     {
         String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        String firstToken = lineTokens[0];
+        StringView firstToken = lineTokens[0];
 
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
@@ -824,7 +821,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     {
         String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        String firstToken = lineTokens[0];
+        StringView firstToken = lineTokens[0];
 
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
@@ -855,7 +852,7 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materials, j);
 
-                if (String_Compare(material->name, lineTokens[1]) == 0)
+                if (String_Compare(scv(material->name), lineTokens[1]) == 0)
                 {
                     currentMesh = RendererMesh_CreateEmpty(faceCounts[model->meshes.count] * 3, material);
                     ListArray_Add(&model->meshes, &currentMesh);
@@ -873,14 +870,12 @@ RendererModel *RendererModel_CreateOBJ(String name, String objFileSource, size_t
     free(lines);
     free(faceCounts);
 
-    Timer_Stop(&modelTimer);
-
-    DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes in %f seconds.", model->name.characters, model->meshes.count, (double)Timer_GetElapsedNanoseconds(modelTimer) / 1000000000.0);
+    DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes.", model->name.characters, model->meshes.count);
 
     return model;
 }
 
-RendererModel *RendererModel_CreateEmpty(String name, size_t initialMeshCapacity, size_t initialVertexCapacity)
+RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity)
 {
     RendererModel *model = malloc(sizeof(RendererModel));
     DebugAssertNullPointerCheck(model);
@@ -920,7 +915,7 @@ void RendererModel_Destroy(RendererModel *model)
 
 #pragma region Renderer Scene
 
-RendererScene *RendererScene_Create(String name, size_t initialBatchCapacity)
+RendererScene *RendererScene_Create(StringView name, size_t initialBatchCapacity)
 {
     RendererScene *scene = malloc(sizeof(RendererScene));
     DebugAssertNullPointerCheck(scene);
@@ -1034,7 +1029,7 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *
     camera->scene = scene;
 }
 
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, String name, RendererModel *model, size_t initialObjectCapacity)
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, StringView name, RendererModel *model, size_t initialObjectCapacity)
 {
     DebugAssertNullPointerCheck(scene);
     DebugAssertNullPointerCheck(model);
