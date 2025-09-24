@@ -8,7 +8,6 @@
 #include "utilities/Maths.h"
 
 #define TEST_BENCH_TIME_SECONDS 10.0f
-#define TEST_OBJECT_ONE_SIDE 1
 #define TEST_WINDOW_SIZE NewVector2Int(1080, 720)
 #define TEST_VSYNC false
 #define TEST_FULL_SCREEN false
@@ -22,8 +21,6 @@ typedef struct myObjectType
     Vector3 scale;
     RendererComponent *renderable;
 } myObjectType;
-
-myObjectType objects[TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE];
 
 typedef struct myCameraType
 {
@@ -47,25 +44,24 @@ void mainTerminate(int exitCode, char *message)
 int main(int argc, char **argv)
 {
     Global_SetTerminateCallback(mainTerminate);
-    srand((unsigned int)time(NULL));
-
-    ResourceText *vertexShaderResource = ResourceText_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
-    ResourceText *fragmentShaderResource = ResourceText_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
-
-    ResourceText *objResource = argc == 1 ? ResourceText_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : ResourceText_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
 
     ContextWindow *mainWindow = Context_Initialize();
     Context_Configure(scl("Juliette"), TEST_WINDOW_SIZE, TEST_VSYNC, TEST_FULL_SCREEN, NULL);
 
     Input_Initialize(mainWindow);
     Renderer_Initialize(mainWindow);
+
+    ResourceText *vertexShaderResource = ResourceText_Create(scl("vertex.glsl"), scl("shaders" PATH_DELIMETER_STR));
+    ResourceText *fragmentShaderResource = ResourceText_Create(scl("fragment.glsl"), scl("shaders" PATH_DELIMETER_STR));
     Renderer_ConfigureShaders(scv(vertexShaderResource->data), scv(fragmentShaderResource->data));
     ResourceText_Destroy(vertexShaderResource);
     ResourceText_Destroy(fragmentShaderResource);
 
+    ResourceText *objResource = argc == 1 ? ResourceText_Create(scl("Pistol.obj"), scl("models" PATH_DELIMETER_STR)) : ResourceText_Create(scl(argv[1]), scl("models" PATH_DELIMETER_STR));
     RendererModel *objModel = RendererModel_CreateOBJ(scl("Object Model"), scv(objResource->data), objResource->lineCount, scv(objResource->path), NewVector3N(0.0f), NewVector3N(0.0f), NewVector3N(1.0f));
-    RendererScene *myRendererScene = RendererScene_Create(scl("My Scene"), TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);
-    RendererBatch *objBatch = RendererScene_CreateBatch(myRendererScene, scl("Object Batch"), objModel, TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE);
+    ResourceText_Destroy(objResource);
+    RendererScene *myRendererScene = RendererScene_Create(scl("My Scene"), 1);
+    RendererBatch *objBatch = RendererScene_CreateBatch(myRendererScene, scl("Object Batch"), objModel, 1);
 
     myCameraType mainCamera = {0};
     mainCamera.name = scc(scl("Main Camera"));
@@ -77,18 +73,12 @@ int main(int argc, char **argv)
     RendererCameraComponent_Configure(mainCamera.camera, true, 90.0f, 0.1f, 1000.0f);
     RendererScene_SetMainCamera(myRendererScene, mainCamera.camera);
 
-    for (int x = 0; x < TEST_OBJECT_ONE_SIDE; x++)
-    {
-        for (int y = 0; y < TEST_OBJECT_ONE_SIDE; y++)
-        {
-            myObjectType *obj = &objects[x * TEST_OBJECT_ONE_SIDE + y];
-            obj->name = scc(scl("Gun"));
-            obj->position = NewVector3(0.0f, (float)y - (float)(TEST_OBJECT_ONE_SIDE / 2), (float)x - (float)(TEST_OBJECT_ONE_SIDE / 2));
-            obj->rotation = NewVector3N(0.0f);
-            obj->scale = NewVector3N(6.0f / Max((float)log2((double)TEST_OBJECT_ONE_SIDE), 4.0f));
-            obj->renderable = RendererBatch_CreateComponent(objBatch, &obj->position, &obj->rotation, &obj->scale);
-        }
-    }
+    myObjectType myObj = {0};
+    myObj.name = scc(scl("Gun"));
+    myObj.position = NewVector3N(0.0f);
+    myObj.rotation = NewVector3N(0.0f);
+    myObj.scale = NewVector3N(1.0f);
+    myObj.renderable = RendererBatch_CreateComponent(objBatch, &myObj.position, &myObj.rotation, &myObj.scale);
 
     Timer DTimer = Timer_Create("Main Loop Timer");
     float DT = 0.0f;
@@ -100,10 +90,7 @@ int main(int argc, char **argv)
         Timer_Start(&DTimer);
         Input_Update();
 
-        for (size_t i = 0; i < TEST_OBJECT_ONE_SIDE * TEST_OBJECT_ONE_SIDE; i++)
-        {
-            objects[i].rotation.y += DT / 2.0f;
-        }
+        // myObj.rotation.y += DT / 2.0f;
 
         if (Input_GetKey(InputKeyCode_F, InputState_Down))
         {
@@ -146,8 +133,8 @@ int main(int argc, char **argv)
 
             Vector3 movementVector = Input_GetMovementVector();
 
-            objects[0].position.x += movementVector.x * DT * mainCamera.speed;
-            objects[0].position.z -= movementVector.y * DT * mainCamera.speed;
+            myObj.position.x += movementVector.x * DT * mainCamera.speed;
+            myObj.position.z -= movementVector.y * DT * mainCamera.speed;
         }
 
         // user check collisions

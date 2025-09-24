@@ -52,7 +52,6 @@
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
 #define MemorySet(destination, value, size) memset(destination, value, size) a
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
-
 #endif
 
 /// @brief Logs a debug message to the debug log file. Use wrapper macros for ease of use.
