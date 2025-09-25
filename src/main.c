@@ -1,5 +1,5 @@
 #include "Global.h"
-#include "app/App.h"
+#include "user/Main.h"
 
 /*
     This file is just a connector between user callbacks and the framework.

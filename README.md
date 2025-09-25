@@ -1,8 +1,8 @@
 # Code-Romeo
 
 * This project is a cross platform project to try out some new rendering libraries, techniques and design patterns in the C programming language.
-* I once tried out making a game engine in C++ but it was too complex and I wasn't knowing what I was doing. So I decided to try something similar in C. (I also don't like C++. I find it pretty powerful but too complex for my taste. Its also more fun to make your own stuff in C.)
-* This project do not have a structure like my previous projects (Core and App, Engine and Game). Instead I have focused on mostly doing one thing, just a game or whatever it is.
+* I once tried out making a game engine (framework actually) in C++ but it was too complex and I wasn't knowing what I was doing. So I decided to try something similar in C. (I also don't like C++. I find it pretty powerful but too complex for my taste. Its also more fun to make your own stuff in C.)
+* There is a main file which connects framework to user created modules. Framework runs the callback functions with needed parameters in the correct time.
 * ReadMe sections for MacOS may not be right because I dont have a mac to test on it.
 
 ## To clone the repository
@@ -15,7 +15,7 @@ cd Code-Romeo
 
 ### Note
 
-* Library dependencies of the project is included and handled all by cmake. So user is not responsible for getting packages for runtime.
+* Library dependencies of the project is included and handled all by cmake. So user is not responsible for getting packages for runtime. You just need to install dependency packages and clone the repo with submodules.
 * GLFW and CGLM are subdirectories (which cloned with the clone command at the top) are compiled statically and linked to the main application. Other dependencies are just files and they may or may not be edited by me 😁
 
 ### `C23` standard
@@ -30,7 +30,7 @@ cd Code-Romeo
 
 ### `OpenGL and GLAD` for OpenGL rendering (included in the project)
 
-### `GLFW` for media and OpenGL context management (included in the project)
+### `GLFW` for media and context management (included in the project)
 
 ### `CGLM` for math library (included in the project)
 
