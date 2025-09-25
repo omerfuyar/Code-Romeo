@@ -13,6 +13,9 @@
 FILE *DEBUG_FILE = NULL;
 char *DEBUG_FILE_NAME_STR = NULL;
 char *GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
+
+FunIntCharPtrPtrToVoid GLOBAL_SETUP_CALLBACK = NULL;
+FunFloatToVoid GLOBAL_LOOP_CALLBACK = NULL;
 FunIntCharptrToVoid GLOBAL_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
@@ -82,25 +85,6 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
     }
 }
 
-void Global_Terminate(int exitCode, char *message)
-{
-    if (GLOBAL_TERMINATE_CALLBACK != NULL)
-    {
-        GLOBAL_TERMINATE_CALLBACK(exitCode, message);
-    }
-
-    fprintf(stderr, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
-
-    exit(exitCode);
-}
-
-void Global_SetTerminateCallback(FunIntCharptrToVoid terminateCallback)
-{
-    DebugAssertNullPointerCheck(terminateCallback);
-
-    GLOBAL_TERMINATE_CALLBACK = terminateCallback;
-}
-
 char *Global_GetExecutablePath()
 {
     if (GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
@@ -127,3 +111,69 @@ char *Global_GetExecutablePath()
 
     return GLOBAL_EXECUTABLE_DIRECTORY_PATH;
 }
+
+void Global_Run(int argc, char **argv)
+{
+    if (GLOBAL_SETUP_CALLBACK != NULL)
+    {
+        GLOBAL_SETUP_CALLBACK(argc, argv);
+    }
+
+    struct timespec currentTime = {0, 0};
+    struct timespec lastTime = {0, 0};
+    struct timespec elapsedTime = {0, 0};
+    float DT = 0.0f;
+
+    timespec_get(&lastTime, TIME_UTC);
+
+    while (GLOBAL_LOOP_CALLBACK != NULL)
+    {
+        timespec_get(&currentTime, TIME_UTC);
+
+        elapsedTime.tv_sec = currentTime.tv_sec - lastTime.tv_sec;
+        elapsedTime.tv_nsec = currentTime.tv_nsec - lastTime.tv_nsec;
+
+        if (elapsedTime.tv_nsec < 0)
+        {
+            elapsedTime.tv_sec -= 1;
+            elapsedTime.tv_nsec += 1000000000;
+        }
+
+        DT = (float)elapsedTime.tv_sec + (float)elapsedTime.tv_nsec / 1000000000.0f;
+
+        GLOBAL_LOOP_CALLBACK(DT);
+
+        lastTime = currentTime;
+    }
+}
+
+void Global_Terminate(int exitCode, char *message)
+{
+    if (GLOBAL_TERMINATE_CALLBACK != NULL)
+    {
+        GLOBAL_TERMINATE_CALLBACK(exitCode, message);
+    }
+
+    fprintf(stderr, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+
+    exit(exitCode);
+}
+
+#pragma region Callbacks
+
+void Global_SetSetupCallback(FunIntCharPtrPtrToVoid setupCallback)
+{
+    GLOBAL_SETUP_CALLBACK = setupCallback;
+}
+
+void Global_SetLoopCallback(FunFloatToVoid loopCallback)
+{
+    GLOBAL_LOOP_CALLBACK = loopCallback;
+}
+
+void Global_SetTerminateCallback(FunIntCharptrToVoid terminateCallback)
+{
+    GLOBAL_TERMINATE_CALLBACK = terminateCallback;
+}
+
+#pragma endregion Callbacks

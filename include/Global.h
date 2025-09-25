@@ -54,27 +54,56 @@
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 #endif
 
+#pragma region Typedefs
+
+typedef void (*FunIntCharPtrPtrToVoid)(int, char **);
+
+typedef void (*FunFloatToVoid)(float);
+
+typedef void (*FunIntCharptrToVoid)(int, char *);
+
+#pragma endregion Typedefs
+
 /// @brief Logs a debug message to the debug log file. Use wrapper macros for ease of use.
+/// @param terminate Whether to terminate the application after logging
 /// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
+/// @param file The source file name where the log is called from
+/// @param line The line number where the log is called from
+/// @param function The function name where the log is called from
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
 /// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
 void Global_DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
+
+/// @brief Gets the executable file directory.
+/// @return The null terminated C string : "path/to/exe/"
+char *Global_GetExecutablePath();
+
+/// @brief Runs the main application loop with setup and loop callbacks
+/// @param argc Command line argument count
+/// @param argv Command line argument values
+void Global_Run(int argc, char **argv);
 
 /// @brief Terminates and closes necessary utilities and exits the program.
 /// @param exitCode The code to pass to exit() function.
 /// @param message The message to show to the console.
 void Global_Terminate(int exitCode, char *message);
 
-typedef void (*FunIntCharptrToVoid)(int, char *);
+#pragma region Callbacks
+
+/// @brief Sets the setup callback function that gets called once at application start
+/// @param setupCallback Function to call during application setup
+void Global_SetSetupCallback(FunIntCharPtrPtrToVoid setupCallback);
+
+/// @brief Sets the main loop callback function that gets called every frame
+/// @param loopCallback Function to call every frame, receives deltatime in seconds as parameter
+void Global_SetLoopCallback(FunFloatToVoid loopCallback);
 
 /// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
-/// @param terminateCallback Function to call when terminate is called. Should not exit the program.
+/// @param terminateCallback Function to call when terminate is called. Should not exit the program. Receives exit code and exit message as parameters.
 void Global_SetTerminateCallback(FunIntCharptrToVoid terminateCallback);
 
-/// @brief Gets the executable file directory.
-/// @return The null terminated C string : "path/to/exe/"
-char *Global_GetExecutablePath();
+#pragma region Callbacks
 
 #pragma endregion Functions and Macros
 
