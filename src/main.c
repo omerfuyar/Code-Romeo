@@ -1,9 +1,8 @@
 #include "Global.h"
-#include "user/Main.h"
+#include "user/App.h"
 
 /*
     This file is just a connector between user callbacks and the framework.
-    User also should edit this file
 */
 
 int main(int argc, char **argv)

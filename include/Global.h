@@ -31,8 +31,6 @@
 #include <time.h>
 #include <limits.h>
 
-#pragma region Functions and Macros
-
 #define TEMP_BUFFER_SIZE 128
 
 #if PLATFORM_WINDOWS
@@ -49,8 +47,8 @@
 #define PATH_DELIMETER_STR "/"
 
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
-#define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
-#define MemorySet(destination, value, size) memset(destination, value, size) a
+#define MemoryCopy(destination, size, source) memcpy(destination, size, source)
+#define MemorySet(destination, value, size) memset(destination, value, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 #endif
 
@@ -63,6 +61,8 @@ typedef void (*FunFloatToVoid)(float);
 typedef void (*FunIntCharptrToVoid)(int, char *);
 
 #pragma endregion Typedefs
+
+#pragma region Functions and Macros
 
 /// @brief Logs a debug message to the debug log file. Use wrapper macros for ease of use.
 /// @param terminate Whether to terminate the application after logging
