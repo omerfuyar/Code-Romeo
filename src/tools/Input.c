@@ -196,7 +196,7 @@ void Input_ConfigureMouseMode(InputMouseMode mode)
 {
     DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
 
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, mode);
+    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, (int)mode);
 }
 
 void Input_Update()

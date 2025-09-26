@@ -31,8 +31,6 @@
 #include <time.h>
 #include <limits.h>
 
-#define TEMP_BUFFER_SIZE 128
-
 #if PLATFORM_WINDOWS
 #define PATH_DELIMETER_CHAR '\\'
 #define PATH_DELIMETER_STR "\\"
@@ -47,10 +45,12 @@
 #define PATH_DELIMETER_STR "/"
 
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
-#define MemoryCopy(destination, size, source) memcpy(destination, size, source)
+#define MemoryCopy(destination, size, source) memcpy(destination, source, size)
 #define MemorySet(destination, value, size) memset(destination, value, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 #endif
+
+#define TEMP_BUFFER_SIZE (size_t)128
 
 #pragma region Typedefs
 
