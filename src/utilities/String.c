@@ -8,10 +8,10 @@ String String_CreateCopyS(const char *string, size_t length)
     String createdString = {0};
 
     createdString.length = length;
-    createdString.characters = (char *)malloc((createdString.length + 1) * sizeof(char));
+    createdString.characters = (char *)malloc((createdString.length + 1));
     DebugAssertNullPointerCheck(createdString.characters);
 
-    MemoryCopy(createdString.characters, createdString.length * sizeof(char), string);
+    MemoryCopy(createdString.characters, createdString.length, string);
     createdString.characters[createdString.length] = '\0';
 
     return createdString;
@@ -32,10 +32,10 @@ void String_Change(String *string, StringView newString)
     DebugAssertNullPointerCheck(string);
 
     string->length = newString.length;
-    string->characters = (char *)realloc(string->characters, (string->length + 1) * sizeof(char));
+    string->characters = (char *)realloc(string->characters, (string->length + 1));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters, string->length * sizeof(char), newString.characters);
+    MemoryCopy(string->characters, string->length, newString.characters);
     string->characters[string->length] = '\0';
 }
 
@@ -43,10 +43,10 @@ void String_ConcatEnd(String *string, StringView other)
 {
     DebugAssertNullPointerCheck(string);
 
-    string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
+    string->characters = (char *)realloc(string->characters, (string->length + other.length + 1));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + string->length, other.length * sizeof(char), other.characters);
+    MemoryCopy(string->characters + string->length, other.length, other.characters);
     string->length += other.length;
     string->characters[string->length] = '\0';
 }
@@ -57,11 +57,11 @@ void String_ConcatBegin(String *string, StringView other)
 
     String buffer = String_CreateCopyS(string->characters, string->length);
 
-    string->characters = (char *)realloc(string->characters, (string->length + other.length + 1) * sizeof(char));
+    string->characters = (char *)realloc(string->characters, (string->length + other.length + 1));
     DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + other.length, (buffer.length + 1) * sizeof(char), buffer.characters);
-    MemoryCopy(string->characters, other.length * sizeof(char), other.characters);
+    MemoryCopy(string->characters + other.length, (buffer.length + 1), buffer.characters);
+    MemoryCopy(string->characters, other.length, other.characters);
 
     string->length += other.length;
     string->characters[string->length] = '\0';

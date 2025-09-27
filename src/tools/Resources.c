@@ -44,9 +44,9 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
     resource->lineCount = lineCount;
 
     // malloc because the buffer is too large for stack
-    char *dataBuffer = (char *)malloc(resource->lineCount * RESOURCE_FILE_LINE_MAX_CHAR_COUNT * sizeof(char));
+    char *dataBuffer = (char *)malloc(resource->lineCount * RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
     DebugAssertNullPointerCheck(dataBuffer);
-    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT * sizeof(char));
+    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
     DebugAssertNullPointerCheck(lineBuffer);
 
     dataBuffer[0] = '\0';
@@ -57,7 +57,7 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
     {
         size_t lineLength = strlen(lineBuffer);
-        MemoryCopy(dataBuffer + dataIndex, lineLength * sizeof(char), lineBuffer);
+        MemoryCopy(dataBuffer + dataIndex, lineLength, lineBuffer);
         dataIndex += lineLength;
     }
     fclose(file);

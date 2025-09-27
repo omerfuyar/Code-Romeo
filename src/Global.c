@@ -34,8 +34,8 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
     {
         DEBUG_FILE_NAME_STR = (char *)malloc(strlen(Global_GetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
 
-        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) * sizeof(char), GLOBAL_EXECUTABLE_DIRECTORY_PATH);
-        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME) * sizeof(char), DEBUG_FILE_NAME);
+        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME), DEBUG_FILE_NAME);
 
         DEBUG_FILE_NAME_STR[strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) + strlen(DEBUG_FILE_NAME)] = '\0';
 
@@ -103,7 +103,7 @@ char *Global_GetExecutablePath()
         GLOBAL_EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
         DebugAssertNullPointerCheck(GLOBAL_EXECUTABLE_DIRECTORY_PATH);
 
-        MemoryCopy(GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex * sizeof(char), buffer);
+        MemoryCopy(GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex, buffer);
         GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
 
         DebugInfo("Executable path detected : '%s'", GLOBAL_EXECUTABLE_DIRECTORY_PATH);
