@@ -21,16 +21,16 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/arc)
 message(STATUS "Using C compiler: ${CMAKE_C_COMPILER}")
 
 # External Dependencies
-add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/glfw)
-add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/cglm)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cglm)
 
 target_compile_options(glfw PRIVATE -w)
 target_compile_options(cglm PRIVATE -w)
 
 # Project Source Files
 file(GLOB_RECURSE PROJECT_SOURCE
-    PRIVATE ${CMAKE_SOURCE_DIR}/src/*.c
-    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/dependencies/glad/src/*.c
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
+    SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/src/*.c
 )
 
 # Library Target Configuration
@@ -38,16 +38,16 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCE})
 
 # Include directories
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
 # Compiler Options
 target_compile_options(${PROJECT_NAME} PRIVATE
-    -isystem${CMAKE_SOURCE_DIR}/dependencies/glad/include
-    -isystem${CMAKE_SOURCE_DIR}/dependencies/glfw/include
-    -isystem${CMAKE_SOURCE_DIR}/dependencies/cglm/include
-    -isystem${CMAKE_SOURCE_DIR}/dependencies/stb/include
+    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include
+    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw/include
+    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cglm/include
+    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb/include
 )
 
 # Build-specific compiler flags
@@ -84,7 +84,7 @@ endif()
 
 # Platform-Specific Linking
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE
+    target_link_libraries(${PROJECT_NAME} PUBLIC
     opengl32
     gdi32
     cglm
@@ -94,7 +94,7 @@ elseif(APPLE)
     find_library(OpenGL_LIBRARY OpenGL REQUIRED)
     find_library(IOKit_LIBRARY IOKit REQUIRED)
     find_library(CoreVideo_LIBRARY CoreVideo REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE
+    target_link_libraries(${PROJECT_NAME} PUBLIC
         ${COCOA_LIBRARY}
         ${OpenGL_LIBRARY}
         ${IOKit_LIBRARY}
@@ -103,7 +103,7 @@ elseif(APPLE)
         glfw
     )
 elseif(UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE dl cglm glfw)
+    target_link_libraries(${PROJECT_NAME} PUBLIC dl cglm glfw)
 endif()
 
 # Installation Rules
@@ -112,7 +112,8 @@ install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION lib
 )
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+#todo fix this 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION include
     FILES_MATCHING PATTERN "*.h"
 )
