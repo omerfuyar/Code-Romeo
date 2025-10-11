@@ -7,7 +7,7 @@
 
 ## To clone the repository
 ``` shell
-git clone --recursive https://github.com/omerfuyar/Code-Romeo.git
+git clone --recurse-submodules https://github.com/omerfuyar/Code-Romeo.git
 cd Code-Romeo
 ```
 
