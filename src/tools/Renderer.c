@@ -334,7 +334,7 @@ void Renderer_RenderScene(RendererScene *scene)
 
     for (size_t i = 0; i < scene->batches.count; i++)
     {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
         RendererMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
@@ -349,7 +349,7 @@ void Renderer_RenderScene(RendererScene *scene)
 
         for (size_t j = 0; j < batch->model->meshes.count; j++)
         {
-            RendererMesh *mesh = *(RendererMesh **)ListArray_Get(batch->model->meshes, j);
+            RendererMesh *mesh = *(RendererMesh **)ListArray_Get(&batch->model->meshes, j);
 
             if (mesh->material != previousMaterial)
             {
@@ -571,20 +571,20 @@ void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererM
     int createdVertexIndex = String_ToInt(scv(faceData[0]));
     unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
 
-    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(model->vertices, (size_t)vertexIndex);
+    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(&model->vertices, (size_t)vertexIndex);
 
     if (faceDataCount > 1 && faceData[1].length != 0)
     {
         int createdUIndex = String_ToInt(scv(faceData[1]));
         unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool->count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
-        vertex->vertexUV = *(Vector2 *)ListArray_Get(*globalVertexUvPool, (size_t)uvIndex);
+        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
     }
 
     if (faceDataCount > 2 && faceData[2].length != 0)
     {
         int createdNormalIndex = String_ToInt(scv(faceData[2]));
         unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool->count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
-        vertex->vertexNormal = *(Vector3 *)ListArray_Get(*globalVertexNormalPool, (size_t)normalIndex);
+        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
     }
 
     ListArray_Add(&currentMesh->indices, &vertexIndex);
@@ -746,7 +746,7 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
     }
 
     size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
-    MemorySet(faceCounts, 0, meshCount * sizeof(size_t));
+    MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
     size_t tempMeshIndex = 0;
     for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
     {
@@ -850,7 +850,7 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
             for (size_t j = 0; j < materials.count; j++)
             {
-                RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materials, j);
+                RendererMaterial *material = *(RendererMaterial **)ListArray_Get(&materials, j);
 
                 if (String_Compare(scv(material->name), lineTokens[1]) == 0)
                 {
@@ -900,7 +900,7 @@ void RendererModel_Destroy(RendererModel *model)
 
     for (size_t i = model->meshes.count - 1; i >= 0; i--)
     {
-        RendererMesh_Destroy(*(RendererMesh **)ListArray_Get(model->meshes, i));
+        RendererMesh_Destroy(*(RendererMesh **)ListArray_Get(&model->meshes, i));
     }
 
     ListArray_Destroy(&model->meshes);
@@ -990,7 +990,7 @@ void RendererScene_Destroy(RendererScene *scene)
 
     for (size_t i = scene->batches.count - 1; i >= 0; i--)
     {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
         RendererScene_DestroyBatch(batch);
     }
 
@@ -1057,7 +1057,7 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
 
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
-        RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(batch->scene->batches, i);
+        RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(&batch->scene->batches, i);
         nextBatch->batchOffsetInScene--;
     }
 
@@ -1110,14 +1110,14 @@ void RendererScene_Update(RendererScene *scene)
 
     for (size_t i = 0; i < scene->batches.count; i++)
     {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(scene->batches, i);
+        RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
         for (size_t j = 0; j < batch->objectMatrices.count; j++)
         {
-            RendererComponent *component = (RendererComponent *)ListArray_Get(batch->components, j);
+            RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
             TransformToModelMatrix(component->positionReference,
                                    component->rotationReference,
                                    component->scaleReference,
-                                   (mat4 *)ListArray_Get(batch->objectMatrices, j));
+                                   (mat4 *)ListArray_Get(&batch->objectMatrices, j));
         }
     }
 }
@@ -1153,7 +1153,7 @@ void RendererBatch_DestroyComponent(RendererComponent *component)
 
     for (size_t i = component->componentOffsetInBatch; i < component->batch->components.count - component->componentOffsetInBatch; i++)
     {
-        RendererComponent *nextComponent = (RendererComponent *)ListArray_Get(component->batch->components, i);
+        RendererComponent *nextComponent = (RendererComponent *)ListArray_Get(&component->batch->components, i);
         nextComponent->componentOffsetInBatch--;
     }
 

@@ -15,7 +15,7 @@ typedef struct ListArray
     size_t capacity;
     size_t count;
     size_t sizeOfItem;
-    char *nameOfType;
+    const char *nameOfType;
 } ListArray;
 
 /// @brief Creator function for ListArray.
@@ -23,33 +23,33 @@ typedef struct ListArray
 /// @param sizeOfItem Size of the item type to store in.
 /// @param initialCapacity How many items can hold in this ListArray. Can be resized later on.
 /// @return The created ListArray struct
-ListArray ListArray_Create(char *nameOfType, size_t sizeOfItem, size_t initialCapacity);
+ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t initialCapacity);
 
 /// @brief Destroyer function for ListArray.
 /// @param list ListArray to destroy.
 void ListArray_Destroy(ListArray *list);
 
 /// @brief Creates a copy of the given ListArray with its own data.
-/// @param list ListArray to copy.
-/// @return The copy ListArray
-ListArray ListArray_Copy(ListArray list);
+/// @param list Pointer to the ListArray to copy.
+/// @return The copied ListArray.
+ListArray ListArray_Copy(const ListArray *list);
 
 /// @brief Resize function for ListArray. Can enlarge or trunc the ListArray.
 /// @param list ListArray to resize.
 /// @param newCapacity Capacity to increase or decrease.
 void ListArray_Resize(ListArray *list, size_t newCapacity);
 
-/// @brief Getter function for ListArray. Should be casted before dereference / usage like : *(ListType*)function...
-/// @param list ListArray to get item in index.
+/// @brief Getter function for ListArray. Should be cast before using. ['(<TYPE>*)Getter(...)' will give you the pointer of the stored data. You can dereference it as you want]
+/// @param list Pointer to the ListArray to get item from.
 /// @param index Index to get item.
-/// @return The item in given index.
-void *ListArray_Get(ListArray list, size_t index);
+/// @return Pointer to the item at the given index.
+void *ListArray_Get(const ListArray *list, size_t index);
 
 /// @brief Item setter function for ListArray. Works only in range of size. Uses memcpy to copy the item to the given index.
-/// @param list ListArray to change item in.
+/// @param list Pointer to the ListArray to change item in.
 /// @param index Index to replace item at.
-/// @param item New item at index.
-void ListArray_Set(ListArray list, size_t index, const void *item);
+/// @param item Pointer to the new item at index.
+void ListArray_Set(ListArray *list, size_t index, const void *item);
 
 /// @brief Adder function for ListArray. Copies {sizeOfItem} amount of data from parameter {item} to the end of the array. Uses memcpy.
 /// @param list ListArray to add item.
@@ -89,7 +89,7 @@ void *ListArray_Pop(ListArray *list);
 void ListArray_Clear(ListArray *list);
 
 /// @brief Index finder for ListArray. Searches the list linearly. Uses memcmp to compare items.
-/// @param list List to search for item.
-/// @param item Item to find index of.
+/// @param list Pointer to the ListArray to search.
+/// @param item Pointer to the item to find.
 /// @return The index of found item. -1 if the item is absent in the list.
-long long ListArray_IndexOf(ListArray list, const void *item);
+long long ListArray_IndexOf(const ListArray *list, const void *item);

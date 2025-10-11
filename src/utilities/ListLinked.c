@@ -97,7 +97,7 @@ long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, size_t sizeOfItem
     }
 }
 
-ListLinked ListLinked_Create(size_t sizeOfItem, char *nameOfType)
+ListLinked ListLinked_Create(size_t sizeOfItem, const char *nameOfType)
 {
     ListLinked list;
     list.count = 0;
@@ -124,11 +124,12 @@ void ListLinked_Destroy(ListLinked *list)
     DebugInfo("ListLinked '%s' destroyed.", tempTitle);
 }
 
-void *ListLinked_Get(ListLinked list, size_t index)
+void *ListLinked_Get(const ListLinked *list, size_t index)
 {
-    DebugAssert(index < list.count, "Index out of range. List count : %du, index : %du", list.count, index);
+    DebugAssertNullPointerCheck(list);
+    DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
-    ListLinkedNode *currentNode = list.head;
+    ListLinkedNode *currentNode = list->head;
 
     for (size_t i = 0; i < index; i++)
     {
@@ -138,13 +139,13 @@ void *ListLinked_Get(ListLinked list, size_t index)
     return currentNode->data;
 }
 
-void ListLinked_Set(ListLinked list, size_t index, const void *item)
+void ListLinked_Set(ListLinked *list, size_t index, const void *item)
 {
-    DebugAssertNullPointerCheck(item);
-    DebugAssert(index < list.count, "Index out of range. List count : %du, index : %du", list.count, index);
+    DebugAssertNullPointerCheck(list);
+    DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
     ListLinkedNode *nodeToSet = ListLinked_Get(list, index);
-    memcpy(nodeToSet->data, item, list.sizeOfItem);
+    memcpy(nodeToSet->data, item, list->sizeOfItem);
 }
 
 void ListLinked_Add(ListLinked *list, const void *item)
@@ -178,7 +179,7 @@ void ListLinked_RemoveAtIndex(ListLinked *list, size_t index)
     }
     else
     {
-        ListLinkedNode *previousNodeToRemove = ListLinked_Get(*list, index - 1);
+        ListLinkedNode *previousNodeToRemove = ListLinked_Get(list, index - 1);
         ListLinkedNode_Connect(previousNodeToRemove, previousNodeToRemove->next->next);
         ListLinkedNode_Destroy(previousNodeToRemove->next);
     }
@@ -188,17 +189,27 @@ void ListLinked_RemoveAtIndex(ListLinked *list, size_t index)
 
 void ListLinked_RemoveItem(ListLinked *list, const void *item)
 {
-    ListLinked_RemoveAtIndex(list, (size_t)ListLinked_IndexOf(*list, item));
+    DebugAssertNullPointerCheck(list);
+
+    ListLinked_RemoveAtIndex(list, (size_t)ListLinked_IndexOf(list, item));
 }
 
 void ListLinked_Clear(ListLinked *list)
 {
-    ListLinkedNode_DestroyAll(list->head);
+    DebugAssertNullPointerCheck(list);
+
+    if (list->head != NULL)
+    {
+        ListLinkedNode_DestroyAll(list->head);
+        list->head = NULL;
+    }
+
+    list->count = 0;
 }
 
-long long ListLinked_IndexOf(ListLinked list, const void *item)
+long long ListLinked_IndexOf(const ListLinked *list, const void *item)
 {
-    DebugAssertNullPointerCheck(item);
+    DebugAssertNullPointerCheck(list);
 
-    return ListLinkedNode_GetIndexIfMatch(list.head, list.sizeOfItem, item, 0);
+    return ListLinkedNode_GetIndexIfMatch(list->head, list->sizeOfItem, item, 0);
 }

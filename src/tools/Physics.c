@@ -223,7 +223,7 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
     String_Destroy(&scene->name);
     for (size_t i = scene->components.count - 1; i >= 0; i--)
     {
-        PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(scene->components, i);
+        PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(&scene->components, i);
         PhysicsScene_DestroyComponent(component);
     }
 
@@ -236,7 +236,7 @@ void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime)
 {
     for (size_t i = 0; i < scene->components.count; i++)
     {
-        PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(scene->components, i);
+        PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(&scene->components, i);
         PhysicsComponent_Update(component, deltaTime);
     }
 }
@@ -247,11 +247,11 @@ void PhysicsScene_ResolveCollisions(PhysicsScene *scene)
     //{
     for (size_t i = 0; i < scene->components.count - 1; i++)
     {
-        PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(scene->components, i);
+        PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(&scene->components, i);
 
         for (size_t j = i + 1; j < scene->components.count; j++)
         {
-            PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(scene->components, j);
+            PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(&scene->components, j);
             PhysicsScene_ResolveCollision(scene, firstComponent, secondComponent);
         }
     }
@@ -280,7 +280,7 @@ void PhysicsScene_DestroyComponent(PhysicsComponent *component)
 
     for (size_t i = component->componentOffsetInScene; i < component->scene->components.count - component->componentOffsetInScene; i++)
     {
-        PhysicsComponent *nextComponent = (PhysicsComponent *)ListArray_Get(component->scene->components, i);
+        PhysicsComponent *nextComponent = (PhysicsComponent *)ListArray_Get(&component->scene->components, i);
         nextComponent->componentOffsetInScene--;
     }
 
