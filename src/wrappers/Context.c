@@ -3,9 +3,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-/// @brief Global main window context instance
+/// @brief Global main window context instance.
 ContextWindow CONTEXT_MAIN_WINDOW = {0};
-/// @brief Global resize callback function pointer
+/// @brief Global resize callback function pointer.
 FunVoidptrIntIntToVoid CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
 
 ContextWindow *Context_Initialize()
