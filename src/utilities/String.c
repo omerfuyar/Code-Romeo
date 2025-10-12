@@ -96,18 +96,18 @@ int String_Compare(StringView string, StringView other)
 
 void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t maxTokenCount)
 {
+    DebugAssertNullPointerCheck(tokenBufferRet);
+
     size_t tokenCount = 0;
     size_t lastTokenIndex = 0;
-    StringView *token = NULL;
 
     for (size_t i = 0; i < string.length && tokenCount < maxTokenCount; i++)
     {
-        if (strncmp(string.characters + i, delimeter.characters, delimeter.length) == 0)
+        if (strncmp(string.characters + i, delimeter.characters, Min(delimeter.length, string.length - i - 1)) == 0)
         {
-            token = tokenBufferRet + tokenCount;
-
-            token->characters = string.characters + lastTokenIndex;
-            token->length = i - lastTokenIndex;
+            tokenBufferRet[tokenCount] = (StringView){
+                .characters = string.characters + lastTokenIndex,
+                .length = i - lastTokenIndex};
 
             lastTokenIndex = i + delimeter.length;
             i = lastTokenIndex - 1;
@@ -120,9 +120,9 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
 
     if (lastTokenIndex < string.length && tokenCount < maxTokenCount)
     {
-        token = tokenBufferRet + tokenCount;
-        token->characters = string.characters + lastTokenIndex;
-        token->length = string.length - lastTokenIndex;
+        tokenBufferRet[tokenCount] = (StringView){
+            .characters = string.characters + lastTokenIndex,
+            .length = string.length - lastTokenIndex};
 
         // DebugInfo("Token %zu: '%.*s'", tokenCount, (int)token->length, token->characters);
 

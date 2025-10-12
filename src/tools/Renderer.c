@@ -568,21 +568,21 @@ void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererM
     size_t faceDataCount;
     String_Tokenize(faceComponent, scl("/"), &faceDataCount, faceData, 4);
 
-    int createdVertexIndex = String_ToInt(scv(faceData[0]));
+    int createdVertexIndex = String_ToInt(faceData[0]);
     unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
 
     RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(&model->vertices, (size_t)vertexIndex);
 
     if (faceDataCount > 1 && faceData[1].length != 0)
     {
-        int createdUIndex = String_ToInt(scv(faceData[1]));
+        int createdUIndex = String_ToInt(faceData[1]);
         unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool->count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
         vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
     }
 
     if (faceDataCount > 2 && faceData[2].length != 0)
     {
-        int createdNormalIndex = String_ToInt(scv(faceData[2]));
+        int createdNormalIndex = String_ToInt(faceData[2]);
         unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool->count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
         vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
     }
@@ -624,7 +624,7 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
     for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
     {
-        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
         StringView firstToken = lineTokens[0];
 
@@ -646,7 +646,7 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
         }
         else if (String_Compare(firstToken, strMTLLIB) == 0) // .mtl file
         {
-            ResourceText *mtlFileResource = ResourceText_Create(lineTokens[1], objFilePath);
+            ResourceText *mtlFileResource = ResourceText_Create(scv(lineTokens[1]), objFilePath);
 
             size_t materialCount = 0;
 
@@ -672,9 +672,9 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
             for (size_t j = 0; j < mtlLineCount; j++) // count
             {
-                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+                String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-                StringView mtlFirstToken = mtlLineTokens[0];
+                StringView mtlFirstToken = scv(mtlLineTokens[0]);
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
@@ -687,55 +687,55 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
             for (size_t j = 0; j < mtlLineCount; j++) // compute
             {
-                String_Tokenize(mtlLines[j], strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+                String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-                StringView mtlFirstToken = mtlLineTokens[0];
+                StringView mtlFirstToken = scv(mtlLineTokens[0]);
 
                 if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
                 {
-                    currentMaterial = RendererMaterial_Create(mtlLineTokens[1]);
+                    currentMaterial = RendererMaterial_Create(scv(mtlLineTokens[1]));
                     ListArray_Add(&materials, &currentMaterial);
                 }
                 else if (String_Compare(mtlFirstToken, strNS) == 0)
                 {
-                    currentMaterial->specularExponent = String_ToFloat(mtlLineTokens[1]);
+                    currentMaterial->specularExponent = String_ToFloat(scv(mtlLineTokens[1]));
                 }
                 else if (String_Compare(mtlFirstToken, strKA) == 0)
                 {
                     currentMaterial->ambientColor =
-                        NewVector3(String_ToFloat(mtlLineTokens[1]),
-                                   String_ToFloat(mtlLineTokens[2]),
-                                   String_ToFloat(mtlLineTokens[3]));
+                        NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                                   String_ToFloat(scv(mtlLineTokens[2])),
+                                   String_ToFloat(scv(mtlLineTokens[3])));
                 }
                 else if (String_Compare(mtlFirstToken, strKD) == 0)
                 {
                     currentMaterial->diffuseColor =
-                        NewVector3(String_ToFloat(mtlLineTokens[1]),
-                                   String_ToFloat(mtlLineTokens[2]),
-                                   String_ToFloat(mtlLineTokens[3]));
+                        NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                                   String_ToFloat(scv(mtlLineTokens[2])),
+                                   String_ToFloat(scv(mtlLineTokens[3])));
                 }
                 else if (String_Compare(mtlFirstToken, strKS) == 0)
                 {
                     currentMaterial->specularColor =
-                        NewVector3(String_ToFloat(mtlLineTokens[1]),
-                                   String_ToFloat(mtlLineTokens[2]),
-                                   String_ToFloat(mtlLineTokens[3]));
+                        NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                                   String_ToFloat(scv(mtlLineTokens[2])),
+                                   String_ToFloat(scv(mtlLineTokens[3])));
                 }
                 else if (String_Compare(mtlFirstToken, strNI) == 0)
                 {
-                    currentMaterial->refractionIndex = String_ToFloat(mtlLineTokens[1]);
+                    currentMaterial->refractionIndex = String_ToFloat(scv(mtlLineTokens[1]));
                 }
                 else if (String_Compare(mtlFirstToken, strD) == 0)
                 {
-                    currentMaterial->dissolve = String_ToFloat(mtlLineTokens[1]);
+                    currentMaterial->dissolve = String_ToFloat(scv(mtlLineTokens[1]));
                 }
                 else if (String_Compare(mtlFirstToken, strILLNUM) == 0)
                 {
-                    currentMaterial->illuminationModel = String_ToInt(mtlLineTokens[1]);
+                    currentMaterial->illuminationModel = String_ToInt(scv(mtlLineTokens[1]));
                 }
                 else if (String_Compare(mtlFirstToken, strMAP_KD) == 0)
                 {
-                    currentMaterial->diffuseMap = RendererTexture_Create(mtlLineTokens[1], objFilePath); // try find in existing textures
+                    currentMaterial->diffuseMap = RendererTexture_Create(scv(mtlLineTokens[1]), objFilePath); // try find in existing textures
                 }
             }
 
@@ -750,9 +750,9 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
     size_t tempMeshIndex = 0;
     for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
     {
-        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        StringView firstToken = lineTokens[0];
+        StringView firstToken = scv(lineTokens[0]);
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
             faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
@@ -769,18 +769,18 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
     for (size_t i = 0; i < objFileSourceLineCount; i++) // create global pools
     {
-        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        StringView firstToken = lineTokens[0];
+        StringView firstToken = scv(lineTokens[0]);
 
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
             vec3 vertexPosition;
 
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
-                           (vec3){String_ToFloat(lineTokens[1]),
-                                  String_ToFloat(lineTokens[2]),
-                                  String_ToFloat(lineTokens[3])},
+                           (vec3){String_ToFloat(scv(lineTokens[1])),
+                                  String_ToFloat(scv(lineTokens[2])),
+                                  String_ToFloat(scv(lineTokens[3]))},
                            0.0f,
                            (float *)&vertexPosition);
 
@@ -792,8 +792,8 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
         else if (String_Compare(firstToken, strVT) == 0) // vt 0.073128 0.431854
         {
             Vector2 vertexUv =
-                NewVector2(String_ToFloat(lineTokens[1]),
-                           String_ToFloat(lineTokens[2]));
+                NewVector2(String_ToFloat(scv(lineTokens[1])),
+                           String_ToFloat(scv(lineTokens[2])));
 
             ListArray_Add(&globalVertexUvPool, &vertexUv);
         }
@@ -802,9 +802,9 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
             vec3 vertexNormal;
 
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
-                           (vec3){String_ToFloat(lineTokens[1]),
-                                  String_ToFloat(lineTokens[2]),
-                                  String_ToFloat(lineTokens[3])},
+                           (vec3){String_ToFloat(scv(lineTokens[1])),
+                                  String_ToFloat(scv(lineTokens[2])),
+                                  String_ToFloat(scv(lineTokens[3]))},
                            0.0f,
                            (float *)&vertexNormal);
 
@@ -819,29 +819,29 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
     for (size_t i = 0; i < objFileSourceLineCount; i++) // add data to model
     {
-        String_Tokenize(lines[i], scl(" "), &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), scl(" "), &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
-        StringView firstToken = lineTokens[0];
+        StringView firstToken = scv(lineTokens[0]);
 
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
             if (lineTokenCount == 4) // 3 vertex face (triangle)
             {
-                ProcessFaceVertex(lineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
-                ProcessFaceVertex(lineTokens[2], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
-                ProcessFaceVertex(lineTokens[3], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[1]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[2]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[3]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
             }
             else if (lineTokenCount == 5) // 4 vertex face (quad), triangulate it
             {
                 // First triangle: vertices 1, 2, 3
-                ProcessFaceVertex(lineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
-                ProcessFaceVertex(lineTokens[2], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
-                ProcessFaceVertex(lineTokens[3], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[1]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[2]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[3]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
 
                 // Second triangle: vertices 1, 3, 4
-                ProcessFaceVertex(lineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
-                ProcessFaceVertex(lineTokens[3], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
-                ProcessFaceVertex(lineTokens[4], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[1]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[3]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
+                ProcessFaceVertex(scv(lineTokens[4]), model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
             }
         }
         else if (String_Compare(firstToken, strUSEMTL) == 0) // use material and create object
@@ -852,7 +852,7 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(&materials, j);
 
-                if (String_Compare(scv(material->name), lineTokens[1]) == 0)
+                if (String_Compare(scv(material->name), scv(lineTokens[1])) == 0)
                 {
                     currentMesh = RendererMesh_CreateEmpty(faceCounts[model->meshes.count] * 3, material);
                     ListArray_Add(&model->meshes, &currentMesh);

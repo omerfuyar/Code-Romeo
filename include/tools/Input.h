@@ -145,7 +145,7 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button);
 
 /// @brief Gets the current mouse wheel scroll delta
 /// @return A float value representing the scroll amount (positive for scrolling up, negative for scrolling down)
-float Input_GetMouseButtonScroll();
+float Input_GetMouseScroll();
 
 /// @brief Gets the current mouse cursor position in screen coordinates. Relative to the top-left corner of the window.
 /// @return A Vector2Int containing the (x, y) coordinates of the mouse cursor

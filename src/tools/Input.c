@@ -3,12 +3,12 @@
 
 #pragma region Source Only
 
+//! BE CAREFUL
 #define INPUT_KEY_NUMBERS_COUNT 10
 #define INPUT_KEY_ALPHABETS_COUNT 26
 #define INPUT_KEY_SPECIALS_COUNT 10
 #define INPUT_KEY_FUNCTIONS_COUNT 12
 #define INPUT_KEY_CONTROLS_COUNT 8
-
 #define INPUT_KEY_MOUSE_BUTTONS_COUNT 8
 
 InputState INPUT_KEY_SPACE = {0};
@@ -17,7 +17,6 @@ InputState INPUT_KEY_ALPHABETS[INPUT_KEY_ALPHABETS_COUNT] = {0};
 InputState INPUT_KEY_SPECIALS[INPUT_KEY_SPECIALS_COUNT] = {0};
 InputState INPUT_KEY_FUNCTIONS[INPUT_KEY_FUNCTIONS_COUNT] = {0};
 InputState INPUT_KEY_CONTROLS[INPUT_KEY_CONTROLS_COUNT] = {0};
-
 InputState INPUT_KEY_MOUSE_BUTTONS[INPUT_KEY_MOUSE_BUTTONS_COUNT] = {0};
 
 ContextWindow *INPUT_MAIN_WINDOW = NULL;
@@ -365,7 +364,7 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button)
     }
 }
 
-float Input_GetMouseButtonScroll()
+float Input_GetMouseScroll()
 {
     return INPUT_MOUSE_SCROLL;
 }
