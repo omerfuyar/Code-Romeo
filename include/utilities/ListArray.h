@@ -3,10 +3,10 @@
 #include "Global.h"
 
 // The resize multiplier used when the ListArray size reached to the capacity when adding new item
-#define ARRAY_LIST_RESIZE_MULTIPLIER 2.0f
+#define LIST_ARRAY_RESIZE_MULTIPLIER 2.0f
 
 // The limit for resizing the ListArray when it's size is less than 1/x of the capacity
-#define ARRAY_LIST_MIN_DECIMAL_LIMIT 4.0f
+#define LIST_ARRAY_MIN_DECIMAL_LIMIT 4.0f
 
 /// @brief A dynamic array list implementation. Can be used in any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct ListArray
@@ -61,7 +61,8 @@ void *ListArray_Add(ListArray *list, const void *item);
 /// @param list ListArray to add items to.
 /// @param item Pointer to the first item to add.
 /// @param itemCount Number of items to add.
-void ListArray_AddRange(ListArray *list, const void *item, size_t itemCount);
+/// @return The address of the first added item.
+void *ListArray_AddRange(ListArray *list, const void *item, size_t itemCount);
 
 /// @brief Remover function using index for ListArray. Removes the item at the given index. Uses memmove to shift all indices of items by -1 after the removed index.
 /// @param list ListArray to remove item from.

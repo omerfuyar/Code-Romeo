@@ -1,5 +1,4 @@
 #include "tools/Renderer.h"
-#include "tools/Resources.h"
 
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
@@ -36,23 +35,13 @@ typedef struct RendererDebugVertex
 
 typedef struct RendererTexture
 {
+    String name;
     size_t index;
-    ResourceImage *image;
+    void *data;
+    Vector2Int size;
+    int channels;
     RendererTextureHandle handle;
 } RendererTexture;
-
-typedef struct RendererMaterial
-{
-    String name;
-    Vector3 ambientColor;
-    Vector3 diffuseColor;
-    Vector3 specularColor;
-    RendererTexture diffuseMap;
-    float specularExponent;
-    float refractionIndex;
-    float dissolve;
-    int illuminationModel;
-} RendererMaterial;
 
 typedef struct RendererMesh
 {
@@ -62,8 +51,7 @@ typedef struct RendererMesh
 
 ContextWindow *RENDERER_MAIN_WINDOW = NULL;
 RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
-RendererTexture RENDERER_MAIN_TEXTURES[RENDERER_TEXTURE_MAX_COUNT] = {0};
-size_t RENDERER_MAIN_TEXTURES_COUNT = 0;
+ListArray RENDERER_MAIN_TEXTURES = {0}; // RendererTexture
 
 RendererVAOHandle RENDERER_DEBUG_VAO = 0;
 RendererVBOHandle RENDERER_DEBUG_VBO = 0;
@@ -99,36 +87,47 @@ void TransformToModelMatrix(Vector3 *position, Vector3 *rotation, Vector3 *scale
 
 #pragma region Renderer Texture
 
-RendererTexture RendererTexture_Create(StringView name, StringView path)
+RendererTexture *RendererTexture_Create(StringView name, void *data, Vector2Int size, int channels)
 {
-    for (size_t i = 0; i < RENDERER_TEXTURE_MAX_COUNT; i++)
+    for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
-        if (RENDERER_MAIN_TEXTURES[i].image != NULL && String_Compare(scv(RENDERER_MAIN_TEXTURES[i].image->name), name) == 0)
+        RendererTexture *currentTexture = ((RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i));
+
+        if (String_Compare(scv(currentTexture->name), name) == 0)
         {
-            return RENDERER_MAIN_TEXTURES[i];
+            return currentTexture;
         }
     }
 
-    RendererTexture texture = {0};
-    texture.image = ResourceImage_Create(name, path);
+    if (data == NULL)
+    {
+        DebugWarning("Cannot create texture '%.*s' with NULL data", (int)name.length, name.characters);
+        return NULL;
+    }
 
-    glGenTextures(1, &texture.handle);
-    glBindTexture(GL_TEXTURE_2D, texture.handle);
+    RendererTexture *texture = ListArray_Add(&RENDERER_MAIN_TEXTURES, NULL);
+    texture->index = RENDERER_MAIN_TEXTURES.count - 1;
+    texture->size = size;
+    texture->channels = channels;
+
+    texture->data = malloc((size_t)(size.x * size.y * channels));
+    DebugAssertNullPointerCheck(texture->data);
+    MemoryCopy(texture->data, (size_t)(size.x * size.y * channels), data);
+
+    glGenTextures(1, &texture->handle);
+    glBindTexture(GL_TEXTURE_2D, texture->handle);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    GLenum format = texture.image->channels == 4 ? GL_RGBA : (texture.image->channels == 3 ? GL_RGB : (texture.image->channels == 2 ? GL_RG : GL_RED));
+    GLenum format = texture->channels == 4 ? GL_RGBA : (texture->channels == 3 ? GL_RGB : (texture->channels == 2 ? GL_RG : GL_RED));
 
-    glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, texture.image->size.x, texture.image->size.y, 0, format, GL_UNSIGNED_BYTE, texture.image->data);
+    glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, texture->size.x, texture->size.y, 0, format, GL_UNSIGNED_BYTE, texture->data);
     // glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    texture.index = RENDERER_MAIN_TEXTURES_COUNT++;
-    RENDERER_MAIN_TEXTURES[texture.index] = texture;
 
     return texture;
 }
@@ -137,63 +136,19 @@ void RendererTexture_Destroy(RendererTexture *texture)
 {
     DebugAssertNullPointerCheck(texture);
 
-    RENDERER_MAIN_TEXTURES[texture->index] = (RendererTexture){0};
-    RENDERER_MAIN_TEXTURES_COUNT--;
-
-    ResourceImage_Destroy(texture->image);
-    texture->image = NULL;
+    String_Destroy(&texture->name);
+    free(texture->data);
+    texture->data = NULL;
+    texture->size = NewVector2IntN(0.0f);
+    texture->channels = 0;
 
     glDeleteTextures(1, &texture->handle);
     texture->handle = 0;
 
-    for (size_t i = texture->index; i < RENDERER_MAIN_TEXTURES_COUNT; i++)
-    {
-        RENDERER_MAIN_TEXTURES[i] = RENDERER_MAIN_TEXTURES[i + 1];
-        RENDERER_MAIN_TEXTURES[i].index = i;
-    }
+    ListArray_RemoveAtIndex(&RENDERER_MAIN_TEXTURES, texture->index);
 }
 
 #pragma endregion Renderer Texture
-
-#pragma region Renderer Material
-
-RendererMaterial *RendererMaterial_Create(StringView name)
-{
-    RendererMaterial *material = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-    DebugAssertNullPointerCheck(material);
-
-    material->name = scc(name);
-    material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->diffuseMap = (RendererTexture){0};
-    material->dissolve = -1.0f;
-    material->illuminationModel = -1;
-    material->refractionIndex = -1.0f;
-    material->specularColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->specularExponent = -1.0f;
-
-    return material;
-}
-
-void RendererMaterial_Destroy(RendererMaterial *material)
-{
-    material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    glDeleteTextures(1, &material->diffuseMap.handle);
-    material->dissolve = -1.0f;
-    material->illuminationModel = -1;
-    RendererTexture_Destroy(&material->diffuseMap);
-    String_Destroy(&material->name);
-    material->refractionIndex = -1.0f;
-    material->specularColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->specularExponent = -1.0f;
-
-    free(material);
-
-    material = NULL;
-}
-
-#pragma endregion Renderer Material
 
 #pragma region Renderer Mesh
 
@@ -226,11 +181,12 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
 #pragma region Renderer
 
-void Renderer_Initialize(ContextWindow *window)
+void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
 {
     DebugAssertNullPointerCheck(window);
 
     RENDERER_MAIN_WINDOW = window;
+    RENDERER_MAIN_TEXTURES = ListArray_Create("Renderer Texture", sizeof(RendererTexture), initialTextureCapacity);
 
     DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
     DebugInfo("GLAD initialized successfully.");
@@ -248,10 +204,20 @@ void Renderer_Initialize(ContextWindow *window)
 
 void Renderer_Terminate()
 {
+    for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
+    {
+        RendererTexture *texture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
+        RendererTexture_Destroy(texture);
+    }
+
+    ListArray_Destroy(&RENDERER_MAIN_TEXTURES);
+
     if (RENDERER_MAIN_SHADER_PROGRAM != 0)
     {
         glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
     }
+
+    RENDERER_MAIN_SHADER_PROGRAM = 0;
 }
 
 void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource)
@@ -360,11 +326,11 @@ void Renderer_RenderScene(RendererScene *scene)
                 glUniform1f(scene->matDissolve, mesh->material->dissolve);
 
                 // Texture binding
-                if (mesh->material->diffuseMap.handle != 0)
+                if (mesh->material->diffuseMap->handle != 0)
                 {
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap.handle);
-                    glUniform1i(scene->matDiffuseMap, 0);
+                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap->handle);
+                    glUniform1i(scene->matDiffuseMap, 0); // todo fix
                     glUniform1i(scene->matHasDiffuseMap, 1);
                 }
                 else
@@ -469,13 +435,22 @@ void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragment
 
 void RendererDebug_Terminate()
 {
-    glDeleteBuffers(1, &RENDERER_DEBUG_VBO);
-    glDeleteVertexArrays(1, &RENDERER_DEBUG_VAO);
+    if (RENDERER_DEBUG_VBO != 0)
+    {
+        glDeleteBuffers(1, &RENDERER_DEBUG_VBO);
+    }
+
+    if (RENDERER_DEBUG_VAO != 0)
+    {
+        glDeleteVertexArrays(1, &RENDERER_DEBUG_VAO);
+    }
 
     if (RENDERER_DEBUG_SHADER_PROGRAM != 0)
     {
         glDeleteProgram(RENDERER_DEBUG_SHADER_PROGRAM);
     }
+
+    ListArray_Destroy(&RENDERER_DEBUG_VERTICES);
 
     RENDERER_DEBUG_VAO = 0;
     RENDERER_DEBUG_VBO = 0;
@@ -560,6 +535,106 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
 
 #pragma endregion Renderer Debug
 
+#pragma region Renderer Material
+
+RendererMaterial *RendererMaterial_Create(StringView matFileData, size_t matFileLineCount, StringView textureName, void *textureData, Vector2Int textureSize, int textureChannels)
+{
+    RendererMaterial *material = (RendererMaterial *)malloc(sizeof(RendererMaterial));
+    DebugAssertNullPointerCheck(material);
+
+    size_t mtlLineCount = 0;
+    StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
+    DebugAssertNullPointerCheck(mtlLines);
+
+    size_t mtlLineTokenCount = 0;
+    StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
+
+    StringView strNewline = scl("\n");
+    StringView strSpace = scl(" ");
+    StringView strNEWMTL = scl("newmtl");
+    StringView strNS = scl("Ns");
+    StringView strKA = scl("Ka");
+    StringView strKD = scl("Kd");
+    StringView strKS = scl("Ks");
+    StringView strNI = scl("Ni");
+    StringView strD = scl("d");
+    StringView strILLNUM = scl("illum");
+
+    String_Tokenize(matFileData, strNewline, &mtlLineCount, mtlLines, matFileLineCount);
+    for (size_t j = 0; j < mtlLineCount; j++)
+    {
+        String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
+
+        StringView mtlFirstToken = scv(mtlLineTokens[0]);
+
+        if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
+        {
+            material->name = scc(mtlLines[1]);
+        }
+        else if (String_Compare(mtlFirstToken, strNS) == 0)
+        {
+            material->specularExponent = String_ToFloat(scv(mtlLineTokens[1]));
+        }
+        else if (String_Compare(mtlFirstToken, strKA) == 0)
+        {
+            material->ambientColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strKD) == 0)
+        {
+            material->diffuseColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strKS) == 0)
+        {
+            material->specularColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strNI) == 0)
+        {
+            material->refractionIndex = String_ToFloat(scv(mtlLineTokens[1]));
+        }
+        else if (String_Compare(mtlFirstToken, strD) == 0)
+        {
+            material->dissolve = String_ToFloat(scv(mtlLineTokens[1]));
+        }
+        else if (String_Compare(mtlFirstToken, strILLNUM) == 0)
+        {
+            material->illuminationModel = String_ToInt(scv(mtlLineTokens[1]));
+        }
+    }
+
+    free(mtlLines);
+
+    material->diffuseMap = RendererTexture_Create(textureName, textureData, textureSize, textureChannels);
+
+    return material;
+}
+
+void RendererMaterial_Destroy(RendererMaterial *material)
+{
+    material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
+    material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
+    material->dissolve = -1.0f;
+    material->illuminationModel = -1;
+    String_Destroy(&material->name);
+    material->refractionIndex = -1.0f;
+    material->specularColor = NewVector3(-1.0f, -1.0f, -1.0f);
+    material->specularExponent = -1.0f;
+
+    free(material);
+
+    material = NULL;
+}
+
+#pragma endregion Renderer Material
+
 #pragma region Renderer Model
 
 void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
@@ -590,7 +665,19 @@ void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererM
     ListArray_Add(&currentMesh->indices, &vertexIndex);
 }
 
-RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource, size_t objFileSourceLineCount, StringView objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
+RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity)
+{
+    RendererModel *model = malloc(sizeof(RendererModel));
+    DebugAssertNullPointerCheck(model);
+
+    model->name = scc(name);
+    model->vertices = ListArray_Create("Renderer Mesh Vertex", sizeof(RendererMeshVertex), initialVertexCapacity);
+    model->meshes = ListArray_Create("Renderer Mesh Pointer", sizeof(RendererMesh *), initialMeshCapacity);
+
+    return model;
+}
+
+RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
     mat4 offsetMatrix;
     TransformToModelMatrix(&positionOffset, &rotationOffset, &scaleOffset, &offsetMatrix);
@@ -601,11 +688,11 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
     size_t totalVertexNormalCount = 0;
     size_t totalVertexUvCount = 0;
 
-    StringView *lines = (StringView *)malloc(objFileSourceLineCount * sizeof(StringView));
+    StringView *lines = (StringView *)malloc(mdlFileLineCount * sizeof(StringView));
     DebugAssertNullPointerCheck(lines);
 
     size_t lineTokenCount = 0;
-    StringView lineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
+    StringView lineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
     StringView strSpace = scl(" ");
@@ -613,18 +700,14 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
     StringView strF = scl("f");
     StringView strVT = scl("vt");
     StringView strVN = scl("vn");
-    // StringView strO = scl("o");
-    // StringView strG = scl("g");
-    StringView strMTLLIB = scl("mtllib");
+    StringView strO = scl("o");
     StringView strUSEMTL = scl("usemtl");
 
-    ListArray materials = {0}; // RendererMaterial*
+    String_Tokenize(mdlFileData, strNewline, &mdlFileLineCount, lines, mdlFileLineCount);
 
-    String_Tokenize(objFileSource, strNewline, &objFileSourceLineCount, lines, objFileSourceLineCount);
-
-    for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
+    for (size_t i = 0; i < mdlFileLineCount; i++) // count and create materials
     {
-        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(lines[i], strSpace, &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
         StringView firstToken = lineTokens[0];
 
@@ -640,124 +723,28 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
         {
             totalVertexNormalCount++;
         }
-        else if (String_Compare(firstToken, strUSEMTL) == 0) // new object
+        else if (String_Compare(firstToken, strO) == 0) // new object
         {
             meshCount++;
-        }
-        else if (String_Compare(firstToken, strMTLLIB) == 0) // .mtl file
-        {
-            ResourceText *mtlFileResource = ResourceText_Create(scv(lineTokens[1]), objFilePath);
-
-            size_t materialCount = 0;
-
-            size_t mtlLineCount = 0;
-            StringView *mtlLines = (StringView *)malloc(mtlFileResource->lineCount * sizeof(StringView));
-            DebugAssertNullPointerCheck(mtlLines);
-
-            size_t mtlLineTokenCount = 0;
-            StringView mtlLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
-
-            StringView strNEWMTL = scl("newmtl");
-            StringView strNS = scl("Ns");
-            StringView strKA = scl("Ka");
-            StringView strKD = scl("Kd");
-            StringView strKS = scl("Ks");
-            StringView strNI = scl("Ni");
-            StringView strD = scl("d");
-            StringView strILLNUM = scl("illum");
-            StringView strMAP_KD = scl("map_Kd");
-            // StringView strMAP_BUMP = scl("map_bump");
-
-            String_Tokenize(scv(mtlFileResource->data), strNewline, &mtlLineCount, mtlLines, mtlFileResource->lineCount);
-
-            for (size_t j = 0; j < mtlLineCount; j++) // count
-            {
-                String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
-
-                StringView mtlFirstToken = scv(mtlLineTokens[0]);
-
-                if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
-                {
-                    materialCount++;
-                }
-            }
-
-            materials = ListArray_Create("Renderer Material Pointer", sizeof(RendererMaterial *), materialCount);
-            RendererMaterial *currentMaterial = NULL;
-
-            for (size_t j = 0; j < mtlLineCount; j++) // compute
-            {
-                String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
-
-                StringView mtlFirstToken = scv(mtlLineTokens[0]);
-
-                if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
-                {
-                    currentMaterial = RendererMaterial_Create(scv(mtlLineTokens[1]));
-                    ListArray_Add(&materials, &currentMaterial);
-                }
-                else if (String_Compare(mtlFirstToken, strNS) == 0)
-                {
-                    currentMaterial->specularExponent = String_ToFloat(scv(mtlLineTokens[1]));
-                }
-                else if (String_Compare(mtlFirstToken, strKA) == 0)
-                {
-                    currentMaterial->ambientColor =
-                        NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                                   String_ToFloat(scv(mtlLineTokens[2])),
-                                   String_ToFloat(scv(mtlLineTokens[3])));
-                }
-                else if (String_Compare(mtlFirstToken, strKD) == 0)
-                {
-                    currentMaterial->diffuseColor =
-                        NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                                   String_ToFloat(scv(mtlLineTokens[2])),
-                                   String_ToFloat(scv(mtlLineTokens[3])));
-                }
-                else if (String_Compare(mtlFirstToken, strKS) == 0)
-                {
-                    currentMaterial->specularColor =
-                        NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                                   String_ToFloat(scv(mtlLineTokens[2])),
-                                   String_ToFloat(scv(mtlLineTokens[3])));
-                }
-                else if (String_Compare(mtlFirstToken, strNI) == 0)
-                {
-                    currentMaterial->refractionIndex = String_ToFloat(scv(mtlLineTokens[1]));
-                }
-                else if (String_Compare(mtlFirstToken, strD) == 0)
-                {
-                    currentMaterial->dissolve = String_ToFloat(scv(mtlLineTokens[1]));
-                }
-                else if (String_Compare(mtlFirstToken, strILLNUM) == 0)
-                {
-                    currentMaterial->illuminationModel = String_ToInt(scv(mtlLineTokens[1]));
-                }
-                else if (String_Compare(mtlFirstToken, strMAP_KD) == 0)
-                {
-                    currentMaterial->diffuseMap = RendererTexture_Create(scv(mtlLineTokens[1]), objFilePath); // try find in existing textures
-                }
-            }
-
-            ResourceText_Destroy(mtlFileResource);
-
-            free(mtlLines);
         }
     }
 
     size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
+    DebugAssertNullPointerCheck(faceCounts);
     MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
     size_t tempMeshIndex = 0;
-    for (size_t i = 0; i < objFileSourceLineCount; i++) // count and create materials
+
+    for (size_t i = 0; i < mdlFileLineCount; i++) // count faces
     {
-        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
         StringView firstToken = scv(lineTokens[0]);
+
         if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
         {
             faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
         }
-        if (String_Compare(firstToken, strUSEMTL) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        else if (String_Compare(firstToken, strUSEMTL) == 0)
         {
             tempMeshIndex++;
         }
@@ -767,9 +754,9 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
     ListArray globalVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexNormalCount); // Vector3
     ListArray globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);         // Vector3
 
-    for (size_t i = 0; i < objFileSourceLineCount; i++) // create global pools
+    for (size_t i = 0; i < mdlFileLineCount; i++) // create global pools
     {
-        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
         StringView firstToken = scv(lineTokens[0]);
 
@@ -817,9 +804,9 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
 
     RendererMesh *currentMesh = NULL;
 
-    for (size_t i = 0; i < objFileSourceLineCount; i++) // add data to model
+    for (size_t i = 0; i < mdlFileLineCount; i++) // add data to model
     {
-        String_Tokenize(scv(lines[i]), scl(" "), &lineTokenCount, lineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
+        String_Tokenize(scv(lines[i]), scl(" "), &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
         StringView firstToken = scv(lineTokens[0]);
 
@@ -846,11 +833,9 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
         }
         else if (String_Compare(firstToken, strUSEMTL) == 0) // use material and create object
         {
-            DebugAssertNullPointerCheck(materials.data);
-
-            for (size_t j = 0; j < materials.count; j++)
+            for (size_t j = 0; j < materialPool->count; j++)
             {
-                RendererMaterial *material = *(RendererMaterial **)ListArray_Get(&materials, j);
+                RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
 
                 if (String_Compare(scv(material->name), scv(lineTokens[1])) == 0)
                 {
@@ -865,24 +850,10 @@ RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource
     ListArray_Destroy(&globalVertexNormalPool);
     ListArray_Destroy(&globalVertexUvPool);
 
-    ListArray_Destroy(&materials);
-
     free(lines);
     free(faceCounts);
 
     DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes.", model->name.characters, model->meshes.count);
-
-    return model;
-}
-
-RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity)
-{
-    RendererModel *model = malloc(sizeof(RendererModel));
-    DebugAssertNullPointerCheck(model);
-
-    model->name = scc(name);
-    model->vertices = ListArray_Create("Renderer Mesh Vertex", sizeof(RendererMeshVertex), initialVertexCapacity);
-    model->meshes = ListArray_Create("Renderer Mesh Pointer", sizeof(RendererMesh *), initialMeshCapacity);
 
     return model;
 }

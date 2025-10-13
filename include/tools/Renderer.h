@@ -30,10 +30,9 @@
 #define RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER 1000.0f
 
 #define RENDERER_MODEL_MAX_CHILD_MESH_COUNT 128
+#define RENDERER_MODEL_LINE_MAX_TOKEN_COUNT 64
 
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
-
-#define RENDERER_TEXTURE_MAX_COUNT 16
 
 #pragma region typedefs
 
@@ -60,6 +59,23 @@ typedef unsigned int RendererUBOHandle;
 
 /// @brief Index of a mesh within a model.
 typedef unsigned int RendererMeshIndex;
+
+/// @brief A texture that holds image data for rendering.
+typedef struct RendererTexture RendererTexture;
+
+/// @brief A material that holds the rendering properties of a mesh.
+typedef struct RendererMaterial
+{
+    String name;
+    Vector3 ambientColor;
+    Vector3 diffuseColor;
+    Vector3 specularColor;
+    RendererTexture *diffuseMap;
+    float specularExponent;
+    float refractionIndex;
+    float dissolve;
+    int illuminationModel;
+} RendererMaterial;
 
 /// @brief A complete model that holds multiple mesh data inside
 typedef struct RendererModel
@@ -143,14 +159,10 @@ typedef struct RendererComponent
 #pragma region Renderer
 
 /// @brief Initializer for renderer. Initializes OpenGL and GLFW. Sets options. Creates main window. Should be called before any renderer function.
-/// @param title Window title.
-/// @param windowSize Window size.
-/// @param vertexShaderSource Source code of the main vertex shader.
-/// @param fragmentShaderSource Source code of the main fragment shader.
-/// @param vSync Whether to enable vertical synchronization.
-/// @param fullScreen Whether the app will start in full screen mode or not.
+/// @param window Pointer to the context window to use as the main window.
+/// @param initialTextureCapacity Initial capacity for the texture array.
 /// @return A pointer to the created context / window.
-void Renderer_Initialize(ContextWindow *window);
+void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();
@@ -205,25 +217,36 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
 
 #pragma endregion Renderer Debug
 
+#pragma region Renderer Material
+
+/// @brief Create a material from a material file (prefer .mat) and an optional texture. It copies the texture data into OpenGL so the original data can be freed after this function.
+/// @param matFileData Source code of the material file.
+/// @param matFileLineCount Number of lines in the material file source.
+/// @param textureName Name of the texture to use for the material. If the name is found in the internal texture pool, it will use that texture. Ignored if cannot find and textureData is NULL.
+/// @param textureData Pointer to the texture data to use for the material.
+/// @param textureSize Size of the texture.
+/// @param textureChannels Number of channels in the texture.
+/// @return Created material.
+RendererMaterial *RendererMaterial_Create(StringView matFileData, size_t matFileLineCount, StringView textureName, void *textureData, Vector2Int textureSize, int textureChannels);
+
+/// @brief Destroyer function for renderer material.
+/// @param material Material to destroy.
+void RendererMaterial_Destroy(RendererMaterial *material);
+
+#pragma endregion Renderer Material
+
 #pragma region Renderer Model
 
 /// @brief Creates a model from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
 /// @param name Name of the model to create.
-/// @param objFileSource Source code of the OBJ file.
-/// @param objFileSourceLineCount Number of lines in the OBJ file source.
-/// @param objFilePath The resources-relative path of the OBJ file.
+/// @param mdlFileData Source code of the OBJ file.
+/// @param mdlFileLineCount Number of lines in the OBJ file source.
+/// @param materialPool Pointer to a list array of material pointer pointers (RendererMaterial **) to use for the model.
 /// @param positionOffset Position offset to freely adjust final model position.
 /// @param rotationOffset Rotation offset to freely adjust final model rotation.
 /// @param scaleOffset Scale offset to freely adjust final model scale.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_CreateOBJ(StringView name, StringView objFileSource, size_t objFileSourceLineCount, StringView objFilePath, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
-
-/// @brief Creates an empty model with no meshes.
-/// @param name Name of the model to create.
-/// @param initialMeshCapacity Initial capacity for the mesh array.
-/// @param initialVertexCapacity Initial capacity for the vertex array.
-/// @return Created empty model.
-RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity);
+RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
 
 /// @brief Destroyer function for renderer model.
 /// @param model Model to destroy.
