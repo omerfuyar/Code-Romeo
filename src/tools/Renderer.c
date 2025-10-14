@@ -589,7 +589,7 @@ ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLine
             DebugAssertNullPointerCheck(currentMaterial);
             ListArray_Add(&materials, &currentMaterial);
 
-            currentMaterial->name = scc(mtlLines[1]);
+            currentMaterial->name = scc(mtlLineTokens[1]);
         }
         else if (String_Compare(mtlFirstToken, strNS) == 0)
         {
@@ -957,14 +957,14 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
 
                 if (String_Compare(scv(material->name), scv(lineTokens[1])) == 0)
                 {
+                    materialFound = true;
                     currentMesh = RendererMesh_CreateEmpty(faceCounts[model->meshes.count] * 3, material);
                     ListArray_Add(&model->meshes, &currentMesh);
-                    materialFound = true;
                     break;
                 }
             }
 
-            DebugAssert(materialFound, "Material '%s' not found in material pool when trying to assign it to mesh in model '%s'.", lineTokens[1].characters, name.characters);
+            DebugAssert(materialFound, "Material '%.*s' not found in material pool when trying to assign it to mesh in model '%.*s'.", lineTokens[1].length, lineTokens[1].characters, model->name.length, model->name.characters);
         }
     }
 

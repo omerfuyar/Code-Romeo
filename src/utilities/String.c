@@ -75,20 +75,10 @@ int String_Compare(StringView string, StringView other)
     DebugAssertNullPointerCheck(other.characters);
 
     int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
-    if (result == 0)
+
+    if (string.length != other.length && result == 0)
     {
-        if (string.length < other.length)
-        {
-            return -1;
-        }
-        else if (string.length > other.length)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
+        result = (int)string.length - (int)other.length;
     }
 
     return result;
