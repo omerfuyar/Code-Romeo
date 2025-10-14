@@ -325,11 +325,11 @@ void Renderer_RenderScene(RendererScene *scene)
                 glUniform1f(scene->matDissolve, mesh->material->dissolve);
 
                 // Texture binding
-                if (mesh->material->diffuseMap->handle != 0)
+                if (mesh->material->diffuseMap != NULL)
                 {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap->handle);
-                    glUniform1i(scene->matDiffuseMap, 0); // todo fix
+                    glUniform1i(scene->matDiffuseMap, 0);
                     glUniform1i(scene->matHasDiffuseMap, 1);
                 }
                 else
