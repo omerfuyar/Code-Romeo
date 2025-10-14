@@ -860,7 +860,7 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         {
             faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
         }
-        else if (String_Compare(firstToken, strUSEMTL) == 0)
+        else if (String_Compare(firstToken, strO) == 0)
         {
             tempMeshIndex++;
         }
@@ -949,6 +949,8 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         }
         else if (String_Compare(firstToken, strUSEMTL) == 0) // use material and create object
         {
+            bool materialFound = false;
+
             for (size_t j = 0; j < materialPool->count; j++)
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
@@ -957,9 +959,12 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
                 {
                     currentMesh = RendererMesh_CreateEmpty(faceCounts[model->meshes.count] * 3, material);
                     ListArray_Add(&model->meshes, &currentMesh);
+                    materialFound = true;
                     break;
                 }
             }
+
+            DebugAssert(materialFound, "Material '%s' not found in material pool when trying to assign it to mesh in model '%s'.", lineTokens[1].characters, name.characters);
         }
     }
 
