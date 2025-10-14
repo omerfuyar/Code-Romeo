@@ -93,7 +93,7 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
 
     for (size_t i = 0; i < string.length && tokenCount < maxTokenCount; i++)
     {
-        if (strncmp(string.characters + i, delimeter.characters, Min(delimeter.length, string.length - i - 1)) == 0)
+        if (strncmp(string.characters + i, delimeter.characters, Min(delimeter.length, string.length - i)) == 0)
         {
             tokenBufferRet[tokenCount] = (StringView){
                 .characters = string.characters + lastTokenIndex,

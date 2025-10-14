@@ -845,13 +845,11 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         }
     }
 
-    size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
-    DebugAssertNullPointerCheck(faceCounts);
-    MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
+    size_t faceCounts[RENDERER_MODEL_MAX_MESH_COUNT] = {0};
 
     {
         size_t tempMeshIndex = 0;
-        for (size_t i = 0; i < mdlFileLineCount; i++) // count faces
+        for (size_t i = 0; i < mdlFileLineCount && tempMeshIndex <= RENDERER_MODEL_MAX_MESH_COUNT; i++) // count faces
         {
             String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -974,7 +972,6 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
     ListArray_Destroy(&globalVertexUvPool);
 
     free(lines);
-    free(faceCounts);
 
     DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes.", model->name.characters, model->meshes.count);
 
