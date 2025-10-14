@@ -219,15 +219,21 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
 
 #pragma region Renderer Material
 
-/// @brief Create a material from a material file (prefer .mat) and an optional texture. It copies the texture data into OpenGL so the original data can be freed after this function.
+/// @brief Creates materials from a material file (prefer .mat). File can contain multiple materials but textures of them will be ignored. Use RendererMaterial_CreateTexture and to create a material with texture.
+/// @param matFileData Source code of the material file.
+/// @param matFileLineCount Number of lines in the material file source.
+/// @return Created material list type of the list is RendererMaterial*.
+ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLineCount);
+
+/// @brief Creates materials from a material file (prefer .mat) with the argument texture. It copies the texture data into OpenGL so the original data can be freed after this function.
 /// @param matFileData Source code of the material file.
 /// @param matFileLineCount Number of lines in the material file source.
 /// @param textureName Name of the texture to use for the material. If the name is found in the internal texture pool, it will use that texture. Ignored if cannot find and textureData is NULL.
 /// @param textureData Pointer to the texture data to use for the material.
 /// @param textureSize Size of the texture.
 /// @param textureChannels Number of channels in the texture.
-/// @return Created material.
-RendererMaterial *RendererMaterial_Create(StringView matFileData, size_t matFileLineCount, StringView textureName, void *textureData, Vector2Int textureSize, int textureChannels);
+/// @return Created material list type of the list is RendererMaterial*.
+ListArray RendererMaterial_CreateTexture(StringView matFileData, size_t matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels);
 
 /// @brief Destroyer function for renderer material.
 /// @param material Material to destroy.

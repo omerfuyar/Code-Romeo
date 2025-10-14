@@ -87,7 +87,7 @@ void TransformToModelMatrix(Vector3 *position, Vector3 *rotation, Vector3 *scale
 
 #pragma region Renderer Texture
 
-RendererTexture *RendererTexture_Create(StringView name, void *data, Vector2Int size, int channels)
+RendererTexture *RendererTexture_Create(StringView name, const void *data, Vector2Int size, int channels)
 {
     for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
@@ -537,10 +537,9 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
 
 #pragma region Renderer Material
 
-RendererMaterial *RendererMaterial_Create(StringView matFileData, size_t matFileLineCount, StringView textureName, void *textureData, Vector2Int textureSize, int textureChannels)
+ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLineCount)
 {
-    RendererMaterial *material = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-    DebugAssertNullPointerCheck(material);
+    size_t materialCount = 0;
 
     size_t mtlLineCount = 0;
     StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
@@ -569,52 +568,169 @@ RendererMaterial *RendererMaterial_Create(StringView matFileData, size_t matFile
 
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
-            material->name = scc(mtlLines[1]);
+            materialCount++;
+        }
+    }
+
+    ListArray materials = ListArray_Create("Renderer Material Pointer", sizeof(RendererMaterial *), materialCount);
+    RendererMaterial *currentMaterial = NULL;
+
+    for (size_t j = 0; j < mtlLineCount; j++)
+    {
+        String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
+
+        StringView mtlFirstToken = scv(mtlLineTokens[0]);
+
+        if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
+        {
+            currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
+            currentMaterial->diffuseMap = NULL;
+
+            DebugAssertNullPointerCheck(currentMaterial);
+            ListArray_Add(&materials, &currentMaterial);
+
+            currentMaterial->name = scc(mtlLines[1]);
         }
         else if (String_Compare(mtlFirstToken, strNS) == 0)
         {
-            material->specularExponent = String_ToFloat(scv(mtlLineTokens[1]));
+            currentMaterial->specularExponent = String_ToFloat(scv(mtlLineTokens[1]));
         }
         else if (String_Compare(mtlFirstToken, strKA) == 0)
         {
-            material->ambientColor =
+            currentMaterial->ambientColor =
                 NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
                            String_ToFloat(scv(mtlLineTokens[2])),
                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKD) == 0)
         {
-            material->diffuseColor =
+            currentMaterial->diffuseColor =
                 NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
                            String_ToFloat(scv(mtlLineTokens[2])),
                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKS) == 0)
         {
-            material->specularColor =
+            currentMaterial->specularColor =
                 NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
                            String_ToFloat(scv(mtlLineTokens[2])),
                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strNI) == 0)
         {
-            material->refractionIndex = String_ToFloat(scv(mtlLineTokens[1]));
+            currentMaterial->refractionIndex = String_ToFloat(scv(mtlLineTokens[1]));
         }
         else if (String_Compare(mtlFirstToken, strD) == 0)
         {
-            material->dissolve = String_ToFloat(scv(mtlLineTokens[1]));
+            currentMaterial->dissolve = String_ToFloat(scv(mtlLineTokens[1]));
         }
         else if (String_Compare(mtlFirstToken, strILLNUM) == 0)
         {
-            material->illuminationModel = String_ToInt(scv(mtlLineTokens[1]));
+            currentMaterial->illuminationModel = String_ToInt(scv(mtlLineTokens[1]));
         }
     }
 
     free(mtlLines);
 
-    material->diffuseMap = RendererTexture_Create(textureName, textureData, textureSize, textureChannels);
+    return materials;
+}
 
-    return material;
+ListArray RendererMaterial_CreateTexture(StringView matFileData, size_t matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels)
+{
+    size_t materialCount = 0;
+
+    size_t mtlLineCount = 0;
+    StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
+    DebugAssertNullPointerCheck(mtlLines);
+
+    size_t mtlLineTokenCount = 0;
+    StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
+
+    StringView strNewline = scl("\n");
+    StringView strSpace = scl(" ");
+    StringView strNEWMTL = scl("newmtl");
+    StringView strNS = scl("Ns");
+    StringView strKA = scl("Ka");
+    StringView strKD = scl("Kd");
+    StringView strKS = scl("Ks");
+    StringView strNI = scl("Ni");
+    StringView strD = scl("d");
+    StringView strILLNUM = scl("illum");
+
+    String_Tokenize(matFileData, strNewline, &mtlLineCount, mtlLines, matFileLineCount);
+    for (size_t j = 0; j < mtlLineCount; j++)
+    {
+        String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
+
+        StringView mtlFirstToken = scv(mtlLineTokens[0]);
+
+        if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
+        {
+            materialCount++;
+        }
+    }
+
+    ListArray materials = ListArray_Create("Renderer Material Pointer", sizeof(RendererMaterial *), materialCount);
+    RendererMaterial *currentMaterial = NULL;
+
+    for (size_t j = 0; j < mtlLineCount; j++)
+    {
+        String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
+
+        StringView mtlFirstToken = scv(mtlLineTokens[0]);
+
+        if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
+        {
+            currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
+            currentMaterial->diffuseMap = RendererTexture_Create(textureName, textureData, textureSize, textureChannels);
+
+            DebugAssertNullPointerCheck(currentMaterial);
+            ListArray_Add(&materials, &currentMaterial);
+
+            currentMaterial->name = scc(mtlLines[1]);
+        }
+        else if (String_Compare(mtlFirstToken, strNS) == 0)
+        {
+            currentMaterial->specularExponent = String_ToFloat(scv(mtlLineTokens[1]));
+        }
+        else if (String_Compare(mtlFirstToken, strKA) == 0)
+        {
+            currentMaterial->ambientColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strKD) == 0)
+        {
+            currentMaterial->diffuseColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strKS) == 0)
+        {
+            currentMaterial->specularColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strNI) == 0)
+        {
+            currentMaterial->refractionIndex = String_ToFloat(scv(mtlLineTokens[1]));
+        }
+        else if (String_Compare(mtlFirstToken, strD) == 0)
+        {
+            currentMaterial->dissolve = String_ToFloat(scv(mtlLineTokens[1]));
+        }
+        else if (String_Compare(mtlFirstToken, strILLNUM) == 0)
+        {
+            currentMaterial->illuminationModel = String_ToInt(scv(mtlLineTokens[1]));
+        }
+    }
+
+    free(mtlLines);
+
+    return materials;
 }
 
 void RendererMaterial_Destroy(RendererMaterial *material)
