@@ -815,7 +815,7 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
     StringView strF = scl("f");
     StringView strVT = scl("vt");
     StringView strVN = scl("vn");
-    StringView strO = scl("o");
+    // StringView strO = scl("o");
     StringView strUSEMTL = scl("usemtl");
 
     String_Tokenize(mdlFileData, strNewline, &mdlFileLineCount, lines, mdlFileLineCount);
