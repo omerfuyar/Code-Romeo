@@ -3,7 +3,7 @@
 
 ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t initialCapacity)
 {
-    DebugAssert(initialCapacity > 0, "List capacity can not be 0.");
+    DebugAssert(initialCapacity > 0, "Capacity of %s list can not be 0.", nameOfType);
 
     ListArray list;
     list.capacity = initialCapacity;

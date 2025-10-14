@@ -189,7 +189,6 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
     RENDERER_MAIN_TEXTURES = ListArray_Create("Renderer Texture", sizeof(RendererTexture), initialTextureCapacity);
 
     DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
-    DebugInfo("GLAD initialized successfully.");
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
     Context_ConfigureFullScreen(window->fullScreen);
@@ -839,7 +838,7 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         {
             totalVertexNormalCount++;
         }
-        else if (String_Compare(firstToken, strO) == 0) // new object
+        else if (String_Compare(firstToken, strUSEMTL) == 0) // new object
         {
             meshCount++;
         }
@@ -859,7 +858,7 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
             {
                 faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
             }
-            else if (String_Compare(firstToken, strO) == 0)
+            else if (String_Compare(firstToken, strUSEMTL) == 0)
             {
                 tempMeshIndex++;
             }
