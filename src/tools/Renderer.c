@@ -560,7 +560,7 @@ ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLine
     StringView strILLNUM = scl("illum");
 
     String_Tokenize(matFileData, strNewline, &mtlLineCount, mtlLines, matFileLineCount);
-    for (size_t j = 0; j < mtlLineCount; j++)
+    for (size_t j = 0; j < mtlLineCount; j++) // count
     {
         String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -848,21 +848,23 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
     size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
     DebugAssertNullPointerCheck(faceCounts);
     MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
-    size_t tempMeshIndex = 0;
 
-    for (size_t i = 0; i < mdlFileLineCount; i++) // count faces
     {
-        String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
-
-        StringView firstToken = scv(lineTokens[0]);
-
-        if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+        size_t tempMeshIndex = 0;
+        for (size_t i = 0; i < mdlFileLineCount; i++) // count faces
         {
-            faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
-        }
-        else if (String_Compare(firstToken, strO) == 0)
-        {
-            tempMeshIndex++;
+            String_Tokenize(scv(lines[i]), strSpace, &lineTokenCount, lineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
+
+            StringView firstToken = scv(lineTokens[0]);
+
+            if (String_Compare(firstToken, strF) == 0) // f 15/15/24 102/122/119 116/142/107 67/79/106
+            {
+                faceCounts[tempMeshIndex - 1] += lineTokenCount == 4 ? 1 : 2;
+            }
+            else if (String_Compare(firstToken, strO) == 0)
+            {
+                tempMeshIndex++;
+            }
         }
     }
 
