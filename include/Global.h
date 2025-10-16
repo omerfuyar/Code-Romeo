@@ -161,7 +161,7 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 #endif
 
 #if DEBUG_ASSERT_ENABLED == false
-#define DebugAssert(condition, format, ...) condition
+#define DebugAssert(condition, format, ...) (void)(condition)
 #define DebugAssertNullPointerCheck(ptr)
 #define DebugAssertFileOpenCheck(filePtr, fileName, mode) FileOpen(filePtr, fileName, mode)
 #else

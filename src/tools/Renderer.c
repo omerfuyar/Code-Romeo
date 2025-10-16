@@ -9,7 +9,7 @@
 
 #pragma region Source Only
 
-#define OPENGL_DRAW_TYPE GL_STATIC_DRAW
+#define OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
 
 #define DebugCheckRenderer()                                               \
     do                                                                     \
