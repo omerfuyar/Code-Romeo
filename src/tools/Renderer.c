@@ -70,7 +70,7 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
-void TransformToModelMatrix(Vector3 *position, Vector3 *rotation, Vector3 *scale, mat4 *matrix)
+void TransformToModelMatrix(mat4 *matrix, Vector3 *position, Vector3 *rotation, Vector3 *scale)
 {
     DebugAssertNullPointerCheck(matrix);
 
@@ -795,7 +795,7 @@ RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapa
 RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
     mat4 offsetMatrix;
-    TransformToModelMatrix(&positionOffset, &rotationOffset, &scaleOffset, &offsetMatrix);
+    TransformToModelMatrix(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
 
     size_t meshCount = 0;
 
@@ -887,11 +887,12 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
             vec3 vertexPosition;
+            vec3 temp = {String_ToFloat(scv(lineTokens[1])),
+                         String_ToFloat(scv(lineTokens[2])),
+                         String_ToFloat(scv(lineTokens[3]))};
 
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
-                           (vec3){String_ToFloat(scv(lineTokens[1])),
-                                  String_ToFloat(scv(lineTokens[2])),
-                                  String_ToFloat(scv(lineTokens[3]))},
+                           (float *)&temp,
                            0.0f,
                            (float *)&vertexPosition);
 
@@ -911,11 +912,12 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         else if (String_Compare(firstToken, strVN) == 0) // vn -0.0233 0.1253 -0.9918
         {
             vec3 vertexNormal;
+            vec3 temp = {String_ToFloat(scv(lineTokens[1])),
+                         String_ToFloat(scv(lineTokens[2])),
+                         String_ToFloat(scv(lineTokens[3]))};
 
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
-                           (vec3){String_ToFloat(scv(lineTokens[1])),
-                                  String_ToFloat(scv(lineTokens[2])),
-                                  String_ToFloat(scv(lineTokens[3]))},
+                           (float *)&temp,
                            0.0f,
                            (float *)&vertexNormal);
 
@@ -1220,10 +1222,11 @@ void RendererScene_Update(RendererScene *scene)
         for (size_t j = 0; j < batch->objectMatrices.count; j++)
         {
             RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
-            TransformToModelMatrix(component->positionReference,
-                                   component->rotationReference,
-                                   component->scaleReference,
-                                   (mat4 *)ListArray_Get(&batch->objectMatrices, j));
+            TransformToModelMatrix(
+                (mat4 *)ListArray_Get(&batch->objectMatrices, j),
+                component->positionReference,
+                component->rotationReference,
+                component->scaleReference);
         }
     }
 }
