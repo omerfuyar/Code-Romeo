@@ -70,7 +70,7 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
-void TransformToModelMatrix(mat4 *matrix, Vector3 *position, Vector3 *rotation, Vector3 *scale)
+void TransformToModelMatrix(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
 {
     DebugAssertNullPointerCheck(matrix);
 
