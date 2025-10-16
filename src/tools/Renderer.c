@@ -1300,14 +1300,4 @@ void RendererCameraComponent_Destroy(RendererCameraComponent *camera)
     camera = NULL;
 }
 
-void RendererCameraComponent_Configure(RendererCameraComponent *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane)
-{
-    DebugAssertNullPointerCheck(camera);
-
-    camera->isPerspective = isPerspective;
-    camera->size = value;
-    camera->nearClipPlane = nearClipPlane;
-    camera->farClipPlane = farClipPlane;
-}
-
 #pragma endregion Renderer Camera
