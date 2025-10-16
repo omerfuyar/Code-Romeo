@@ -866,8 +866,17 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
     }
 
     RendererModel *model = RendererModel_CreateEmpty(name, meshCount, totalVertexPositionCount);
-    ListArray globalVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexNormalCount); // Vector3
-    ListArray globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);         // Vector3
+    ListArray globalVertexNormalPool = {0};
+    if (totalVertexNormalCount != 0)
+    {
+        globalVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexNormalCount);
+    }
+
+    ListArray globalVertexUvPool = {0};
+    if (totalVertexUvCount != 0)
+    {
+        globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);
+    }
 
     for (size_t i = 0; i < mdlFileLineCount; i++) // create global pools
     {
@@ -967,8 +976,15 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         }
     }
 
-    ListArray_Destroy(&globalVertexNormalPool);
-    ListArray_Destroy(&globalVertexUvPool);
+    if (globalVertexNormalPool.data != NULL)
+    {
+        ListArray_Destroy(&globalVertexNormalPool);
+    }
+
+    if (globalVertexUvPool.data != NULL)
+    {
+        ListArray_Destroy(&globalVertexUvPool);
+    }
 
     free(lines);
 
