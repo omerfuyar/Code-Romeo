@@ -33,9 +33,9 @@ void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool
 {
     Context_ConfigureTitle(title);
     Context_ConfigureResizeCallback(resizeCallback);
+    Context_ConfigureFullScreen(fullScreen);
     Context_ConfigureSize(windowSize);
     Context_ConfigureVSync(vSync);
-    Context_ConfigureFullScreen(fullScreen);
 }
 
 void Context_ConfigureTitle(StringView title)
@@ -44,6 +44,7 @@ void Context_ConfigureTitle(StringView title)
 
     glfwSetWindowTitle(CONTEXT_MAIN_WINDOW.handle, CONTEXT_MAIN_WINDOW.title.characters);
 }
+
 void Context_ConfigureSize(Vector2Int size)
 {
     CONTEXT_MAIN_WINDOW.size = size;

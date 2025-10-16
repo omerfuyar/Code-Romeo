@@ -67,6 +67,11 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     RENDERER_MAIN_WINDOW->size.x = width;
     RENDERER_MAIN_WINDOW->size.y = height;
 
+    if (RENDERER_MAIN_WINDOW->fullScreen)
+    {
+        glfwGetFramebufferSize(RENDERER_MAIN_WINDOW->handle, &RENDERER_MAIN_WINDOW->size.x, &RENDERER_MAIN_WINDOW->size.y);
+    }
+
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
@@ -211,7 +216,6 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
     Context_ConfigureLogCallback(RENDERER_MAIN_WINDOW_LOG_CALLBACK);
-    Context_ConfigureFullScreen(window->fullScreen);
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
