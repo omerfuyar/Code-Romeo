@@ -14,9 +14,9 @@ FILE *DEBUG_FILE = NULL;
 char *DEBUG_FILE_NAME_STR = NULL;
 char *GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
 
-FunIntCharPtrPtrToVoid GLOBAL_SETUP_CALLBACK = NULL;
-FunFloatToVoid GLOBAL_LOOP_CALLBACK = NULL;
-FunIntCharptrToVoid GLOBAL_TERMINATE_CALLBACK = NULL;
+VoidFunIntCharPtrPtr GLOBAL_SETUP_CALLBACK = NULL;
+VoidFunFloat GLOBAL_LOOP_CALLBACK = NULL;
+VoidFunIntCharptr GLOBAL_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
@@ -161,17 +161,17 @@ void Global_Terminate(int exitCode, char *message)
 
 #pragma region Callbacks
 
-void Global_SetSetupCallback(FunIntCharPtrPtrToVoid setupCallback)
+void Global_SetSetupCallback(VoidFunIntCharPtrPtr setupCallback)
 {
     GLOBAL_SETUP_CALLBACK = setupCallback;
 }
 
-void Global_SetLoopCallback(FunFloatToVoid loopCallback)
+void Global_SetLoopCallback(VoidFunFloat loopCallback)
 {
     GLOBAL_LOOP_CALLBACK = loopCallback;
 }
 
-void Global_SetTerminateCallback(FunIntCharptrToVoid terminateCallback)
+void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback)
 {
     GLOBAL_TERMINATE_CALLBACK = terminateCallback;
 }

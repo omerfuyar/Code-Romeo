@@ -18,7 +18,9 @@ typedef struct ContextWindow
     bool fullScreen;
 } ContextWindow;
 
-typedef void (*FunVoidptrIntIntToVoid)(void *, int, int);
+typedef void (*VoidFunVoidptrIntInt)(void *, int, int);
+
+typedef void (*VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int, unsigned int, unsigned int, unsigned int, int, const char *, const void *);
 
 #pragma endregion Typedefs
 
@@ -32,7 +34,7 @@ ContextWindow *Context_Initialize();
 /// @param vSync Enable/disable vertical synchronization
 /// @param fullScreen Enable/disable fullscreen mode
 /// @param resizeCallback Function to call when window is resized
-void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback);
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, VoidFunVoidptrIntInt resizeCallback);
 
 /// @brief Set the window title
 /// @param title New window title text
@@ -52,7 +54,11 @@ void Context_ConfigureFullScreen(bool fullScreen);
 
 /// @brief Set the window resize callback function
 /// @param callback Function to call when window is resized, or NULL to remove callback
-void Context_ConfigureResizeCallback(FunVoidptrIntIntToVoid callback);
+void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback);
+
+/// @brief Set the window log callback function
+/// @param callback Function to call when window log events occur, or NULL to remove callback
+void Context_ConfigureLogCallback(VoidFunUintUintUintUintIntCcharptrCvoidptr callback);
 
 /// @brief Clean up and terminate the context system
 void Context_Terminate();

@@ -6,7 +6,9 @@
 /// @brief Global main window context instance.
 ContextWindow CONTEXT_MAIN_WINDOW = {0};
 /// @brief Global resize callback function pointer.
-FunVoidptrIntIntToVoid CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
+VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
+/// @brief Global log callback function pointer.
+VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
 
 ContextWindow *Context_Initialize()
 {
@@ -27,7 +29,7 @@ ContextWindow *Context_Initialize()
     return &CONTEXT_MAIN_WINDOW;
 }
 
-void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, FunVoidptrIntIntToVoid resizeCallback)
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, VoidFunVoidptrIntInt resizeCallback)
 {
     Context_ConfigureTitle(title);
     Context_ConfigureResizeCallback(resizeCallback);
@@ -80,13 +82,20 @@ void Context_ConfigureFullScreen(bool fullScreen)
     }
 }
 
-void Context_ConfigureResizeCallback(FunVoidptrIntIntToVoid callback)
+void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback)
 {
     CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = callback;
 
     glfwSetFramebufferSizeCallback(CONTEXT_MAIN_WINDOW.handle, (GLFWframebuffersizefun)CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK);
 
     Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
+}
+
+void Context_ConfigureLogCallback(VoidFunUintUintUintUintIntCcharptrCvoidptr callback)
+{
+    CONTEXT_MAIN_WINDOW_LOG_CALLBACK = callback;
+
+    glDebugMessageCallback(CONTEXT_MAIN_WINDOW_LOG_CALLBACK, NULL);
 }
 
 void Context_Terminate()

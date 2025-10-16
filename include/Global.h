@@ -56,11 +56,11 @@
 
 #pragma region Typedefs
 
-typedef void (*FunIntCharPtrPtrToVoid)(int, char **);
+typedef void (*VoidFunIntCharPtrPtr)(int, char **);
 
-typedef void (*FunFloatToVoid)(float);
+typedef void (*VoidFunFloat)(float);
 
-typedef void (*FunIntCharptrToVoid)(int, char *);
+typedef void (*VoidFunIntCharptr)(int, char *);
 
 #pragma endregion Typedefs
 
@@ -95,15 +95,15 @@ void Global_Terminate(int exitCode, char *message);
 
 /// @brief Sets the setup callback function that gets called once at application start
 /// @param setupCallback Function to call during application setup
-void Global_SetSetupCallback(FunIntCharPtrPtrToVoid setupCallback);
+void Global_SetSetupCallback(VoidFunIntCharPtrPtr setupCallback);
 
 /// @brief Sets the main loop callback function that gets called every frame
 /// @param loopCallback Function to call every frame, receives deltatime in seconds as parameter
-void Global_SetLoopCallback(FunFloatToVoid loopCallback);
+void Global_SetLoopCallback(VoidFunFloat loopCallback);
 
 /// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
 /// @param terminateCallback Function to call when terminate is called. Should not exit the program. Receives exit code and exit message as parameters.
-void Global_SetTerminateCallback(FunIntCharptrToVoid terminateCallback);
+void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 
 #pragma region Callbacks
 

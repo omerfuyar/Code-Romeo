@@ -70,6 +70,25 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
+void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
+{
+    (void)source;
+    (void)id;
+    (void)length;
+    (void)userParam;
+
+    if (type == GL_DEBUG_TYPE_ERROR)
+    {
+        DebugError("OpenGL Error :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
+                   type, severity, message);
+    }
+    else
+    {
+        DebugInfo("OpenGL Log :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
+                  type, severity, message);
+    }
+}
+
 void TransformToModelMatrix(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
 {
     DebugAssertNullPointerCheck(matrix);
@@ -191,6 +210,7 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
     DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
+    Context_ConfigureLogCallback(RENDERER_MAIN_WINDOW_LOG_CALLBACK);
     Context_ConfigureFullScreen(window->fullScreen);
 
     glEnable(GL_DEPTH_TEST);
