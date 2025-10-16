@@ -76,13 +76,13 @@ void TransformToModelMatrix(mat4 *matrix, Vector3 *position, Vector3 *rotation, 
 
     glm_mat4_identity((vec4 *)matrix);
 
-    glm_translate((vec4 *)matrix, (vec3){position->x, position->y, position->z});
+    glm_translate((vec4 *)matrix, (float *)&(vec3){position->x, position->y, position->z});
 
-    glm_rotate((vec4 *)matrix, rotation->x, (vec3){1, 0, 0});
-    glm_rotate((vec4 *)matrix, rotation->y, (vec3){0, 1, 0});
-    glm_rotate((vec4 *)matrix, rotation->z, (vec3){0, 0, 1});
+    glm_rotate((vec4 *)matrix, rotation->x, (float *)&(vec3){1, 0, 0});
+    glm_rotate((vec4 *)matrix, rotation->y, (float *)&(vec3){0, 1, 0});
+    glm_rotate((vec4 *)matrix, rotation->z, (float *)&(vec3){0, 0, 1});
 
-    glm_scale((vec4 *)matrix, (vec3){scale->x, scale->y, scale->z});
+    glm_scale((vec4 *)matrix, (float *)&(vec3){scale->x, scale->y, scale->z});
 }
 
 #pragma region Renderer Texture
@@ -1194,7 +1194,7 @@ void RendererScene_Update(RendererScene *scene)
 
     Vector3 center = Vector3_Add(*scene->camera->positionReference, Vector3_Normalized(direction));
 
-    glm_lookat((float *)scene->camera->positionReference, (float *)&center, (vec3){0, 1, 0}, (vec4 *)&scene->camera->viewMatrix);
+    glm_lookat((float *)scene->camera->positionReference, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&scene->camera->viewMatrix);
 
     if (scene->camera->isPerspective)
     {
