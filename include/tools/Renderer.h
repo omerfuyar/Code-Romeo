@@ -320,12 +320,4 @@ RendererCameraComponent *RendererCameraComponent_Create(Vector3 *positionReferen
 /// @param camera Camera object to destroy.
 void RendererCameraComponent_Destroy(RendererCameraComponent *camera);
 
-/// @brief Configure the renderer camera.
-/// @param camera Camera to configure
-/// @param isPerspective Set the camera perspective or orthographic.
-/// @param value fov if perspective, orthographicSize if orthographic.
-/// @param nearClipPlane Near clipping plane for the camera.
-/// @param farClipPlane Far clipping plane for the camera.
-void RendererCameraComponent_Configure(RendererCameraComponent *camera, bool isPerspective, float value, float nearClipPlane, float farClipPlane);
-
 #pragma endregion Renderer Camera
