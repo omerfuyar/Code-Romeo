@@ -111,10 +111,16 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 
 #pragma region Debug Log
 
-#define DEBUG_INFO_ENABLED true
-#define DEBUG_WARNING_ENABLED true
-#define DEBUG_ERROR_ENABLED true
-#define DEBUG_ASSERT_ENABLED true
+#if defined(_DEBUG) || !defined(NDEBUG)
+#define BUILD_DEBUG true
+#else
+#define BUILD_DEBUG false
+#endif
+
+#define DEBUG_INFO_ENABLED BUILD_DEBUG
+#define DEBUG_WARNING_ENABLED BUILD_DEBUG
+#define DEBUG_ERROR_ENABLED BUILD_DEBUG
+#define DEBUG_ASSERT_ENABLED BUILD_DEBUG
 
 #define DEBUG_TERMINATE_ON_ERROR true
 #define DEBUG_TERMINATE_ON_ASSERT true

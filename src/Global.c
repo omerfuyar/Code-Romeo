@@ -154,7 +154,7 @@ void Global_Terminate(int exitCode, char *message)
         GLOBAL_TERMINATE_CALLBACK(exitCode, message);
     }
 
-    fprintf(stderr, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+    fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
 
     exit(exitCode);
 }
