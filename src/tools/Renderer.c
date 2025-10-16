@@ -887,12 +887,11 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         if (String_Compare(firstToken, strV) == 0) // v -7.579129 4.591946 4.850700
         {
             vec3 vertexPosition;
-            vec3 temp = {String_ToFloat(scv(lineTokens[1])),
-                         String_ToFloat(scv(lineTokens[2])),
-                         String_ToFloat(scv(lineTokens[3]))};
 
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
-                           (float *)&temp,
+                           (float *)&(vec3){String_ToFloat(scv(lineTokens[1])),
+                                            String_ToFloat(scv(lineTokens[2])),
+                                            String_ToFloat(scv(lineTokens[3]))},
                            0.0f,
                            (float *)&vertexPosition);
 
@@ -912,12 +911,11 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
         else if (String_Compare(firstToken, strVN) == 0) // vn -0.0233 0.1253 -0.9918
         {
             vec3 vertexNormal;
-            vec3 temp = {String_ToFloat(scv(lineTokens[1])),
-                         String_ToFloat(scv(lineTokens[2])),
-                         String_ToFloat(scv(lineTokens[3]))};
 
             glm_mat4_mulv3((vec4 *)&offsetMatrix,
-                           (float *)&temp,
+                           (float *)&(vec3){String_ToFloat(scv(lineTokens[1])),
+                                            String_ToFloat(scv(lineTokens[2])),
+                                            String_ToFloat(scv(lineTokens[3]))},
                            0.0f,
                            (float *)&vertexNormal);
 
