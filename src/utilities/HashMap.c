@@ -25,7 +25,9 @@ HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacit
     HashMap map;
     map.capacity = capacity;
     map.sizeOfItem = sizeOfItem;
-    map.nameOfType = nameOfType;
+    map.nameOfType = malloc(strlen(nameOfType) + 1);
+    MemoryCopy(map.nameOfType, strlen(nameOfType) + 1, nameOfType);
+    map.nameOfType[strlen(nameOfType)] = '\0';
     map.count = 0;
     map.data = (void *)malloc(capacity * sizeOfItem);
     DebugAssertNullPointerCheck(map.data);
@@ -47,6 +49,7 @@ void HashMap_Destroy(HashMap *map)
     free(map->data);
     map->data = NULL;
 
+    free(map->nameOfType);
     map->nameOfType = NULL;
     map->capacity = 0;
     map->count = 0;

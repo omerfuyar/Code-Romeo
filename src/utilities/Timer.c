@@ -21,13 +21,23 @@ float TimePoint_ToMilliseconds(const TimePoint *timePoint)
 Timer Timer_Create(const char *title)
 {
     Timer timer;
-    timer.title = title; // todo fix
+    timer.title = malloc(strlen(title) + 1);
+    MemoryCopy(timer.title, strlen(title) + 1, title);
+    timer.title[strlen(title)] = '\0';
     timer.isRunning = false;
 
     timer.startTime = (TimePoint){0, 0};
     timer.endTime = (TimePoint){0, 0};
 
     return timer;
+}
+
+void Timer_Destroy(Timer *timer)
+{
+    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+
+    free(timer->title);
+    timer->title = NULL;
 }
 
 void Timer_Start(Timer *timer)

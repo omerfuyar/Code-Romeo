@@ -15,7 +15,7 @@ typedef struct ListArray
     size_t capacity;
     size_t count;
     size_t sizeOfItem;
-    const char *nameOfType;
+    char *nameOfType;
 } ListArray;
 
 /// @brief Creator function for ListArray.

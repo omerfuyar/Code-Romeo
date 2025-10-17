@@ -8,7 +8,9 @@ ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t ini
     ListArray list;
     list.capacity = initialCapacity;
     list.sizeOfItem = sizeOfItem;
-    list.nameOfType = nameOfType;
+    list.nameOfType = malloc(strlen(nameOfType) + 1);
+    MemoryCopy(list.nameOfType, strlen(nameOfType) + 1, nameOfType);
+    list.nameOfType[strlen(nameOfType)] = '\0';
     list.count = 0;
     list.data = (void *)malloc(initialCapacity * sizeOfItem);
     DebugAssertNullPointerCheck(list.data);
@@ -29,6 +31,7 @@ void ListArray_Destroy(ListArray *list)
     free(list->data);
     list->data = NULL;
 
+    free(list->nameOfType);
     list->nameOfType = NULL;
     list->capacity = 0;
     list->count = 0;

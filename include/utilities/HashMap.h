@@ -9,7 +9,7 @@ typedef struct HashMap
     size_t capacity;
     size_t count;
     size_t sizeOfItem;
-    const char *nameOfType;
+    char *nameOfType;
 } HashMap;
 
 /// @brief Creator function for HashMap.

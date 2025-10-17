@@ -15,7 +15,7 @@ typedef struct ListLinked
     ListLinkedNode *head;
     size_t count;
     size_t sizeOfItem;
-    const char *nameOfType;
+    char *nameOfType;
 } ListLinked;
 
 /// @brief Creator function for ListLinked.

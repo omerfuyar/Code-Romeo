@@ -103,7 +103,9 @@ ListLinked ListLinked_Create(size_t sizeOfItem, const char *nameOfType)
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
-    list.nameOfType = nameOfType;
+    list.nameOfType = malloc(strlen(nameOfType) + 1);
+    MemoryCopy(list.nameOfType, strlen(nameOfType) + 1, nameOfType);
+    list.nameOfType[strlen(nameOfType)] = '\0';
 
     DebugInfo("ListLinked '%s' created with size of item: %zu", nameOfType, sizeOfItem);
     return list;
@@ -120,6 +122,11 @@ void ListLinked_Destroy(ListLinked *list)
     }
 
     list->head = NULL;
+
+    free(list->nameOfType);
+    list->nameOfType = NULL;
+    list->count = 0;
+    list->sizeOfItem = 0;
 
     DebugInfo("ListLinked '%s' destroyed.", tempTitle);
 }
