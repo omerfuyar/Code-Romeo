@@ -11,6 +11,13 @@ void TimePoint_Update(TimePoint *timePoint)
     timePoint->nanoseconds = currentTime.tv_nsec;
 }
 
+float TimePoint_ToMilliseconds(const TimePoint *timePoint)
+{
+    DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
+
+    return (timePoint->seconds * 1000.0f) + (timePoint->nanoseconds / 1000000.0f);
+}
+
 Timer Timer_Create(const char *title)
 {
     Timer timer;
@@ -64,6 +71,8 @@ void Timer_Reset(Timer *timer)
 TimePoint Timer_GetElapsedTime(const Timer *timer)
 {
     DebugAssertNullPointerCheck(timer);
+
+    TimePoint_Update(&timer->endTime);
 
     TimePoint elapsedTime;
     elapsedTime.seconds = timer->endTime.seconds - timer->startTime.seconds;

@@ -24,6 +24,10 @@ typedef struct Timer
 /// @param timePoint Time Point to update with the current time.
 void TimePoint_Update(TimePoint *timePoint);
 
+/// @brief Converts a TimePoint to milliseconds.
+/// @param timePoint Pointer to the TimePoint to convert.
+float TimePoint_ToMilliseconds(const TimePoint *timePoint);
+
 /// @brief Creates a new timer.
 /// @param title Label for the timer. Null terminated.
 /// @return Timer instance.
