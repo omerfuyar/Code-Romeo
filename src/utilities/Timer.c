@@ -14,11 +14,11 @@ void TimePoint_Update(TimePoint *timePoint)
 Timer Timer_Create(const char *title)
 {
     Timer timer;
-    timer.title = title;
+    timer.title = title; // todo fix
     timer.isRunning = false;
 
-    timer.startTime = TIMEPOINT_NULL;
-    timer.endTime = TIMEPOINT_NULL;
+    timer.startTime = (TimePoint){0, 0};
+    timer.endTime = (TimePoint){0, 0};
 
     return timer;
 }
@@ -55,8 +55,9 @@ void Timer_Stop(Timer *timer)
 
 void Timer_Reset(Timer *timer)
 {
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+    DebugAssertNullPointerCheck(timer);
 
+    TimePoint_Update(&timer->endTime);
     timer->startTime = timer->endTime;
 }
 

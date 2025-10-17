@@ -11,8 +11,6 @@ typedef struct TimePoint
     time_t nanoseconds;
 } TimePoint;
 
-#define TIMEPOINT_NULL ((TimePoint){-1, -1})
-
 /// @brief Represents a timer that can be used for measuring elapsed time. Should be used with helper functions.
 typedef struct Timer
 {
@@ -39,7 +37,7 @@ void Timer_Start(Timer *timer);
 /// @param timer Timer to stop.
 void Timer_Stop(Timer *timer);
 
-/// @brief Resets the timers start time to the current time, to it's initial state. Does not check if the timer is running.
+/// @brief Updates the timers end time and resets the start time to the end time. Does not check if the timer is running.
 /// @param timer Timer to reset.
 void Timer_Reset(Timer *timer);
 
