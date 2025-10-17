@@ -111,7 +111,7 @@ void TransformToModelMatrix(mat4 *matrix, const Vector3 *position, const Vector3
 
 #pragma region Renderer Texture
 
-RendererTexture *RendererTexture_Create(StringView name, const void *data, Vector2Int size, int channels)
+RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, Vector2Int size, int channels)
 {
     for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
@@ -345,6 +345,7 @@ void Renderer_RenderScene(RendererScene *scene)
                 glUniform3fv(scene->matAmbientColor, 1, (GLfloat *)&mesh->material->ambientColor);
                 glUniform3fv(scene->matDiffuseColor, 1, (GLfloat *)&mesh->material->diffuseColor);
                 glUniform3fv(scene->matSpecularColor, 1, (GLfloat *)&mesh->material->specularColor);
+                glUniform3fv(scene->matEmissiveColor, 1, (GLfloat *)&mesh->material->emissiveColor);
                 glUniform1f(scene->matSpecularExponent, mesh->material->specularExponent);
                 glUniform1f(scene->matDissolve, mesh->material->dissolve);
 
@@ -576,6 +577,7 @@ ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLine
     StringView strNEWMTL = scl("newmtl");
     StringView strNS = scl("Ns");
     StringView strKA = scl("Ka");
+    StringView strKE = scl("Ke");
     StringView strKD = scl("Kd");
     StringView strKS = scl("Ks");
     StringView strNI = scl("Ni");
@@ -607,12 +609,12 @@ ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLine
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
             currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-            currentMaterial->diffuseMap = NULL;
-
             DebugAssertNullPointerCheck(currentMaterial);
+
             ListArray_Add(&materials, &currentMaterial);
 
             currentMaterial->name = scc(mtlLineTokens[1]);
+            currentMaterial->diffuseMap = NULL;
         }
         else if (String_Compare(mtlFirstToken, strNS) == 0)
         {
@@ -621,6 +623,13 @@ ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLine
         else if (String_Compare(mtlFirstToken, strKA) == 0)
         {
             currentMaterial->ambientColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strKE) == 0)
+        {
+            currentMaterial->emissiveColor =
                 NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
                            String_ToFloat(scv(mtlLineTokens[2])),
                            String_ToFloat(scv(mtlLineTokens[3])));
@@ -674,6 +683,7 @@ ListArray RendererMaterial_CreateTexture(StringView matFileData, size_t matFileL
     StringView strNEWMTL = scl("newmtl");
     StringView strNS = scl("Ns");
     StringView strKA = scl("Ka");
+    StringView strKE = scl("Ke");
     StringView strKD = scl("Kd");
     StringView strKS = scl("Ks");
     StringView strNI = scl("Ni");
@@ -705,12 +715,12 @@ ListArray RendererMaterial_CreateTexture(StringView matFileData, size_t matFileL
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
             currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-            currentMaterial->diffuseMap = RendererTexture_Create(textureName, textureData, textureSize, textureChannels);
-
             DebugAssertNullPointerCheck(currentMaterial);
+
             ListArray_Add(&materials, &currentMaterial);
 
-            currentMaterial->name = scc(mtlLines[1]);
+            currentMaterial->name = scc(mtlLineTokens[1]);
+            currentMaterial->diffuseMap = RendererTexture_CreateOrGet(textureName, textureData, textureSize, textureChannels);
         }
         else if (String_Compare(mtlFirstToken, strNS) == 0)
         {
@@ -719,6 +729,13 @@ ListArray RendererMaterial_CreateTexture(StringView matFileData, size_t matFileL
         else if (String_Compare(mtlFirstToken, strKA) == 0)
         {
             currentMaterial->ambientColor =
+                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
+                           String_ToFloat(scv(mtlLineTokens[2])),
+                           String_ToFloat(scv(mtlLineTokens[3])));
+        }
+        else if (String_Compare(mtlFirstToken, strKE) == 0)
+        {
+            currentMaterial->emissiveColor =
                 NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
                            String_ToFloat(scv(mtlLineTokens[2])),
                            String_ToFloat(scv(mtlLineTokens[3])));
@@ -987,6 +1004,8 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
 
+                // DebugInfo("Comparing material '%.*s' with '%.*s'...", material->name.length, material->name.characters, lineTokens[1].length, lineTokens[1].characters);
+
                 if (String_Compare(scv(material->name), scv(lineTokens[1])) == 0)
                 {
                     materialFound = true;
@@ -1088,6 +1107,7 @@ RendererScene *RendererScene_Create(StringView name, size_t initialBatchCapacity
     scene->matAmbientColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matAmbientColor");
     scene->matDiffuseColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseColor");
     scene->matSpecularColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularColor");
+    scene->matEmissiveColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matEmissiveColor");
     scene->matSpecularExponent = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularExponent");
     scene->matDissolve = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDissolve");
     scene->matDiffuseMap = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseMap");

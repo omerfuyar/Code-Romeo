@@ -8,7 +8,8 @@ ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t ini
     ListArray list;
     list.capacity = initialCapacity;
     list.sizeOfItem = sizeOfItem;
-    list.nameOfType = malloc(strlen(nameOfType) + 1);
+    list.nameOfType = (char *)malloc(strlen(nameOfType) + 1);
+    DebugAssertNullPointerCheck(list.nameOfType);
     MemoryCopy(list.nameOfType, strlen(nameOfType) + 1, nameOfType);
     list.nameOfType[strlen(nameOfType)] = '\0';
     list.count = 0;
@@ -26,7 +27,8 @@ void ListArray_Destroy(ListArray *list)
     DebugAssertNullPointerCheck(list);
     DebugAssertNullPointerCheck(list->data);
 
-    const char *name = list->nameOfType;
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, strlen(list->nameOfType) + 1), list->nameOfType);
 
     free(list->data);
     list->data = NULL;
@@ -37,7 +39,7 @@ void ListArray_Destroy(ListArray *list)
     list->count = 0;
     list->sizeOfItem = 0;
 
-    DebugInfo("ListArray '%s' destroyed.", name);
+    DebugInfo("ListArray '%s' destroyed.", tempTitle);
 }
 
 ListArray ListArray_Copy(const ListArray *list)

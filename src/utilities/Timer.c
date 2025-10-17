@@ -21,7 +21,8 @@ float TimePoint_ToMilliseconds(const TimePoint *timePoint)
 Timer Timer_Create(const char *title)
 {
     Timer timer;
-    timer.title = malloc(strlen(title) + 1);
+    timer.title = (char *)malloc(strlen(title) + 1);
+    DebugAssertNullPointerCheck(timer.title);
     MemoryCopy(timer.title, strlen(title) + 1, title);
     timer.title[strlen(title)] = '\0';
     timer.isRunning = false;
@@ -36,8 +37,13 @@ void Timer_Destroy(Timer *timer)
 {
     DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, strnlen(timer->title, TEMP_BUFFER_SIZE), timer->title);
+
     free(timer->title);
     timer->title = NULL;
+
+    DebugInfo("Timer '%s' destroyed.", tempTitle);
 }
 
 void Timer_Start(Timer *timer)

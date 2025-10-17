@@ -112,7 +112,7 @@ ResourceImage *ResourceImage_Create(StringView title, StringView path)
     String_ConcatEnd(&fullPath, scv(resourceImage->name));
 
     stbi_set_flip_vertically_on_load(true);
-    resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
+    resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 4);
     DebugAssertNullPointerCheck(resourceImage->data);
 
     String_Destroy(&fullPath);

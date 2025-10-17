@@ -10,7 +10,7 @@
 
 #include <cglm/mat4.h>
 
-#define RENDERER_OPENGL_CLEAR_COLOR 0.1f, 0.1f, 0.1f, 1.0f
+#define RENDERER_OPENGL_CLEAR_COLOR 1.1f, 1.1f, 0.1f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
 #define RENDERER_VBO_POSITION_BINDING 0
@@ -71,6 +71,7 @@ typedef struct RendererMaterial
     Vector3 ambientColor;
     Vector3 diffuseColor;
     Vector3 specularColor;
+    Vector3 emissiveColor;
     RendererTexture *diffuseMap;
     float specularExponent;
     float refractionIndex;
@@ -125,6 +126,7 @@ typedef struct RendererScene
     RendererUniformLocationHandle matAmbientColor;
     RendererUniformLocationHandle matDiffuseColor;
     RendererUniformLocationHandle matSpecularColor;
+    RendererUniformLocationHandle matEmissiveColor;
     RendererUniformLocationHandle matSpecularExponent;
     RendererUniformLocationHandle matDissolve;
     RendererUniformLocationHandle matDiffuseMap;

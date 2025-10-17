@@ -103,7 +103,8 @@ ListLinked ListLinked_Create(size_t sizeOfItem, const char *nameOfType)
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
-    list.nameOfType = malloc(strlen(nameOfType) + 1);
+    list.nameOfType = (char *)malloc(strlen(nameOfType) + 1);
+    DebugAssertNullPointerCheck(list.nameOfType);
     MemoryCopy(list.nameOfType, strlen(nameOfType) + 1, nameOfType);
     list.nameOfType[strlen(nameOfType)] = '\0';
 
