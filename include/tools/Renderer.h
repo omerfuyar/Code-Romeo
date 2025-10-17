@@ -140,7 +140,7 @@ typedef struct RendererBatch
     String name;
     RendererModel *model;
     ListArray components;     // RendererComponent
-    ListArray objectMatrices; // mat4, data must be continuous
+    ListArray objectMatrices; // mat4, data must be continuous and only matrices because it's directly sent to UBO
 
     RendererScene *scene;
     size_t batchOffsetInScene;

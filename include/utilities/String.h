@@ -39,6 +39,12 @@ String String_CreateCopyS(const char *string, size_t length);
 #define scv(stringToCreateView) \
     (StringView) { .characters = stringToCreateView.characters, .length = stringToCreateView.length }
 
+/// @brief Create a view from char pointer and length.
+/// @param string Char pointer to create a view of.
+/// @param length Length of the string.
+#define scs(string, stringLength) \
+    (StringView) { .characters = string, .length = stringLength }
+
 /// @brief Destroys a String object and frees its memory if it is a copy.
 /// @param string Pointer to the String object to destroy.
 void String_Destroy(String *string);

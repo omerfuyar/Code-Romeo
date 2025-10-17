@@ -91,31 +91,37 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
     size_t tokenCount = 0;
     size_t lastTokenIndex = 0;
 
-    for (size_t i = 0; i < string.length && tokenCount < maxTokenCount; i++)
+    size_t index = 0;
+    while (index < string.length && tokenCount < maxTokenCount)
     {
-        if (strncmp(string.characters + i, delimeter.characters, Min(delimeter.length, string.length - i)) == 0)
+        if (String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
         {
-            tokenBufferRet[tokenCount] = (StringView){
-                .characters = string.characters + lastTokenIndex,
-                .length = i - lastTokenIndex};
+            if (index > lastTokenIndex)
+            {
+                tokenBufferRet[tokenCount] = scs(string.characters + lastTokenIndex, index - lastTokenIndex);
+                tokenCount++;
+            }
 
-            lastTokenIndex = i + delimeter.length;
-            i = lastTokenIndex - 1;
+            index += delimeter.length;
 
-            // DebugInfo("Token %zu: '%.*s'", tokenCount, (int)token->length, token->characters);
+            while (index < string.length &&
+                   index + delimeter.length <= string.length &&
+                   String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
+            {
+                index += delimeter.length;
+            }
 
-            tokenCount++;
+            lastTokenIndex = index;
+        }
+        else
+        {
+            index++;
         }
     }
 
     if (lastTokenIndex < string.length && tokenCount < maxTokenCount)
     {
-        tokenBufferRet[tokenCount] = (StringView){
-            .characters = string.characters + lastTokenIndex,
-            .length = string.length - lastTokenIndex};
-
-        // DebugInfo("Token %zu: '%.*s'", tokenCount, (int)token->length, token->characters);
-
+        tokenBufferRet[tokenCount] = scs(string.characters + lastTokenIndex, string.length - lastTokenIndex);
         tokenCount++;
     }
 

@@ -6,7 +6,7 @@
 #include "utilities/String.h"
 #include "utilities/ListArray.h"
 
-#define PHYSICS_COLLISION_RESOLVE_ITERATIONS 4
+#define PHYSICS_COLLISION_RESOLVE_ITERATIONS 2
 
 /// @brief Represents a physics scene containing components and global physics properties.
 typedef struct PhysicsScene
@@ -22,15 +22,15 @@ typedef struct PhysicsScene
 /// @brief Represents a component that can interact with the physics scene.
 typedef struct PhysicsComponent
 {
-    Vector3 *position;
-    Vector3 colliderSize;
     Vector3 velocity;
-
-    float mass;
-    bool isStatic;
+    Vector3 colliderSize;
+    Vector3 *positionReference;
 
     PhysicsScene *scene;
     size_t componentOffsetInScene;
+
+    float mass;
+    bool isStatic;
 } PhysicsComponent;
 
 #pragma region Physics

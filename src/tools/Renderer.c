@@ -115,7 +115,7 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 {
     for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
-        RendererTexture *currentTexture = ((RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i));
+        RendererTexture *currentTexture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
 
         if (String_Compare(scv(currentTexture->name), name) == 0)
         {
@@ -133,6 +133,7 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
     texture->index = RENDERER_MAIN_TEXTURES.count - 1;
     texture->size = size;
     texture->channels = channels;
+    texture->name = scc(name);
 
     texture->data = malloc((size_t)(size.x * size.y * channels));
     DebugAssertNullPointerCheck(texture->data);
@@ -1280,6 +1281,9 @@ void RendererScene_Update(RendererScene *scene)
 RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference)
 {
     DebugAssertNullPointerCheck(batch);
+    DebugAssertNullPointerCheck(positionReference);
+    DebugAssertNullPointerCheck(rotationReference);
+    DebugAssertNullPointerCheck(scaleReference);
     //    DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
 
     RendererComponent component = {0};

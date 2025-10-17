@@ -11,13 +11,13 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsScene *scene, PhysicsComponent *
     {
         move = overlap.x;
 
-        if (dynamicComponent->position->x < staticComponent->position->x)
+        if (dynamicComponent->positionReference->x < staticComponent->positionReference->x)
         {
-            dynamicComponent->position->x -= move;
+            dynamicComponent->positionReference->x -= move;
         }
         else
         {
-            dynamicComponent->position->x += move;
+            dynamicComponent->positionReference->x += move;
         }
 
         dynamicComponent->velocity.x = -dynamicComponent->velocity.x * scene->elasticity;
@@ -26,13 +26,13 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsScene *scene, PhysicsComponent *
     {
         move = overlap.y;
 
-        if (dynamicComponent->position->y < staticComponent->position->y)
+        if (dynamicComponent->positionReference->y < staticComponent->positionReference->y)
         {
-            dynamicComponent->position->y -= move;
+            dynamicComponent->positionReference->y -= move;
         }
         else
         {
-            dynamicComponent->position->y += move;
+            dynamicComponent->positionReference->y += move;
         }
 
         dynamicComponent->velocity.y = -dynamicComponent->velocity.y * scene->elasticity;
@@ -41,13 +41,13 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsScene *scene, PhysicsComponent *
     {
         move = overlap.z;
 
-        if (dynamicComponent->position->z < staticComponent->position->z)
+        if (dynamicComponent->positionReference->z < staticComponent->positionReference->z)
         {
-            dynamicComponent->position->z -= move;
+            dynamicComponent->positionReference->z -= move;
         }
         else
         {
-            dynamicComponent->position->z += move;
+            dynamicComponent->positionReference->z += move;
         }
 
         dynamicComponent->velocity.z = -dynamicComponent->velocity.z * scene->elasticity;
@@ -65,15 +65,15 @@ void PhysicsScene_ResolveDynamicVsDynamic(PhysicsScene *scene, PhysicsComponent 
         move1 = (1.0f / firstComponent->mass) / totalInvMass * overlap.x;
         move2 = (1.0f / secondComponent->mass) / totalInvMass * overlap.x;
 
-        if (firstComponent->position->x < secondComponent->position->x)
+        if (firstComponent->positionReference->x < secondComponent->positionReference->x)
         {
-            firstComponent->position->x -= move1;
-            secondComponent->position->x += move2;
+            firstComponent->positionReference->x -= move1;
+            secondComponent->positionReference->x += move2;
         }
         else
         {
-            firstComponent->position->x += move1;
-            secondComponent->position->x -= move2;
+            firstComponent->positionReference->x += move1;
+            secondComponent->positionReference->x -= move2;
         }
     }
     else if (overlap.y < overlap.z)
@@ -81,15 +81,15 @@ void PhysicsScene_ResolveDynamicVsDynamic(PhysicsScene *scene, PhysicsComponent 
         move1 = (1.0f / firstComponent->mass) / totalInvMass * overlap.y;
         move2 = (1.0f / secondComponent->mass) / totalInvMass * overlap.y;
 
-        if (firstComponent->position->y < secondComponent->position->y)
+        if (firstComponent->positionReference->y < secondComponent->positionReference->y)
         {
-            firstComponent->position->y -= move1;
-            secondComponent->position->y += move2;
+            firstComponent->positionReference->y -= move1;
+            secondComponent->positionReference->y += move2;
         }
         else
         {
-            firstComponent->position->y += move1;
-            secondComponent->position->y -= move2;
+            firstComponent->positionReference->y += move1;
+            secondComponent->positionReference->y -= move2;
         }
     }
     else
@@ -97,15 +97,15 @@ void PhysicsScene_ResolveDynamicVsDynamic(PhysicsScene *scene, PhysicsComponent 
         move1 = (1.0f / firstComponent->mass) / totalInvMass * overlap.z;
         move2 = (1.0f / secondComponent->mass) / totalInvMass * overlap.z;
 
-        if (firstComponent->position->z < secondComponent->position->z)
+        if (firstComponent->positionReference->z < secondComponent->positionReference->z)
         {
-            firstComponent->position->z -= move1;
-            secondComponent->position->z += move2;
+            firstComponent->positionReference->z -= move1;
+            secondComponent->positionReference->z += move2;
         }
         else
         {
-            firstComponent->position->z += move1;
-            secondComponent->position->z -= move2;
+            firstComponent->positionReference->z += move1;
+            secondComponent->positionReference->z -= move2;
         }
     }
 
@@ -171,20 +171,20 @@ bool Physics_IsColliding(PhysicsComponent *component1, PhysicsComponent *compone
     DebugAssertNullPointerCheck(component1);
     DebugAssertNullPointerCheck(component2);
 
-    float overlapX = Min(component1->position->x + component1->colliderSize.x / 2.0f,
-                         component2->position->x + component2->colliderSize.x / 2.0f) -
-                     Max(component1->position->x - component1->colliderSize.x / 2.0f,
-                         component2->position->x - component2->colliderSize.x / 2.0f);
+    float overlapX = Min(component1->positionReference->x + component1->colliderSize.x / 2.0f,
+                         component2->positionReference->x + component2->colliderSize.x / 2.0f) -
+                     Max(component1->positionReference->x - component1->colliderSize.x / 2.0f,
+                         component2->positionReference->x - component2->colliderSize.x / 2.0f);
 
-    float overlapY = Min(component1->position->y + component1->colliderSize.y / 2.0f,
-                         component2->position->y + component2->colliderSize.y / 2.0f) -
-                     Max(component1->position->y - component1->colliderSize.y / 2.0f,
-                         component2->position->y - component2->colliderSize.y / 2.0f);
+    float overlapY = Min(component1->positionReference->y + component1->colliderSize.y / 2.0f,
+                         component2->positionReference->y + component2->colliderSize.y / 2.0f) -
+                     Max(component1->positionReference->y - component1->colliderSize.y / 2.0f,
+                         component2->positionReference->y - component2->colliderSize.y / 2.0f);
 
-    float overlapZ = Min(component1->position->z + component1->colliderSize.z / 2.0f,
-                         component2->position->z + component2->colliderSize.z / 2.0f) -
-                     Max(component1->position->z - component1->colliderSize.z / 2.0f,
-                         component2->position->z - component2->colliderSize.z / 2.0f);
+    float overlapZ = Min(component1->positionReference->z + component1->colliderSize.z / 2.0f,
+                         component2->positionReference->z + component2->colliderSize.z / 2.0f) -
+                     Max(component1->positionReference->z - component1->colliderSize.z / 2.0f,
+                         component2->positionReference->z - component2->colliderSize.z / 2.0f);
 
     if (overlapRet != NULL)
     {
@@ -243,19 +243,19 @@ void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime)
 
 void PhysicsScene_ResolveCollisions(PhysicsScene *scene)
 {
-    // for (size_t iter = 0; iter < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iter++)
-    //{
-    for (size_t i = 0; i < scene->components.count - 1; i++)
+    for (size_t iter = 0; iter < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iter++)
     {
-        PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(&scene->components, i);
-
-        for (size_t j = i + 1; j < scene->components.count; j++)
+        for (size_t i = 0; i < scene->components.count - 1; i++)
         {
-            PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(&scene->components, j);
-            PhysicsScene_ResolveCollision(scene, firstComponent, secondComponent);
+            PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(&scene->components, i);
+
+            for (size_t j = i + 1; j < scene->components.count; j++)
+            {
+                PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(&scene->components, j);
+                PhysicsScene_ResolveCollision(scene, firstComponent, secondComponent);
+            }
         }
     }
-    //}
 }
 
 PhysicsComponent *PhysicsScene_CreateComponent(PhysicsScene *scene, Vector3 *positionReference, Vector3 colliderSize, float mass, bool isStatic)
@@ -266,7 +266,7 @@ PhysicsComponent *PhysicsScene_CreateComponent(PhysicsScene *scene, Vector3 *pos
     component.colliderSize = colliderSize;
     component.isStatic = isStatic;
     component.mass = mass;
-    component.position = positionReference;
+    component.positionReference = positionReference;
     component.componentOffsetInScene = scene->components.count;
 
     DebugInfo("Physics Component created in Scene '%s'.", scene->name.characters);
@@ -302,7 +302,7 @@ void PhysicsComponent_Update(PhysicsComponent *component, float deltaTime)
 
     component->velocity = Vector3_Add(component->velocity, NewVector3(0.0f, component->scene->gravity * deltaTime, 0.0f));
     component->velocity = Vector3_Scale(component->velocity, 1.0f - component->scene->drag);
-    *component->position = Vector3_Add(*component->position, Vector3_Scale(component->velocity, deltaTime));
+    *component->positionReference = Vector3_Add(*component->positionReference, Vector3_Scale(component->velocity, deltaTime));
 }
 
 void PhysicsComponent_Configure(PhysicsComponent *firstComponent, Vector3 newColliderSize, float newMass, bool newIsStatic)
