@@ -103,4 +103,6 @@ void Context_Terminate()
 {
     glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
     glfwTerminate();
+
+    DebugInfo("Context terminated successfully.");
 }

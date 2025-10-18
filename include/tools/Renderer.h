@@ -79,6 +79,13 @@ typedef struct RendererMaterial
     int illuminationModel;
 } RendererMaterial;
 
+/// @brief A mesh that holds indices to used vertices inside a model and a material.
+typedef struct RendererMesh
+{
+    ListArray indices; // RendererMeshIndex
+    RendererMaterial *material;
+} RendererMesh;
+
 /// @brief A complete model that holds multiple mesh data inside
 typedef struct RendererModel
 {

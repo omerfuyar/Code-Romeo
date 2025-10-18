@@ -1,26 +1,26 @@
 #pragma once
 
 #if defined(_WIN32)
-#define PLATFORM_WINDOWS 1
-#define PLATFORM_LINUX 0
-#define PLATFORM_MACOS 0
+#define RJ_PLATFORM_WINDOWS 1
+#define RJ_PLATFORM_LINUX 0
+#define RJ_PLATFORM_MACOS 0
 #elif defined(__linux__)
 #define _POSIX_C_SOURCE 200809L
-#define PLATFORM_LINUX 1
-#define PLATFORM_WINDOWS 0
-#define PLATFORM_MACOS 0
+#define RJ_PLATFORM_LINUX 1
+#define RJ_PLATFORM_WINDOWS 0
+#define RJ_PLATFORM_MACOS 0
 #elif defined(__APPLE__) && defined(__MACH__)
-#define PLATFORM_MACOS 1
-#define PLATFORM_WINDOWS 0
-#define PLATFORM_LINUX 0
+#define RJ_PLATFORM_MACOS 1
+#define RJ_PLATFORM_WINDOWS 0
+#define RJ_PLATFORM_LINUX 0
 #else
 #error "Unsupported platform."
 #endif
 
-#if PLATFORM_LINUX || PLATFORM_MACOS
-#define PLATFORM_UNIX 1
+#if RJ_PLATFORM_LINUX || RJ_PLATFORM_MACOS
+#define RJ_PLATFORM_UNIX 1
 #else
-#define PLATFORM_UNIX 0
+#define RJ_PLATFORM_UNIX 0
 #endif
 
 #include <stdlib.h>
@@ -31,28 +31,27 @@
 #include <time.h>
 #include <limits.h>
 
-#if PLATFORM_WINDOWS
-#define PATH_DELIMETER_CHAR '\\'
-#define PATH_DELIMETER_STR "\\"
+#if RJ_PLATFORM_WINDOWS
+#define RJ_PATH_DELIMETER_CHAR '\\'
+#define RJ_PATH_DELIMETER_STR "\\"
 
 #define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
 #define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
-#define MemorySet(destination, size, value) memset(destination, value, size)
-#define MemoryMove(destination, size, source) memmove(destination, source, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
 
-#elif PLATFORM_UNIX
-#define PATH_DELIMETER_CHAR '/'
-#define PATH_DELIMETER_STR "/"
+#elif RJ_PLATFORM_UNIX
+#define RJ_PATH_DELIMETER_CHAR '/'
+#define RJ_PATH_DELIMETER_STR "/"
 
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define MemoryCopy(destination, size, source) memcpy(destination, source, size)
-#define MemorySet(destination, size, value) memset(destination, value, size)
-#define MemoryMove(destination, size, source) memmove(destination, source, size)
 #define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
 #endif
 
-#define TEMP_BUFFER_SIZE (size_t)128
+#define MemorySet(destination, size, value) memset(destination, value, size)
+#define MemoryMove(destination, size, source) memmove(destination, source, size)
+
+#define RJ_TEMP_BUFFER_SIZE (size_t)128
 
 #pragma region Typedefs
 
@@ -74,7 +73,7 @@ typedef void (*VoidFunIntCharptr)(int, char *);
 /// @param function The function name where the log is called from
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
-/// @note The log message is written to a file named 'DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
+/// @note The log message is written to a file named 'RJ_DEBUG_FILE_NAME'. Directory and name can be changed by modifying the macro.
 void Global_DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 /// @brief Gets the executable file directory.
@@ -112,25 +111,25 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 #pragma region Debug Log
 
 #if defined(_DEBUG) || !defined(NDEBUG)
-#define BUILD_DEBUG true
+#define RJ_BUILD_DEBUG true
 #else
-#define BUILD_DEBUG false
+#define RJ_BUILD_DEBUG false
 #endif
 
-#define DEBUG_INFO_ENABLED BUILD_DEBUG
-#define DEBUG_WARNING_ENABLED BUILD_DEBUG
-#define DEBUG_ERROR_ENABLED BUILD_DEBUG
-#define DEBUG_ASSERT_ENABLED BUILD_DEBUG
+#define RJ_DEBUG_INFO RJ_BUILD_DEBUG
+#define RJ_DEBUG_WARNING RJ_BUILD_DEBUG
+#define RJ_DEBUG_ERROR RJ_BUILD_DEBUG
+#define RJ_DEBUG_ASSERT RJ_BUILD_DEBUG
 
-#define DEBUG_TERMINATE_ON_ERROR true
-#define DEBUG_TERMINATE_ON_ASSERT true
+#define RJ_DEBUG_TERMINATE_ON_ERROR true
+#define RJ_DEBUG_TERMINATE_ON_ASSERT true
 
-#define DEBUG_FLUSH_AFTER_LOG false
+#define RJ_DEBUG_FLUSH_AFTER_LOG false
 
-#define DEBUG_TIME_FORMAT "%H:%M:%S"
-#define DEBUG_FILE_NAME "debug.log"
+#define RJ_DEBUG_TIME_FORMAT "%H:%M:%S"
+#define RJ_DEBUG_FILE_NAME "debug.log"
 
-#if DEBUG_INFO_ENABLED == false
+#if RJ_DEBUG_INFO == false
 #define DebugInfo(format, ...)
 #else
 #define DebugInfo(format, ...)                                                               \
@@ -140,7 +139,7 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
     } while (false)
 #endif
 
-#if DEBUG_WARNING_ENABLED == false
+#if RJ_DEBUG_WARNING == false
 #define DebugWarning(format, ...)
 #else
 #define DebugWarning(format, ...)                                                               \
@@ -150,30 +149,30 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
     } while (false)
 #endif
 
-#if DEBUG_ERROR_ENABLED == false
+#if RJ_DEBUG_ERROR == false
 #define DebugError(format, ...)
 #else
-#define DebugError(format, ...)                                                                                  \
-    do                                                                                                           \
-    {                                                                                                            \
-        Global_DebugLog(DEBUG_TERMINATE_ON_ERROR, "ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugError(format, ...)                                                                                     \
+    do                                                                                                              \
+    {                                                                                                               \
+        Global_DebugLog(RJ_DEBUG_TERMINATE_ON_ERROR, "ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
-#if DEBUG_ASSERT_ENABLED == false
+#if RJ_DEBUG_ASSERT == false
 #define DebugAssert(condition, format, ...) (void)(condition)
 #define DebugAssertNullPointerCheck(ptr)
 #define DebugAssertFileOpenCheck(filePtr, fileName, mode) FileOpen(filePtr, fileName, mode)
 #else
 #define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
 #define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
-#define DebugAssert(condition, format, ...)                                                                                       \
-    do                                                                                                                            \
-    {                                                                                                                             \
-        if (!(condition))                                                                                                         \
-        {                                                                                                                         \
-            Global_DebugLog(DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-        }                                                                                                                         \
+#define DebugAssert(condition, format, ...)                                                                                          \
+    do                                                                                                                               \
+    {                                                                                                                                \
+        if (!(condition))                                                                                                            \
+        {                                                                                                                            \
+            Global_DebugLog(RJ_DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+        }                                                                                                                            \
     } while (false)
 #endif
 

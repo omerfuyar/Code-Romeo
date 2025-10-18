@@ -27,8 +27,8 @@ void ListArray_Destroy(ListArray *list)
     DebugAssertNullPointerCheck(list);
     DebugAssertNullPointerCheck(list->data);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, strlen(list->nameOfType) + 1), list->nameOfType);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, strlen(list->nameOfType) + 1), list->nameOfType);
 
     free(list->data);
     list->data = NULL;

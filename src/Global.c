@@ -1,9 +1,9 @@
 #include "Global.h"
 
-#if PLATFORM_WINDOWS
+#if RJ_PLATFORM_WINDOWS
 #include <windows.h>
 #define GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
-#elif PLATFORM_UNIX
+#elif RJ_PLATFORM_UNIX
 #include <unistd.h>
 #define GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 #endif
@@ -24,26 +24,26 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
-    char timeBuffer[TEMP_BUFFER_SIZE / 4];
+    char timeBuffer[RJ_TEMP_BUFFER_SIZE / 4];
 
     timespec_get(&tempSpec, TIME_UTC);
     LocalTime(&tempSpec.tv_sec, &timer);
-    strftime(timeBuffer, sizeof(timeBuffer), DEBUG_TIME_FORMAT, &timer);
+    strftime(timeBuffer, sizeof(timeBuffer), RJ_DEBUG_TIME_FORMAT, &timer);
 
     if (DEBUG_FILE == NULL)
     {
-        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(Global_GetExecutablePath()) + strlen(DEBUG_FILE_NAME) + 1);
+        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(Global_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME) + 1);
 
         MemoryCopy(DEBUG_FILE_NAME_STR, strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), GLOBAL_EXECUTABLE_DIRECTORY_PATH);
-        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(DEBUG_FILE_NAME), DEBUG_FILE_NAME);
+        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(RJ_DEBUG_FILE_NAME), RJ_DEBUG_FILE_NAME);
 
-        DEBUG_FILE_NAME_STR[strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) + strlen(DEBUG_FILE_NAME)] = '\0';
+        DEBUG_FILE_NAME_STR[strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) + strlen(RJ_DEBUG_FILE_NAME)] = '\0';
 
         remove(DEBUG_FILE_NAME_STR);
 
         if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
         {
-            char buffer[TEMP_BUFFER_SIZE] = {0};
+            char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
             snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             fprintf(stderr, "%s", buffer);
             Global_Terminate(EXIT_FAILURE, buffer);
@@ -53,26 +53,26 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
     }
     else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
     {
-        char buffer[TEMP_BUFFER_SIZE] = {0};
+        char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
         snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
         fprintf(stderr, "%s", buffer);
         Global_Terminate(EXIT_FAILURE, buffer);
     }
 
-    char messageBuffer[TEMP_BUFFER_SIZE * 4] = {0};
+    char messageBuffer[RJ_TEMP_BUFFER_SIZE * 4] = {0};
     va_list args;
     va_start(args, format);
     vsnprintf(messageBuffer, sizeof(messageBuffer), format, args);
     va_end(args);
 
-    char finalBuffer[TEMP_BUFFER_SIZE * 5] = {0};
+    char finalBuffer[RJ_TEMP_BUFFER_SIZE * 5] = {0};
 
     snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n",
              timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
     fprintf(DEBUG_FILE, "%s", finalBuffer);
 
-    if (DEBUG_FLUSH_AFTER_LOG)
+    if (RJ_DEBUG_FLUSH_AFTER_LOG)
     {
         fflush(DEBUG_FILE);
     }
@@ -89,12 +89,12 @@ char *Global_GetExecutablePath()
 {
     if (GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
     {
-        char buffer[TEMP_BUFFER_SIZE];
+        char buffer[RJ_TEMP_BUFFER_SIZE];
         GetExePath(buffer, sizeof(buffer));
 
         size_t currentIndex = strlen(buffer);
 
-        while (buffer[--currentIndex] != PATH_DELIMETER_CHAR)
+        while (buffer[--currentIndex] != RJ_PATH_DELIMETER_CHAR)
         {
             buffer[currentIndex] = '\0';
         }

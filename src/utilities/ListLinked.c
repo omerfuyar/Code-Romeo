@@ -114,8 +114,8 @@ ListLinked ListLinked_Create(size_t sizeOfItem, const char *nameOfType)
 
 void ListLinked_Destroy(ListLinked *list)
 {
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, strnlen(list->nameOfType, TEMP_BUFFER_SIZE), list->nameOfType);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, strnlen(list->nameOfType, RJ_TEMP_BUFFER_SIZE), list->nameOfType);
 
     if (list->head != NULL)
     {

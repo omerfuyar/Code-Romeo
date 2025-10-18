@@ -36,6 +36,7 @@
 #define Clamp(value, minValue, maxValue) (Min(Max(value, minValue), maxValue))
 #define DegToRad(deg) (deg * PI_M / 180.0f)
 #define RadToDeg(rad) (rad * 180.0f / PI_M)
+#define RandomRange(min, max) (rand() % ((max) - (min) + 1) + (min))
 
 #pragma endregion Macros
 

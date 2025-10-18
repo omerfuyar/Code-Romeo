@@ -14,8 +14,8 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
     resource->path = scc(relativePath);
 
     // size_t pathCount = 0;
-    // String pathBuffer[TEMP_BUFFER_SIZE / 32];
-    // String_Tokenize(relativePath, scl(PATH_DELIMETER_STR), &pathCount, pathBuffer, TEMP_BUFFER_SIZE / 32);
+    // String pathBuffer[RJ_TEMP_BUFFER_SIZE / 32];
+    // String_Tokenize(relativePath, scl(RJ_PATH_DELIMETER_STR), &pathCount, pathBuffer, RJ_TEMP_BUFFER_SIZE / 32);
     //
     // for (size_t i = 0; i < pathCount - 1; i++)
     //{
@@ -81,8 +81,8 @@ void ResourceText_Destroy(ResourceText *resource)
     DebugAssertNullPointerCheck(resource);
     DebugAssertNullPointerCheck(resource->name.characters);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resource->name.length + 1), resource->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, resource->name.length + 1), resource->name.characters);
 
     String_Destroy(&resource->name);
     String_Destroy(&resource->path);
@@ -126,8 +126,8 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
 {
     DebugAssertNullPointerCheck(resourceImage);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, resourceImage->name.length + 1), resourceImage->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, resourceImage->name.length + 1), resourceImage->name.characters);
 
     String_Destroy(&resourceImage->name);
     String_Destroy(&resourceImage->path);

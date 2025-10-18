@@ -43,12 +43,6 @@ typedef struct RendererTexture
     RendererTextureHandle handle;
 } RendererTexture;
 
-typedef struct RendererMesh
-{
-    ListArray indices; // RendererMeshIndex
-    RendererMaterial *material;
-} RendererMesh;
-
 ContextWindow *RENDERER_MAIN_WINDOW = NULL;
 RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
 ListArray RENDERER_MAIN_TEXTURES = {0}; // RendererTexture
@@ -181,8 +175,8 @@ void RendererTexture_Destroy(RendererTexture *texture)
 {
     DebugAssertNullPointerCheck(texture);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, strlen(texture->name.characters) + 1), texture->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, strlen(texture->name.characters) + 1), texture->name.characters);
 
     String_Destroy(&texture->name);
     free(texture->data);
@@ -266,6 +260,8 @@ void Renderer_Terminate()
     }
 
     RENDERER_MAIN_SHADER_PROGRAM = 0;
+
+    DebugInfo("Renderer terminated successfully.");
 }
 
 void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource)
@@ -1065,8 +1061,8 @@ void RendererModel_Destroy(RendererModel *model)
 {
     DebugAssertNullPointerCheck(model);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, model->name.length + 1), model->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, model->name.length + 1), model->name.characters);
 
     String_Destroy(&model->name);
 
@@ -1157,8 +1153,8 @@ void RendererScene_Destroy(RendererScene *scene)
 {
     DebugAssertNullPointerCheck(scene);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
@@ -1227,8 +1223,8 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
 {
     DebugAssertNullPointerCheck(batch);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, batch->name.length + 1), batch->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, batch->name.length + 1), batch->name.characters);
 
     for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {

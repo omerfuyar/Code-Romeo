@@ -37,8 +37,8 @@ void Timer_Destroy(Timer *timer)
 {
     DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, strnlen(timer->title, TEMP_BUFFER_SIZE), timer->title);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, strnlen(timer->title, RJ_TEMP_BUFFER_SIZE), timer->title);
 
     free(timer->title);
     timer->title = NULL;

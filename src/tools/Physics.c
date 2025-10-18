@@ -217,8 +217,8 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
 {
     DebugAssertNullPointerCheck(scene);
 
-    char tempTitle[TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
 
     String_Destroy(&scene->name);
     for (size_t i = scene->components.count - 1; i >= 0; i--)
@@ -269,7 +269,7 @@ PhysicsComponent *PhysicsScene_CreateComponent(PhysicsScene *scene, Vector3 *pos
     component.positionReference = positionReference;
     component.componentOffsetInScene = scene->components.count;
 
-    DebugInfo("Physics Component created in Scene '%s'.", scene->name.characters);
+    // DebugInfo("Physics Component created in Scene '%s'.", scene->name.characters);
 
     return (PhysicsComponent *)ListArray_Add(&scene->components, &component);
 }
