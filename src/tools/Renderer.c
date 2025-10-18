@@ -119,25 +119,24 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 
         if (String_Compare(scv(currentTexture->name), name) == 0)
         {
+            DebugInfo("Texture '%.*s' found in texture pool, reusing it.", (int)name.length, name.characters);
             return currentTexture;
         }
     }
 
-    if (data == NULL)
-    {
-        DebugWarning("Cannot create texture '%.*s' with NULL data", (int)name.length, name.characters);
-        return NULL;
-    }
+    DebugAssertNullPointerCheck(data);
 
-    RendererTexture *texture = ListArray_Add(&RENDERER_MAIN_TEXTURES, NULL);
+    RendererTexture *texture = (RendererTexture *)ListArray_Add(&RENDERER_MAIN_TEXTURES, NULL);
     texture->index = RENDERER_MAIN_TEXTURES.count - 1;
     texture->size = size;
     texture->channels = channels;
     texture->name = scc(name);
 
-    texture->data = malloc((size_t)(size.x * size.y * channels));
+    size_t dataSize = (size_t)(size.x * size.y * channels);
+
+    texture->data = malloc(dataSize);
     DebugAssertNullPointerCheck(texture->data);
-    MemoryCopy(texture->data, (size_t)(size.x * size.y * channels), data);
+    MemoryCopy(texture->data, dataSize, data);
 
     glGenTextures(1, &texture->handle);
     glBindTexture(GL_TEXTURE_2D, texture->handle);
@@ -147,12 +146,33 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    GLenum format = texture->channels == 4 ? GL_RGBA : (texture->channels == 3 ? GL_RGB : (texture->channels == 2 ? GL_RG : GL_RED));
+    GLenum format = 0;
+
+    switch (texture->channels)
+    {
+    case 4:
+        format = GL_RGBA;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 2:
+        format = GL_RG;
+        break;
+    case 1:
+        format = GL_RED;
+        break;
+    default:
+        DebugError("Unsupported number of channels (%d) for texture '%.*s'.", texture->channels, (int)name.length, name.characters);
+        break;
+    }
 
     glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, texture->size.x, texture->size.y, 0, format, GL_UNSIGNED_BYTE, texture->data);
     // glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    DebugInfo("Texture '%.*s' created successfully.", (int)name.length, name.characters);
 
     return texture;
 }
@@ -160,6 +180,9 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 void RendererTexture_Destroy(RendererTexture *texture)
 {
     DebugAssertNullPointerCheck(texture);
+
+    char tempTitle[TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(TEMP_BUFFER_SIZE, strlen(texture->name.characters) + 1), texture->name.characters);
 
     String_Destroy(&texture->name);
     free(texture->data);
@@ -170,7 +193,7 @@ void RendererTexture_Destroy(RendererTexture *texture)
     glDeleteTextures(1, &texture->handle);
     texture->handle = 0;
 
-    ListArray_RemoveAtIndex(&RENDERER_MAIN_TEXTURES, texture->index);
+    DebugInfo("Texture '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion Renderer Texture
@@ -231,6 +254,7 @@ void Renderer_Terminate()
     for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
         RendererTexture *texture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
+
         RendererTexture_Destroy(texture);
     }
 

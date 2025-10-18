@@ -10,7 +10,7 @@
 
 #include <cglm/mat4.h>
 
-#define RENDERER_OPENGL_CLEAR_COLOR 1.1f, 1.1f, 0.1f, 1.0f
+#define RENDERER_OPENGL_CLEAR_COLOR 0.0f, 0.0f, 0.0f, 0.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
 #define RENDERER_VBO_POSITION_BINDING 0
@@ -307,7 +307,7 @@ RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *
 
 /// @brief Destroys a component and frees its resources.
 /// @param component The component to destroy.
-void RendererBatch_DestroyComponent(RendererComponent *component);
+void RendererBatch_DestroyComponent(RendererComponent *component); // todo not logical
 
 #pragma endregion Renderer Batch
 
