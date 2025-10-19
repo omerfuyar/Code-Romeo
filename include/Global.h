@@ -124,56 +124,71 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 #define RJ_DEBUG_TERMINATE_ON_ERROR true
 #define RJ_DEBUG_TERMINATE_ON_ASSERT true
 
-#define RJ_DEBUG_FLUSH_AFTER_LOG false
+#define RJ_DEBUG_SAFE_LOGGING false
+#define RJ_DEBUG_FLUSH_AFTER_LOG RJ_DEBUG_SAFE_LOGGING
 
 #define RJ_DEBUG_TIME_FORMAT "%H:%M:%S"
 #define RJ_DEBUG_FILE_NAME "debug.log"
 
+#define DebugLog(terminate, header, format, ...)                                                 \
+    do                                                                                           \
+    {                                                                                            \
+        Global_DebugLog(terminate, header, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+    } while (false)
+
 #if RJ_DEBUG_INFO == false
 #define DebugInfo(format, ...)
 #else
-#define DebugInfo(format, ...)                                                               \
-    do                                                                                       \
-    {                                                                                        \
-        Global_DebugLog(false, "INFO", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugInfo(format, ...)                          \
+    do                                                  \
+    {                                                   \
+        DebugLog(false, "INFO", format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
 #if RJ_DEBUG_WARNING == false
 #define DebugWarning(format, ...)
 #else
-#define DebugWarning(format, ...)                                                               \
-    do                                                                                          \
-    {                                                                                           \
-        Global_DebugLog(false, "WARNING", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugWarning(format, ...)                          \
+    do                                                     \
+    {                                                      \
+        DebugLog(false, "WARNING", format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
 #if RJ_DEBUG_ERROR == false
 #define DebugError(format, ...)
 #else
-#define DebugError(format, ...)                                                                                     \
-    do                                                                                                              \
-    {                                                                                                               \
-        Global_DebugLog(RJ_DEBUG_TERMINATE_ON_ERROR, "ERROR", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define DebugError(format, ...)                                                \
+    do                                                                         \
+    {                                                                          \
+        DebugLog(RJ_DEBUG_TERMINATE_ON_ERROR, "ERROR", format, ##__VA_ARGS__); \
     } while (false)
 #endif
 
 #if RJ_DEBUG_ASSERT == false
 #define DebugAssert(condition, format, ...) (void)(condition)
+
 #define DebugAssertNullPointerCheck(ptr)
+
 #define DebugAssertFileOpenCheck(filePtr, fileName, mode) FileOpen(filePtr, fileName, mode)
+
 #else
-#define DebugAssertNullPointerCheck(ptr) DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
-#define DebugAssertFileOpenCheck(filePtr, fileName, mode) DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
-#define DebugAssert(condition, format, ...)                                                                                          \
-    do                                                                                                                               \
-    {                                                                                                                                \
-        if (!(condition))                                                                                                            \
-        {                                                                                                                            \
-            Global_DebugLog(RJ_DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
-        }                                                                                                                            \
+#define DebugAssert(condition, format, ...)                                                     \
+    do                                                                                          \
+    {                                                                                           \
+        if (!(condition))                                                                       \
+        {                                                                                       \
+            DebugLog(RJ_DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", format, ##__VA_ARGS__); \
+        }                                                                                       \
     } while (false)
+
+#define DebugAssertNullPointerCheck(ptr) \
+    DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+
+#define DebugAssertFileOpenCheck(filePtr, fileName, mode) \
+    DebugAssert(FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
+
 #endif
 
 #pragma endregion Debug

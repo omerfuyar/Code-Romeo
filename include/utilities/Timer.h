@@ -58,3 +58,8 @@ TimePoint Timer_GetElapsedTime(const Timer *timer);
 /// @param timer Pointer to the timer to get elapsed time from.
 /// @return Elapsed time of the timer in nanoseconds.
 time_t Timer_GetElapsedNanoseconds(const Timer *timer);
+
+/// @brief
+/// @param timer
+/// @return
+float Timer_GetElapsedMilliseconds(const Timer *timer);

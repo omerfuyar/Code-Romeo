@@ -51,6 +51,7 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
 
         fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
+#if RJ_DEBUG_SAFE_LOGGING
     else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
     {
         char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
@@ -58,6 +59,7 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
         fprintf(stderr, "%s", buffer);
         Global_Terminate(EXIT_FAILURE, buffer);
     }
+#endif
 
     char messageBuffer[RJ_TEMP_BUFFER_SIZE * 4] = {0};
     va_list args;
@@ -70,14 +72,15 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
     snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n",
              timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
-    fprintf(DEBUG_FILE, "%s", finalBuffer);
+    fprintf(DEBUG_FILE, "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n", timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
-    if (RJ_DEBUG_FLUSH_AFTER_LOG)
-    {
-        fflush(DEBUG_FILE);
-    }
+#if RJ_DEBUG_FLUSH_AFTER_LOG
+    fflush(DEBUG_FILE);
+#endif
 
+#if RJ_DEBUG_SAFE_LOGGING
     fclose(DEBUG_FILE);
+#endif
 
     if (terminate)
     {
@@ -155,6 +158,14 @@ void Global_Terminate(int exitCode, char *message)
     }
 
     fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+
+    if (DEBUG_FILE != NULL)
+    {
+        fprintf(DEBUG_FILE, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+        fflush(DEBUG_FILE);
+        fclose(DEBUG_FILE);
+        DEBUG_FILE = NULL;
+    }
 
     exit(exitCode);
 }

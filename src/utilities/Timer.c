@@ -108,3 +108,11 @@ time_t Timer_GetElapsedNanoseconds(const Timer *timer)
     TimePoint elapsedTime = Timer_GetElapsedTime(timer);
     return elapsedTime.seconds * 1000000000 + elapsedTime.nanoseconds;
 }
+
+float Timer_GetElapsedMilliseconds(const Timer *timer)
+{
+    DebugAssertNullPointerCheck(timer);
+
+    TimePoint elapsedTime = Timer_GetElapsedTime(timer);
+    return TimePoint_ToMilliseconds(&elapsedTime);
+}
