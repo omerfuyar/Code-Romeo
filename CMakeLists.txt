@@ -17,8 +17,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/arc)
 
-# Compiler Information
-message(STATUS "Using C compiler: ${CMAKE_C_COMPILER}")
+# Build Information
+message(STATUS "Build info : ${CMAKE_BUILD_TYPE} | ${CMAKE_SYSTEM_NAME} | ${CMAKE_SYSTEM_PROCESSOR}")
 
 # External Dependencies
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw)

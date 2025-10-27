@@ -24,11 +24,6 @@
 #pragma error("Unsupported platform.")
 #endif
 
-#ifndef RJ_PLATFORM_MESSAGE
-#pragma message("Compiling for platform: " RJ_PLATFORM)
-#define RJ_PLATFORM_MESSAGE
-#endif
-
 #if RJ_PLATFORM_LINUX || RJ_PLATFORM_MACOS
 #define RJ_PLATFORM_UNIX 1
 #define _POSIX_C_SOURCE 200809L
@@ -65,11 +60,6 @@
 #pragma error("Unsupported compiler.")
 #endif
 
-#ifndef RJ_COMPILER_MESSAGE
-#pragma message("Compiling with compiler: " RJ_COMPILER_NAME)
-#define RJ_COMPILER_MESSAGE
-#endif
-
 #pragma endregion Compiler Detection
 
 #pragma region Architecture Detection
@@ -94,11 +84,6 @@
 
 #else
 #pragma error("Unsupported architecture.")
-#endif
-
-#ifndef RJ_ARCHITECTURE_MESSAGE
-#pragma message("Compiling for architecture: " RJ_ARCHITECTURE)
-#define RJ_ARCHITECTURE_MESSAGE
 #endif
 
 #pragma endregion Architecture Detection

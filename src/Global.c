@@ -8,6 +8,8 @@
 #define GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 #endif
 
+// #pragma message("Build info: " RJ_PLATFORM " | " RJ_COMPILER_NAME " | " RJ_ARCHITECTURE)
+
 #pragma region Source Only
 
 FILE *DEBUG_FILE = NULL;
