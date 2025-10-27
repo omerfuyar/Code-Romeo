@@ -3,7 +3,7 @@
 
 #pragma region Source Only
 
-void PhysicsScene_ResolveStaticVsDynamic(PhysicsScene *scene, PhysicsComponent *staticComponent, PhysicsComponent *dynamicComponent, Vector3 overlap)
+void PhysicsScene_ResolveStaticVsDynamic(const PhysicsScene *scene, PhysicsComponent *staticComponent, PhysicsComponent *dynamicComponent, Vector3 overlap)
 {
     float move = 0.0f;
 
@@ -54,7 +54,7 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsScene *scene, PhysicsComponent *
     }
 }
 
-void PhysicsScene_ResolveDynamicVsDynamic(PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent, Vector3 overlap)
+void PhysicsScene_ResolveDynamicVsDynamic(const PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent, Vector3 overlap)
 {
     float totalInvMass = 1.0f / firstComponent->mass + 1.0f / secondComponent->mass;
     float move1 = 0.0f;
@@ -137,13 +137,12 @@ void PhysicsScene_ResolveDynamicVsDynamic(PhysicsScene *scene, PhysicsComponent 
             oneOverMassSum);
 }
 
-void PhysicsScene_ResolveCollision(PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent)
+void PhysicsScene_ResolveCollision(const PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent)
 {
     DebugAssertNullPointerCheck(scene);
 
     Vector3 overlap;
-    if (!Physics_IsColliding(firstComponent, secondComponent, &overlap) ||
-        (firstComponent->isStatic && secondComponent->isStatic))
+    if (!Physics_IsColliding(firstComponent, secondComponent, &overlap))
     {
         return;
     }
@@ -166,25 +165,28 @@ void PhysicsScene_ResolveCollision(PhysicsScene *scene, PhysicsComponent *firstC
 
 #pragma region Physics
 
-bool Physics_IsColliding(PhysicsComponent *component1, PhysicsComponent *component2, Vector3 *overlapRet)
+bool Physics_IsColliding(const PhysicsComponent *component1, const PhysicsComponent *component2, Vector3 *overlapRet)
 {
     DebugAssertNullPointerCheck(component1);
     DebugAssertNullPointerCheck(component2);
 
-    float overlapX = Min(component1->positionReference->x + component1->colliderSize.x / 2.0f,
-                         component2->positionReference->x + component2->colliderSize.x / 2.0f) -
-                     Max(component1->positionReference->x - component1->colliderSize.x / 2.0f,
-                         component2->positionReference->x - component2->colliderSize.x / 2.0f);
+    Vector3 position1 = *component1->positionReference;
+    Vector3 position2 = *component2->positionReference;
 
-    float overlapY = Min(component1->positionReference->y + component1->colliderSize.y / 2.0f,
-                         component2->positionReference->y + component2->colliderSize.y / 2.0f) -
-                     Max(component1->positionReference->y - component1->colliderSize.y / 2.0f,
-                         component2->positionReference->y - component2->colliderSize.y / 2.0f);
+    float overlapX = Min(position1.x + component1->colliderSize.x / 2.0f,
+                         position2.x + component2->colliderSize.x / 2.0f) -
+                     Max(position1.x - component1->colliderSize.x / 2.0f,
+                         position2.x - component2->colliderSize.x / 2.0f);
 
-    float overlapZ = Min(component1->positionReference->z + component1->colliderSize.z / 2.0f,
-                         component2->positionReference->z + component2->colliderSize.z / 2.0f) -
-                     Max(component1->positionReference->z - component1->colliderSize.z / 2.0f,
-                         component2->positionReference->z - component2->colliderSize.z / 2.0f);
+    float overlapY = Min(position1.y + component1->colliderSize.y / 2.0f,
+                         position2.y + component2->colliderSize.y / 2.0f) -
+                     Max(position1.y - component1->colliderSize.y / 2.0f,
+                         position2.y - component2->colliderSize.y / 2.0f);
+
+    float overlapZ = Min(position1.z + component1->colliderSize.z / 2.0f,
+                         position2.z + component2->colliderSize.z / 2.0f) -
+                     Max(position1.z - component1->colliderSize.z / 2.0f,
+                         position2.z - component2->colliderSize.z / 2.0f);
 
     if (overlapRet != NULL)
     {
@@ -232,7 +234,7 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
     DebugInfo("Physics Scene '%s' destroyed.", tempTitle);
 }
 
-void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime)
+void PhysicsScene_UpdateComponents(const PhysicsScene *scene, float deltaTime)
 {
     for (size_t i = 0; i < scene->components.count; i++)
     {
@@ -241,17 +243,28 @@ void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime)
     }
 }
 
-void PhysicsScene_ResolveCollisions(PhysicsScene *scene)
+void PhysicsScene_ResolveCollisions(const PhysicsScene *scene)
 {
-    for (size_t iter = 0; iter < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iter++)
+    for (size_t iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
     {
         for (size_t i = 0; i < scene->components.count - 1; i++)
         {
             PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(&scene->components, i);
 
+            if (firstComponent->isStatic)
+            {
+                continue;
+            }
+
             for (size_t j = i + 1; j < scene->components.count; j++)
             {
                 PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(&scene->components, j);
+
+                if (secondComponent->isStatic)
+                {
+                    continue;
+                }
+
                 PhysicsScene_ResolveCollision(scene, firstComponent, secondComponent);
             }
         }
@@ -305,13 +318,13 @@ void PhysicsComponent_Update(PhysicsComponent *component, float deltaTime)
     *component->positionReference = Vector3_Add(*component->positionReference, Vector3_Scale(component->velocity, deltaTime));
 }
 
-void PhysicsComponent_Configure(PhysicsComponent *firstComponent, Vector3 newColliderSize, float newMass, bool newIsStatic)
+void PhysicsComponent_Configure(PhysicsComponent *component, Vector3 newColliderSize, float newMass, bool newIsStatic)
 {
-    DebugAssertNullPointerCheck(firstComponent);
+    DebugAssertNullPointerCheck(component);
 
-    firstComponent->colliderSize = newColliderSize;
-    firstComponent->mass = newMass;
-    firstComponent->isStatic = newIsStatic;
+    component->colliderSize = newColliderSize;
+    component->mass = newMass;
+    component->isStatic = newIsStatic;
 }
 
 #pragma endregion Physics Component

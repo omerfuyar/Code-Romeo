@@ -40,7 +40,7 @@ typedef struct PhysicsComponent
 /// @param component2 The second component.
 /// @param overlapRet If not NULL, will be filled with the overlap vector on each axis.
 /// @return True if the components are colliding, false otherwise.
-bool Physics_IsColliding(PhysicsComponent *component1, PhysicsComponent *component2, Vector3 *overlapRet);
+bool Physics_IsColliding(const PhysicsComponent *component1, const PhysicsComponent *component2, Vector3 *overlapRet);
 
 #pragma endregion Physics
 
@@ -62,11 +62,11 @@ void PhysicsScene_Destroy(PhysicsScene *scene);
 /// @brief Updates the positions of all non-static components in the scene based on their velocity, gravity, and drag.
 /// @param scene The scene to update.
 /// @param deltaTime The time elapsed since the last frame.
-void PhysicsScene_UpdateComponents(PhysicsScene *scene, float deltaTime);
+void PhysicsScene_UpdateComponents(const PhysicsScene *scene, float deltaTime);
 
 /// @brief Detects and resolves collisions between components in the scene.
 /// @param scene The scene to process.
-void PhysicsScene_ResolveCollisions(PhysicsScene *scene);
+void PhysicsScene_ResolveCollisions(const PhysicsScene *scene);
 
 /// @brief Creates a new physics component and adds it to the scene.
 /// @param scene The scene to add the component to.
@@ -85,8 +85,8 @@ void PhysicsScene_DestroyComponent(PhysicsComponent *component);
 
 #pragma region Physics Component
 
-void PhysicsComponent_Update(PhysicsComponent *scene, float deltaTime);
+void PhysicsComponent_Update(PhysicsComponent *component, float deltaTime);
 
-void PhysicsComponent_Configure(PhysicsComponent *firstComponent, Vector3 newColliderSize, float newMass, bool newIsStatic);
+void PhysicsComponent_Configure(PhysicsComponent *component, Vector3 newColliderSize, float newMass, bool newIsStatic);
 
 #pragma endregion Physics Component

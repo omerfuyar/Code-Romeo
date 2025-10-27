@@ -1,27 +1,107 @@
 #pragma once
 
+#pragma region Platform Detection
+
 #if defined(_WIN32)
 #define RJ_PLATFORM_WINDOWS 1
 #define RJ_PLATFORM_LINUX 0
 #define RJ_PLATFORM_MACOS 0
+#define RJ_PLATFORM "WINDOWS"
+
 #elif defined(__linux__)
-#define _POSIX_C_SOURCE 200809L
 #define RJ_PLATFORM_LINUX 1
 #define RJ_PLATFORM_WINDOWS 0
 #define RJ_PLATFORM_MACOS 0
+#define RJ_PLATFORM "LINUX"
+
 #elif defined(__APPLE__) && defined(__MACH__)
 #define RJ_PLATFORM_MACOS 1
 #define RJ_PLATFORM_WINDOWS 0
 #define RJ_PLATFORM_LINUX 0
+#define RJ_PLATFORM "MACOS"
+
 #else
-#error "Unsupported platform."
+#pragma error("Unsupported platform.")
+#endif
+
+#ifndef RJ_PLATFORM_MESSAGE
+#pragma message("Compiling for platform: " RJ_PLATFORM)
+#define RJ_PLATFORM_MESSAGE
 #endif
 
 #if RJ_PLATFORM_LINUX || RJ_PLATFORM_MACOS
 #define RJ_PLATFORM_UNIX 1
+#define _POSIX_C_SOURCE 200809L
 #else
 #define RJ_PLATFORM_UNIX 0
 #endif
+
+#pragma endregion Platform Detection
+
+#pragma region Compiler Detection
+
+#if defined(__clang__)
+#define RJ_COMPILER_CLANG 1
+#define RJ_COMPILER_GCC 0
+#define RJ_COMPILER_MSVC 0
+#define RJ_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
+#define RJ_COMPILER_NAME "CLANG"
+
+#elif defined(__GNUC__)
+#define RJ_COMPILER_CLANG 0
+#define RJ_COMPILER_GCC 1
+#define RJ_COMPILER_MSVC 0
+#define RJ_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#define RJ_COMPILER_NAME "GCC"
+
+#elif defined(_MSC_VER)
+#define RJ_COMPILER_CLANG 0
+#define RJ_COMPILER_GCC 0
+#define RJ_COMPILER_MSVC 1
+#define RJ_COMPILER_VERSION _MSC_VER
+#define RJ_COMPILER_NAME "MSVC"
+
+#else
+#pragma error("Unsupported compiler.")
+#endif
+
+#ifndef RJ_COMPILER_MESSAGE
+#pragma message("Compiling with compiler: " RJ_COMPILER_NAME)
+#define RJ_COMPILER_MESSAGE
+#endif
+
+#pragma endregion Compiler Detection
+
+#pragma region Architecture Detection
+
+#if defined(_M_X64) || defined(__x86_64__)
+#define RJ_ARCHITECTURE_X64 1
+#define RJ_ARCHITECTURE_X86 0
+#define RJ_ARCHITECTURE_ARM 0
+#define RJ_ARCHITECTURE "X64"
+
+#elif defined(_M_IX86) || defined(__i386__)
+#define RJ_ARCHITECTURE_X64 0
+#define RJ_ARCHITECTURE_X86 1
+#define RJ_ARCHITECTURE_ARM 0
+#define RJ_ARCHITECTURE "X86"
+
+#elif defined(_M_ARM) || defined(__arm__) || defined(__aarch64__)
+#define RJ_ARCHITECTURE_X64 0
+#define RJ_ARCHITECTURE_X86 0
+#define RJ_ARCHITECTURE_ARM 1
+#define RJ_ARCHITECTURE "ARM"
+
+#else
+#pragma error("Unsupported architecture.")
+#endif
+
+#ifndef RJ_ARCHITECTURE_MESSAGE
+#pragma message("Compiling for architecture: " RJ_ARCHITECTURE)
+#define RJ_ARCHITECTURE_MESSAGE
+#endif
+
+#pragma endregion Architecture Detection
 
 #include <stdlib.h>
 #include <stdbool.h>
