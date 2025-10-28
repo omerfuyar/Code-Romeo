@@ -29,17 +29,17 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
     char timeBuffer[RJ_TEMP_BUFFER_SIZE / 4];
 
     timespec_get(&tempSpec, TIME_UTC);
-    LocalTime(&tempSpec.tv_sec, &timer);
+    timer = *localtime(&tempSpec.tv_sec);
     strftime(timeBuffer, sizeof(timeBuffer), RJ_DEBUG_TIME_FORMAT, &timer);
 
     if (DEBUG_FILE == NULL)
     {
         DEBUG_FILE_NAME_STR = (char *)malloc(strlen(Global_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME) + 1);
 
-        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), GLOBAL_EXECUTABLE_DIRECTORY_PATH);
-        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH), strlen(RJ_DEBUG_FILE_NAME), RJ_DEBUG_FILE_NAME);
+        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(Global_GetExecutablePath()), Global_GetExecutablePath());
+        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(Global_GetExecutablePath()), strlen(RJ_DEBUG_FILE_NAME), RJ_DEBUG_FILE_NAME);
 
-        DEBUG_FILE_NAME_STR[strlen(GLOBAL_EXECUTABLE_DIRECTORY_PATH) + strlen(RJ_DEBUG_FILE_NAME)] = '\0';
+        DEBUG_FILE_NAME_STR[strlen(Global_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME)] = '\0';
 
         remove(DEBUG_FILE_NAME_STR);
 
@@ -90,7 +90,7 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
     }
 }
 
-char *Global_GetExecutablePath()
+const char *Global_GetExecutablePath()
 {
     if (GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
     {

@@ -6,83 +6,110 @@ cmake_minimum_required(VERSION 3.22)
 
 project(Code-Romeo C)
 
-# C Standard Configuration
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Output Directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/arc)
 
-# Build Information
-message(STATUS "Build info : ${CMAKE_BUILD_TYPE} | ${CMAKE_SYSTEM_NAME} | ${CMAKE_SYSTEM_PROCESSOR}")
-
-# External Dependencies
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cglm)
 
 target_compile_options(glfw PRIVATE -w)
 target_compile_options(cglm PRIVATE -w)
 
-# Project Source Files
 file(GLOB_RECURSE PROJECT_SOURCE
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
     SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/src/*.c
 )
 
-# Library Target Configuration
 add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCE})
 
-# Include directories
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Compiler Options
-target_compile_options(${PROJECT_NAME} PRIVATE
-    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include
-    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw/include
-    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cglm/include
-    -isystem${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb/include
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cglm/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb/include
 )
 
-# Build-specific compiler flags
-target_compile_options(${PROJECT_NAME} PRIVATE
-    $<$<CONFIG:Debug>:
-        -g -O0 -Wall -Wextra -Wshadow -Wpedantic -Wconversion
-        -Wnull-dereference -Wunused-result -Wno-strict-prototypes
-        -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument
-        -Wno-unused-value -fstack-protector-strong -Werror
-    >
-    $<$<CONFIG:Release>:
-        -O3 -DNDEBUG
-    >
-)
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    if(CMAKE_C_COMPILER MATCHES "clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -g -O0 -Wall -Werror -Wextra -Wshadow -Wpedantic -Wconversion
+            -Wnull-dereference -Wunused-result -Wno-strict-prototypes
+            -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-value
+            -fstack-protector-strong
+    )
+    elseif(CMAKE_C_COMPILER MATCHES "clang-cl")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /Zi /Od /W4 /permissive- /GS /WX /wd4324
+    )
+    elseif(CMAKE_C_COMPILER MATCHES "cl")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /Zi /Od /W4 /permissive- /GS /WX /wd4324
+    )
+    elseif(CMAKE_C_COMPILER MATCHES "gcc")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -g -O0 -Wall -Wextra -Wshadow -Wpedantic -Wconversion
+            -Wnull-dereference -Wunused-result -Wno-strict-prototypes
+            -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument
+            -Wno-unused-value -fstack-protector-strong -Werror
+    )
+    else()
+        message(WARNING "Unknown/unsupported compiler. No specific compiler flags set.")
+    endif()
+elseif(CMAKE_BUILD_TYPE MATCHES "Release")
+    if(CMAKE_C_COMPILER MATCHES "clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -O3 -DNDEBUG
+        )
+    elseif(CMAKE_C_COMPILER MATCHES "clang-cl")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /O2 /DNDEBUG
+        )
+    elseif(CMAKE_C_COMPILER MATCHES "cl")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /O2 /DNDEBUG
+        )
+    elseif(CMAKE_C_COMPILER MATCHES "gcc")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -O3 -DNDEBUG
+        )
+    else()
+        message(WARNING "Unknown/unsupported compiler. No specific compiler flags set.")
+    endif()
+else()
+    message(WARNING "Unknown build type. No specific compiler flags set.")
+endif()
 
-# Sanitizers Configuration
+get_target_property(ROMEO_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
+message(STATUS "[Romeo] : Build info : ${CMAKE_BUILD_TYPE} | ${CMAKE_SYSTEM_NAME} | ${CMAKE_SYSTEM_PROCESSOR}")
+message(STATUS "[Romeo] : Compiler info : ${CMAKE_C_COMPILER_ID} | ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "[Romeo] : Compile options: ${ROMEO_COMPILE_OPTIONS}")
+
 if((ENABLE_ASAN OR ENABLE_UBSAN) AND NOT CMAKE_C_COMPILER MATCHES "clang")
     message(FATAL_ERROR "Sanitizers are only compatible with LLVM")
 endif()
 
-# Address Sanitizer
 if(ENABLE_ASAN)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
     target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
     message(STATUS "Address Sanitizer enabled")
 endif()
 
-# Undefined Behavior Sanitizer
 if(ENABLE_UBSAN)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -fno-omit-frame-pointer)
     target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined)
     message(STATUS "Undefined Behavior Sanitizer enabled")
 endif()
 
-# Platform-Specific Linking
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PUBLIC
     opengl32
@@ -106,14 +133,7 @@ elseif(UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PUBLIC dl cglm glfw)
 endif()
 
-# Installation Rules
 install(TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
-)
-
-#todo fix this 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.h"
 )

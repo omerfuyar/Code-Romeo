@@ -181,7 +181,7 @@ void RendererTexture_Destroy(RendererTexture *texture)
     String_Destroy(&texture->name);
     free(texture->data);
     texture->data = NULL;
-    texture->size = NewVector2IntN(0.0f);
+    texture->size = NewVector2IntN(0);
     texture->channels = 0;
 
     glDeleteTextures(1, &texture->handle);

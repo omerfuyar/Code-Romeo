@@ -96,7 +96,7 @@ void Context_ConfigureLogCallback(VoidFunUintUintUintUintIntCcharptrCvoidptr cal
 {
     CONTEXT_MAIN_WINDOW_LOG_CALLBACK = callback;
 
-    glDebugMessageCallback(CONTEXT_MAIN_WINDOW_LOG_CALLBACK, NULL);
+    glDebugMessageCallback((GLDEBUGPROC)CONTEXT_MAIN_WINDOW_LOG_CALLBACK, NULL);
 }
 
 void Context_Terminate()

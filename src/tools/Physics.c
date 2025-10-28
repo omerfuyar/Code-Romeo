@@ -251,19 +251,19 @@ void PhysicsScene_ResolveCollisions(const PhysicsScene *scene)
         {
             PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(&scene->components, i);
 
-            if (firstComponent->isStatic)
-            {
-                continue;
-            }
+            // if (firstComponent->isStatic)
+            //{
+            //     continue;
+            // }
 
             for (size_t j = i + 1; j < scene->components.count; j++)
             {
                 PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(&scene->components, j);
 
-                if (secondComponent->isStatic)
-                {
-                    continue;
-                }
+                // if (secondComponent->isStatic)
+                //{
+                //     continue;
+                // }
 
                 PhysicsScene_ResolveCollision(scene, firstComponent, secondComponent);
             }

@@ -64,6 +64,13 @@ void *ListArray_Add(ListArray *list, const void *item);
 /// @return The address of the first added item.
 void *ListArray_AddRange(ListArray *list, const void *item, size_t itemCount);
 
+/// @brief Adds an item at a specific index in the ListArray.
+/// @param list Pointer to the ListArray to add item to.
+/// @param index Index to add item at.
+/// @param item Pointer to the item to add.
+/// @return The address of the added item.
+void *ListArray_AddToIndex(ListArray *list, size_t index, const void *item);
+
 /// @brief Remover function using index for ListArray. Removes the item at the given index. Uses memmove to shift all indices of items by -1 after the removed index.
 /// @param list ListArray to remove item from.
 /// @param index Index to remove item at.

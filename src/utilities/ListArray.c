@@ -144,6 +144,40 @@ void *ListArray_AddRange(ListArray *list, const void *item, size_t itemCount)
     return targetLocation;
 }
 
+void *ListArray_AddToIndex(ListArray *list, size_t index, const void *item)
+{
+    DebugAssertNullPointerCheck(list);
+    DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %zu, index trying to access: %zu", list->nameOfType, list->count, index);
+
+    while (list->count + 1 > list->capacity)
+    {
+        DebugWarning("ListArray '%s' is full. Resizing it from %zu to %zu.", list->nameOfType, list->capacity, (size_t)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (size_t)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+    }
+
+    void *targetLocation = (void *)((char *)list->data + index * list->sizeOfItem);
+
+    size_t bytesToMove = (list->count - index) * list->sizeOfItem;
+
+    if (bytesToMove > 0)
+    {
+        MemoryMove((char *)targetLocation + list->sizeOfItem, bytesToMove, targetLocation);
+    }
+
+    if (item == NULL)
+    {
+        MemorySet(targetLocation, list->sizeOfItem, 0);
+    }
+    else
+    {
+        MemoryCopy(targetLocation, list->sizeOfItem, item);
+    }
+
+    list->count++;
+
+    return targetLocation;
+}
+
 void ListArray_RemoveAtIndex(ListArray *list, size_t index)
 {
     DebugAssertNullPointerCheck(list);

@@ -26,7 +26,6 @@
 
 #if RJ_PLATFORM_LINUX || RJ_PLATFORM_MACOS
 #define RJ_PLATFORM_UNIX 1
-#define _POSIX_C_SOURCE 200809L
 #else
 #define RJ_PLATFORM_UNIX 0
 #endif
@@ -86,6 +85,9 @@
 #pragma error("Unsupported architecture.")
 #endif
 
+#define _POSIX_C_SOURCE 200809L
+#define _CRT_SECURE_NO_WARNINGS
+
 #pragma endregion Architecture Detection
 
 #include <stdlib.h>
@@ -99,20 +101,13 @@
 #if RJ_PLATFORM_WINDOWS
 #define RJ_PATH_DELIMETER_CHAR '\\'
 #define RJ_PATH_DELIMETER_STR "\\"
-
-#define FileOpen(filePtr, fileName, mode) (fopen_s(&filePtr, fileName, mode) == 0)
-#define MemoryCopy(destination, size, source) memcpy_s(destination, size, source, size)
-#define LocalTime(timerIntPtr, timerStructPtr) localtime_s(timerStructPtr, timerIntPtr)
-
 #elif RJ_PLATFORM_UNIX
 #define RJ_PATH_DELIMETER_CHAR '/'
 #define RJ_PATH_DELIMETER_STR "/"
+#endif
 
 #define FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
 #define MemoryCopy(destination, size, source) memcpy(destination, source, size)
-#define LocalTime(timerIntPtr, timerStructPtr) localtime_r(timerIntPtr, timerStructPtr)
-#endif
-
 #define MemorySet(destination, size, value) memset(destination, value, size)
 #define MemoryMove(destination, size, source) memmove(destination, source, size)
 
@@ -143,7 +138,7 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
-char *Global_GetExecutablePath();
+const char *Global_GetExecutablePath();
 
 /// @brief Runs the main application loop with setup and loop callbacks
 /// @param argc Command line argument count
@@ -175,7 +170,7 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 
 #pragma region Debug Log
 
-#if defined(_DEBUG) || !defined(NDEBUG)
+#if defined(_DEBUG) || defined(DEBUG) || !defined(NDEBUG)
 #define RJ_BUILD_DEBUG true
 #else
 #define RJ_BUILD_DEBUG false
