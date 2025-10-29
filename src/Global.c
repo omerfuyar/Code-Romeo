@@ -15,6 +15,7 @@
 FILE *DEBUG_FILE = NULL;
 char *DEBUG_FILE_NAME_STR = NULL;
 char *GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
+bool TERMINATE_BYPASS_CLEANUP = false;
 
 VoidFunIntCharPtrPtr GLOBAL_SETUP_CALLBACK = NULL;
 VoidFunFloat GLOBAL_LOOP_CALLBACK = NULL;
@@ -48,6 +49,7 @@ void Global_DebugLog(bool terminate, const char *header, const char *file, int l
             char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
             snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
             fprintf(stderr, "%s", buffer);
+            TERMINATE_BYPASS_CLEANUP = true;
             Global_Terminate(EXIT_FAILURE, buffer);
         }
 
@@ -154,12 +156,16 @@ void Global_Run(int argc, char **argv)
 
 void Global_Terminate(int exitCode, char *message)
 {
+    if (TERMINATE_BYPASS_CLEANUP)
+    {
+        fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
+        exit(exitCode);
+    }
+
     if (GLOBAL_TERMINATE_CALLBACK != NULL)
     {
         GLOBAL_TERMINATE_CALLBACK(exitCode, message);
     }
-
-    fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
 
     if (DEBUG_FILE != NULL)
     {
@@ -169,6 +175,13 @@ void Global_Terminate(int exitCode, char *message)
         DEBUG_FILE = NULL;
     }
 
+    if (DEBUG_FILE_NAME_STR != NULL)
+    {
+        free(DEBUG_FILE_NAME_STR);
+        DEBUG_FILE_NAME_STR = NULL;
+    }
+
+    fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
     exit(exitCode);
 }
 

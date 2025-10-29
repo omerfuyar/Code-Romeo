@@ -220,16 +220,17 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
     DebugAssertNullPointerCheck(scene);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, scene->name.length), scene->name.characters);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, scene->name.length)] = '\0';
 
-    String_Destroy(&scene->name);
-    for (size_t i = scene->components.count - 1; i >= 0; i--)
+    for (size_t i = scene->components.count - 1; i < scene->components.count; i--)
     {
         PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(&scene->components, i);
         PhysicsScene_DestroyComponent(component);
     }
 
     ListArray_Destroy(&scene->components);
+    String_Destroy(&scene->name);
 
     DebugInfo("Physics Scene '%s' destroyed.", tempTitle);
 }
@@ -291,15 +292,14 @@ void PhysicsScene_DestroyComponent(PhysicsComponent *component)
 {
     DebugAssertNullPointerCheck(component);
 
-    for (size_t i = component->componentOffsetInScene; i < component->scene->components.count - component->componentOffsetInScene; i++)
+    // todo ! be may be wrong
+    for (size_t i = component->componentOffsetInScene + 1; i < component->scene->components.count - component->componentOffsetInScene; i++)
     {
         PhysicsComponent *nextComponent = (PhysicsComponent *)ListArray_Get(&component->scene->components, i);
         nextComponent->componentOffsetInScene--;
     }
 
     ListArray_RemoveAtIndex(&component->scene->components, component->componentOffsetInScene);
-
-    DebugInfo("Physics Component destroyed in Scene '%s'.", component->scene->name.characters);
 }
 
 #pragma endregion Physics Scene

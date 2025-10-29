@@ -1,4 +1,5 @@
 #include "utilities/HashMap.h"
+#include "utilities/Maths.h"
 
 #pragma region Source Only
 
@@ -25,9 +26,14 @@ HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacit
     HashMap map;
     map.capacity = capacity;
     map.sizeOfItem = sizeOfItem;
-    map.nameOfType = malloc(strlen(nameOfType) + 1);
-    MemoryCopy(map.nameOfType, strlen(nameOfType) + 1, nameOfType);
-    map.nameOfType[strlen(nameOfType)] = '\0';
+
+    size_t nameOfTypeLength = strlen(nameOfType);
+
+    map.nameOfType = (char *)malloc(nameOfTypeLength + 1);
+    DebugAssertNullPointerCheck(map.nameOfType);
+    MemoryCopy(map.nameOfType, nameOfTypeLength + 1, nameOfType);
+    map.nameOfType[nameOfTypeLength] = '\0';
+
     map.count = 0;
     map.data = (void *)malloc(capacity * sizeOfItem);
     DebugAssertNullPointerCheck(map.data);
@@ -44,18 +50,23 @@ void HashMap_Destroy(HashMap *map)
     DebugAssertNullPointerCheck(map);
     DebugAssertNullPointerCheck(map->data);
 
-    const char *name = map->nameOfType;
+    size_t nameOfTypeLength = strlen(map->nameOfType);
+
+    char tempTitle[RJ_TEMP_BUFFER_SIZE];
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+
+    free(map->nameOfType);
+    map->nameOfType = NULL;
 
     free(map->data);
     map->data = NULL;
 
-    free(map->nameOfType);
-    map->nameOfType = NULL;
     map->capacity = 0;
     map->count = 0;
     map->sizeOfItem = 0;
 
-    DebugInfo("HashMap '%s' destroyed.", name);
+    DebugInfo("HashMap '%s' destroyed.", tempTitle);
 }
 
 void HashMap_Register(HashMap *map, const char *key, const void *value)

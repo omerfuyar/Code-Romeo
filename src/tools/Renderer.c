@@ -176,7 +176,8 @@ void RendererTexture_Destroy(RendererTexture *texture)
     DebugAssertNullPointerCheck(texture);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, strlen(texture->name.characters) + 1), texture->name.characters);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, texture->name.length), texture->name.characters);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, texture->name.length)] = '\0';
 
     String_Destroy(&texture->name);
     free(texture->data);
@@ -252,7 +253,10 @@ void Renderer_Terminate()
         RendererTexture_Destroy(texture);
     }
 
-    ListArray_Destroy(&RENDERER_MAIN_TEXTURES);
+    if (RENDERER_MAIN_TEXTURES.data != NULL)
+    {
+        ListArray_Destroy(&RENDERER_MAIN_TEXTURES);
+    }
 
     if (RENDERER_MAIN_SHADER_PROGRAM != 0)
     {
@@ -392,10 +396,10 @@ void Renderer_RenderScene(RendererScene *scene)
                          OPENGL_DRAW_TYPE);
 
             glDrawElementsInstanced(GL_TRIANGLES,
-                                    mesh->indices.count,
+                                    (GLsizei)mesh->indices.count,
                                     GL_UNSIGNED_INT,
                                     0,
-                                    batch->objectMatrices.count);
+                                    (GLsizei)batch->objectMatrices.count);
         }
     }
 
@@ -524,9 +528,9 @@ void RendererDebug_FinishRendering(mat4 *camProjectionMatrix, mat4 *camViewMatri
 
     glBindVertexArray(RENDERER_DEBUG_VAO);
     glBindBuffer(GL_ARRAY_BUFFER, RENDERER_DEBUG_VBO);
-    glBufferData(GL_ARRAY_BUFFER, RENDERER_DEBUG_VERTICES.sizeOfItem * RENDERER_DEBUG_VERTICES.count, RENDERER_DEBUG_VERTICES.data, OPENGL_DRAW_TYPE);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(RENDERER_DEBUG_VERTICES.sizeOfItem * RENDERER_DEBUG_VERTICES.count), RENDERER_DEBUG_VERTICES.data, OPENGL_DRAW_TYPE);
 
-    glDrawArrays(GL_LINES, 0, RENDERER_DEBUG_VERTICES.count);
+    glDrawArrays(GL_LINES, 0, (GLsizei)RENDERER_DEBUG_VERTICES.count);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -981,9 +985,6 @@ RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, siz
                            0.0f,
                            (float *)&vertexNormal);
 
-            RendererMeshVertex createdVertex;
-            createdVertex.vertexPosition = NewVector3(vertexNormal[0], vertexNormal[1], vertexNormal[2]);
-
             ListArray_Add(&globalVertexNormalPool, &vertexNormal);
         }
     }
@@ -1062,13 +1063,14 @@ void RendererModel_Destroy(RendererModel *model)
     DebugAssertNullPointerCheck(model);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, model->name.length + 1), model->name.characters);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, model->name.length), model->name.characters);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, model->name.length)] = '\0';
 
     String_Destroy(&model->name);
 
     ListArray_Destroy(&model->vertices);
 
-    for (size_t i = model->meshes.count - 1; i >= 0; i--)
+    for (size_t i = model->meshes.count - 1; i < model->meshes.count; i--)
     {
         RendererMesh_Destroy(*(RendererMesh **)ListArray_Get(&model->meshes, i));
     }
@@ -1154,12 +1156,13 @@ void RendererScene_Destroy(RendererScene *scene)
     DebugAssertNullPointerCheck(scene);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, scene->name.length + 1), scene->name.characters);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, scene->name.length), scene->name.characters);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, scene->name.length)] = '\0';
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
 
-    for (size_t i = scene->batches.count - 1; i >= 0; i--)
+    for (size_t i = scene->batches.count - 1; i < scene->batches.count; i--)
     {
         RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
         RendererScene_DestroyBatch(batch);
@@ -1224,21 +1227,23 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
     DebugAssertNullPointerCheck(batch);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, batch->name.length + 1), batch->name.characters);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, batch->name.length), batch->name.characters);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, batch->name.length)] = '\0';
 
-    for (size_t i = batch->batchOffsetInScene; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
+    // todo ! be may be wrong
+    for (size_t i = batch->batchOffsetInScene + 1; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
         RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(&batch->scene->batches, i);
         nextBatch->batchOffsetInScene--;
     }
-
-    ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
 
     String_Destroy(&batch->name);
     batch->model = NULL;
 
     ListArray_Destroy(&batch->objectMatrices);
     ListArray_Destroy(&batch->components);
+
+    ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
 
     DebugInfo("Renderer Batch '%s' destroyed.", tempTitle);
 }
@@ -1326,7 +1331,8 @@ void RendererBatch_DestroyComponent(RendererComponent *component)
 {
     DebugAssertNullPointerCheck(component);
 
-    for (size_t i = component->componentOffsetInBatch; i < component->batch->components.count - component->componentOffsetInBatch; i++)
+    // todo ! be may be wrong
+    for (size_t i = component->componentOffsetInBatch + 1; i < component->batch->components.count - component->componentOffsetInBatch; i++)
     {
         RendererComponent *nextComponent = (RendererComponent *)ListArray_Get(&component->batch->components, i);
         nextComponent->componentOffsetInBatch--;

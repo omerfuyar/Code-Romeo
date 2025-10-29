@@ -8,10 +8,14 @@ ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t ini
     ListArray list;
     list.capacity = initialCapacity;
     list.sizeOfItem = sizeOfItem;
-    list.nameOfType = (char *)malloc(strlen(nameOfType) + 1);
+
+    size_t nameOfTypeLength = strlen(nameOfType);
+
+    list.nameOfType = (char *)malloc(nameOfTypeLength + 1);
     DebugAssertNullPointerCheck(list.nameOfType);
-    MemoryCopy(list.nameOfType, strlen(nameOfType) + 1, nameOfType);
-    list.nameOfType[strlen(nameOfType)] = '\0';
+    MemoryCopy(list.nameOfType, nameOfTypeLength + 1, nameOfType);
+    list.nameOfType[nameOfTypeLength] = '\0';
+
     list.count = 0;
     list.data = (void *)malloc(initialCapacity * sizeOfItem);
     DebugAssertNullPointerCheck(list.data);
@@ -27,8 +31,11 @@ void ListArray_Destroy(ListArray *list)
     DebugAssertNullPointerCheck(list);
     DebugAssertNullPointerCheck(list->data);
 
+    size_t nameOfTypeLength = strlen(list->nameOfType);
+
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE, strlen(list->nameOfType) + 1), list->nameOfType);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     free(list->data);
     list->data = NULL;

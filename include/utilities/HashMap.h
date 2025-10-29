@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Global.h>
+#include "Global.h"
 
 /// @brief A dynamic hash map implementation. Can be used with any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct HashMap

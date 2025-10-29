@@ -1,4 +1,5 @@
 #include "utilities/Timer.h"
+#include "utilities/Maths.h"
 
 void TimePoint_Update(TimePoint *timePoint)
 {
@@ -21,10 +22,14 @@ float TimePoint_ToMilliseconds(const TimePoint *timePoint)
 Timer Timer_Create(const char *title)
 {
     Timer timer;
-    timer.title = (char *)malloc(strlen(title) + 1);
+
+    size_t titleLength = strlen(title);
+
+    timer.title = (char *)malloc(titleLength + 1);
     DebugAssertNullPointerCheck(timer.title);
-    MemoryCopy(timer.title, strlen(title) + 1, title);
-    timer.title[strlen(title)] = '\0';
+    MemoryCopy(timer.title, titleLength + 1, title);
+    timer.title[titleLength] = '\0';
+
     timer.isRunning = false;
 
     timer.startTime = (TimePoint){0, 0};
@@ -37,8 +42,11 @@ void Timer_Destroy(Timer *timer)
 {
     DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
+    size_t titleLength = strlen(timer->title);
+
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, strnlen(timer->title, RJ_TEMP_BUFFER_SIZE), timer->title);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
 
     free(timer->title);
     timer->title = NULL;

@@ -1,4 +1,5 @@
 #include "utilities/ListLinked.h"
+#include "utilities/Maths.h"
 
 /// @brief Creator function for ListLinkedNode. Uses memcpy to copy the data.
 /// @param sizeOfData Size of the data to be stored in the node.
@@ -97,16 +98,19 @@ long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, size_t sizeOfItem
     }
 }
 
-ListLinked ListLinked_Create(size_t sizeOfItem, const char *nameOfType)
+ListLinked ListLinked_Create(const char *nameOfType, size_t sizeOfItem)
 {
     ListLinked list;
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
-    list.nameOfType = (char *)malloc(strlen(nameOfType) + 1);
+
+    size_t nameOfTypeLength = strlen(nameOfType);
+
+    list.nameOfType = (char *)malloc(nameOfTypeLength + 1);
     DebugAssertNullPointerCheck(list.nameOfType);
-    MemoryCopy(list.nameOfType, strlen(nameOfType) + 1, nameOfType);
-    list.nameOfType[strlen(nameOfType)] = '\0';
+    MemoryCopy(list.nameOfType, nameOfTypeLength + 1, nameOfType);
+    list.nameOfType[nameOfTypeLength] = '\0';
 
     DebugInfo("ListLinked '%s' created with size of item: %zu", nameOfType, sizeOfItem);
     return list;
@@ -114,8 +118,13 @@ ListLinked ListLinked_Create(size_t sizeOfItem, const char *nameOfType)
 
 void ListLinked_Destroy(ListLinked *list)
 {
+    DebugAssertNullPointerCheck(list);
+
+    size_t nameOfTypeLength = strlen(list->nameOfType);
+
     char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, strnlen(list->nameOfType, RJ_TEMP_BUFFER_SIZE), list->nameOfType);
+    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
+    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     if (list->head != NULL)
     {
