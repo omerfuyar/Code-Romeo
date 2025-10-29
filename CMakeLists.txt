@@ -26,6 +26,8 @@ file(GLOB_RECURSE PROJECT_SOURCE
     SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/src/*.c
 )
 
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/src/glad.c PROPERTIES COMPILE_FLAGS "-w")
+
 add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCE})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -59,7 +61,6 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
         target_compile_options(${PROJECT_NAME} PRIVATE
             -g -O0 -Wall -Werror -Wextra -Wshadow -Wpedantic -Wconversion
             -Wnull-dereference -Wunused-result -Wno-strict-prototypes
-            -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument
             -Wno-unused-value -fstack-protector-strong
     )
     else()
@@ -92,7 +93,7 @@ endif()
 get_target_property(ROMEO_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
 message(STATUS "[Romeo] : Build info : ${CMAKE_BUILD_TYPE} | ${CMAKE_SYSTEM_NAME} | ${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "[Romeo] : Compiler info : ${CMAKE_C_COMPILER_ID} | ${CMAKE_C_COMPILER_VERSION}")
-message(STATUS "[Romeo] : Compile options: ${ROMEO_COMPILE_OPTIONS}")
+message(STATUS "[Romeo] : Compile options : ${ROMEO_COMPILE_OPTIONS}")
 
 if((ENABLE_ASAN OR ENABLE_UBSAN) AND NOT CMAKE_C_COMPILER MATCHES "clang")
     message(FATAL_ERROR "Sanitizers are only compatible with LLVM")
