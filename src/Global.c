@@ -167,17 +167,25 @@ void Global_Terminate(int exitCode, char *message)
         GLOBAL_TERMINATE_CALLBACK(exitCode, message);
     }
 
+#if !RJ_DEBUG_SAFE_LOGGING
     if (DEBUG_FILE != NULL)
     {
         fflush(DEBUG_FILE);
         fclose(DEBUG_FILE);
         DEBUG_FILE = NULL;
     }
+#endif
 
     if (DEBUG_FILE_NAME_STR != NULL)
     {
         free(DEBUG_FILE_NAME_STR);
         DEBUG_FILE_NAME_STR = NULL;
+    }
+
+    if (GLOBAL_EXECUTABLE_DIRECTORY_PATH != NULL)
+    {
+        free(GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
     }
 
     fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);

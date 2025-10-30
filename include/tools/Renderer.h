@@ -296,7 +296,7 @@ RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCap
 /// @param totalObjectSize
 /// @param objectCount
 /// @return
-RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, Vector3 *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount);
+RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount);
 
 /// @brief Destroyer function for object scene
 /// @param scene Scene to destroy

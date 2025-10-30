@@ -1292,7 +1292,7 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
 
             if (vertexUvCounts[currentModelIndex - 1] != 0)
             {
-                currentVertexUvPool = ListArray_Create("Vector3", sizeof(Vector3), vertexUvCounts[currentModelIndex - 1]);
+                currentVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), vertexUvCounts[currentModelIndex - 1]);
             }
             else
             {
@@ -1431,7 +1431,7 @@ RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCap
     return scene;
 }
 
-RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, Vector3 *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount)
+RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount)
 {
     DebugAssertNullPointerCheck(modelPool);
     DebugAssertNullPointerCheck(objectReferences);
@@ -1468,9 +1468,9 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFi
         {
             DebugAssert(totalObjectIndex < objectCount, "Object reference count %zu is not enough for the imported scene file", objectCount);
             currentComponent = RendererBatch_CreateComponent(currentBatch,
-                                                             objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject,
-                                                             objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 1,
-                                                             objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 2);
+                                                             (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 0 * sizeof(Vector3)),
+                                                             (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 1 * sizeof(Vector3)),
+                                                             (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 2 * sizeof(Vector3)));
 
             *currentComponent->positionReference = NewVector3(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
         }
