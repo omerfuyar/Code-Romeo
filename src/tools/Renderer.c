@@ -1500,7 +1500,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFi
                 if (String_Compare(scv(model->name), scv(scnLineTokens[1])) == 0)
                 {
                     modelFound = true;
-                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (size_t)String_ToInt(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY); // initial object capacity
+                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (size_t)String_ToInt(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY);
                     break;
                 }
             }

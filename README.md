@@ -53,7 +53,7 @@ winget install -e --id Kitware.CMake
 
 ## Build
 
-* Project supports clang/clang-cl, msvc and gcc compilers. At least these are the ones I tested.
+* Project supports clang/clang-cl, msvc and gcc compilers. Clang is prioritized all the time.
 
 ``` shell
 mkdir build
