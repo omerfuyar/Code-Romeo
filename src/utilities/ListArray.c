@@ -190,11 +190,13 @@ void ListArray_RemoveAtIndex(ListArray *list, size_t index)
     DebugAssertNullPointerCheck(list);
     DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list->nameOfType, list->count, index);
 
+#if LIST_ARRAY_CUT_RESIZE
     if (list->count - 1 > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - 1 < (size_t)((double)list->capacity / LIST_ARRAY_MIN_DECIMAL_LIMIT))
     {
         DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, LIST_ARRAY_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
     }
+#endif
 
     void *targetLocation = ListArray_Get(list, index);
 
@@ -214,11 +216,13 @@ void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount)
     DebugAssert(index + itemCount <= list->count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu, count: %zu", list->nameOfType, list->count, index, itemCount);
     DebugAssert(itemCount > 0, "Item count to remove from ListArray '%s' must be greater than 0.", list->nameOfType);
 
+#if LIST_ARRAY_CUT_RESIZE
     if (list->count - itemCount > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - itemCount < (size_t)((double)list->capacity / LIST_ARRAY_MIN_DECIMAL_LIMIT))
     {
         DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, LIST_ARRAY_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
     }
+#endif
 
     void *targetLocation = ListArray_Get(list, index);
     size_t bytesToMove = (list->count - index - itemCount) * list->sizeOfItem;

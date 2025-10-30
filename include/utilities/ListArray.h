@@ -8,6 +8,9 @@
 // The limit for resizing the ListArray when it's size is less than 1/x of the capacity
 #define LIST_ARRAY_MIN_DECIMAL_LIMIT 4.0f
 
+// Wether should remove functions resize the list to be smaller or not.
+#define LIST_ARRAY_CUT_RESIZE false
+
 /// @brief A dynamic array list implementation. Can be used in any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct ListArray
 {

@@ -169,7 +169,6 @@ void Global_Terminate(int exitCode, char *message)
 
     if (DEBUG_FILE != NULL)
     {
-        fprintf(DEBUG_FILE, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
         fflush(DEBUG_FILE);
         fclose(DEBUG_FILE);
         DEBUG_FILE = NULL;

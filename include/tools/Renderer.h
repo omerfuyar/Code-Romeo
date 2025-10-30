@@ -34,6 +34,7 @@
 #define RENDERER_MODEL_MAX_MESH_COUNT 16
 
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
+#define RENDERER_BATCH_INITIAL_CAPACITY 16
 
 #pragma region typedefs
 
@@ -144,7 +145,6 @@ typedef struct RendererScene
 /// @brief A batch of render components that use the same model.
 typedef struct RendererBatch
 {
-    String name;
     RendererModel *model;
     ListArray components;     // RendererComponent
     ListArray objectMatrices; // mat4, data must be continuous and only matrices because it's directly sent to UBO
@@ -229,11 +229,11 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
 
 #pragma region Renderer Material
 
-/// @brief Creates materials from a material file (prefer .mat). File can contain multiple materials but textures of them will be ignored. Use RendererMaterial_CreateTexture and to create a material with texture.
+/// @brief Creates materials from a material file (prefer .mat). File can contain multiple materials but textures of them will be ignored. Use RendererMaterial_CreateFromFileTextured and to create a material with texture.
 /// @param matFileData Source code of the material file.
 /// @param matFileLineCount Number of lines in the material file source.
 /// @return Created material list type of the list is RendererMaterial*.
-ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLineCount);
+ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFileLineCount);
 
 /// @brief Creates materials from a material file (prefer .mat) with the argument texture. It copies the texture data into OpenGL so the original data can be freed after this function.
 /// @param matFileData Source code of the material file.
@@ -243,7 +243,7 @@ ListArray RendererMaterial_CreateFile(StringView matFileData, size_t matFileLine
 /// @param textureSize Size of the texture.
 /// @param textureChannels Number of channels in the texture.
 /// @return Created material list type of the list is RendererMaterial*.
-ListArray RendererMaterial_CreateTexture(StringView matFileData, size_t matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels);
+ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels);
 
 /// @brief Destroyer function for renderer material.
 /// @param material Material to destroy.
@@ -253,8 +253,8 @@ void RendererMaterial_Destroy(RendererMaterial *material);
 
 #pragma region Renderer Model
 
-/// @brief Creates a model from an OBJ file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
-/// @param name Name of the model to create.
+// todo fix docs
+/// @brief Creates a model from an MDL file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
 /// @param mdlFileData Source code of the OBJ file.
 /// @param mdlFileLineCount Number of lines in the OBJ file source.
 /// @param materialPool Pointer to a list array of material pointer pointers (RendererMaterial **) to use for the model.
@@ -262,7 +262,15 @@ void RendererMaterial_Destroy(RendererMaterial *material);
 /// @param rotationOffset Rotation offset to freely adjust final model rotation.
 /// @param scaleOffset Scale offset to freely adjust final model scale.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_Create(StringView name, StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
+RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
+
+// todo fix docs
+/// @brief Creates a model from an MDL file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
+/// @param mdlFileData Source code of the OBJ file.
+/// @param mdlFileLineCount Number of lines in the OBJ file source.
+/// @param materialPool Pointer to a list array of material pointer pointers (RendererMaterial **) to use for the model.
+/// @return Created model with vertices and indices.
+ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool);
 
 /// @brief Destroyer function for renderer model.
 /// @param model Model to destroy.
@@ -276,7 +284,19 @@ void RendererModel_Destroy(RendererModel *model);
 /// @param name Name of the scene.
 /// @param initialBatchCapacity The initial capacity of the batch list in scene.
 /// @return Created scene of render objects.
-RendererScene *RendererScene_Create(StringView name, size_t initialBatchCapacity);
+RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCapacity);
+
+// todo fix docs
+/// @brief
+/// @param scnFileData
+/// @param scnFileLineCount
+/// @param modelPool
+/// @param objectReferences
+/// @param transformOffsetInObject
+/// @param totalObjectSize
+/// @param objectCount
+/// @return
+RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, Vector3 *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount);
 
 /// @brief Destroyer function for object scene
 /// @param scene Scene to destroy
@@ -289,11 +309,10 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *
 
 /// @brief Creates a renderer batch to store components that use the same model.
 /// @param scene Pointer to the scene that the batch will belong to.
-/// @param name Name of the batch.
 /// @param model Pointer to the model that the components in the batch will use.
 /// @param initialComponentCapacity The initial capacity for components inside the batch.
 /// @return The created batch.
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, StringView name, RendererModel *model, size_t initialComponentCapacity);
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, size_t initialComponentCapacity);
 
 /// @brief Destroys the renderer batch and frees its resources.
 /// @param batch Batch to destroy.

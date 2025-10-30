@@ -184,7 +184,7 @@ void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback);
 #define RJ_DEBUG_TERMINATE_ON_ERROR true
 #define RJ_DEBUG_TERMINATE_ON_ASSERT true
 
-#define RJ_DEBUG_SAFE_LOGGING false
+#define RJ_DEBUG_SAFE_LOGGING RJ_BUILD_DEBUG
 #define RJ_DEBUG_FLUSH_AFTER_LOG RJ_DEBUG_SAFE_LOGGING
 
 #define RJ_DEBUG_TIME_FORMAT "%H:%M:%S"
