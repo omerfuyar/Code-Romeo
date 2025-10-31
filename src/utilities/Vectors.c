@@ -1,5 +1,5 @@
 #include "utilities/Vectors.h"
-#include "utilities/Maths.h"
+#include <math.h>
 
 #pragma region Vector2
 
@@ -28,7 +28,7 @@ Vector2 Vector2_Normalized(Vector2 vector)
 
 float Vector2_Magnitude(Vector2 vector)
 {
-    return SquareRoot(vector.x * vector.x + vector.y * vector.y);
+    return sqrtf(vector.x * vector.x + vector.y * vector.y);
 }
 
 float Vector2_Dot(Vector2 vector1, Vector2 vector2)
@@ -70,7 +70,7 @@ Vector3 Vector3_Normalized(Vector3 vector)
 
 float Vector3_Magnitude(Vector3 vector)
 {
-    return SquareRoot(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+    return sqrtf(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
 float Vector3_Dot(Vector3 vector1, Vector3 vector2)
@@ -123,7 +123,7 @@ Vector4 Vector4_Normalized(Vector4 vector)
 
 float Vector4_Magnitude(Vector4 vector)
 {
-    return SquareRoot(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z + vector.w * vector.w);
+    return sqrtf(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z + vector.w * vector.w);
 }
 
 float Vector4_Dot(Vector4 vector1, Vector4 vector2)
@@ -161,7 +161,7 @@ Vector2 Vector2_ToFloat(Vector2Int vector)
 
 float Vector2Int_Magnitude(Vector2Int vector)
 {
-    return SquareRoot((float)(vector.x * vector.x + vector.y * vector.y));
+    return sqrtf((float)(vector.x * vector.x + vector.y * vector.y));
 }
 
 float Vector2Int_Dot(Vector2Int vector1, Vector2Int vector2)
@@ -190,7 +190,7 @@ Vector3 Vector3Int_ToFloat(Vector3Int vector)
 
 float Vector3Int_Magnitude(Vector3Int vector)
 {
-    return SquareRoot((float)(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z));
+    return sqrtf((float)(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z));
 }
 
 float Vector3Int_Dot(Vector3Int vector1, Vector3Int vector2)
@@ -219,7 +219,7 @@ Vector4 Vector4Int_ToFloat(Vector4Int vector)
 
 float Vector4Int_Magnitude(Vector4Int vector)
 {
-    return SquareRoot((float)(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z + vector.w * vector.w));
+    return sqrtf((float)(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z + vector.w * vector.w));
 }
 
 float Vector4Int_Dot(Vector4Int vector1, Vector4Int vector2)

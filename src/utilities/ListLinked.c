@@ -1,5 +1,9 @@
 #include "utilities/ListLinked.h"
-#include "utilities/Maths.h"
+
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
+
+#pragma region Source Only
 
 /// @brief Creator function for ListLinkedNode. Uses memcpy to copy the data.
 /// @param sizeOfData Size of the data to be stored in the node.
@@ -97,6 +101,8 @@ long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, size_t sizeOfItem
         return ListLinkedNode_GetIndexIfMatch(node->next, sizeOfItem, data, startIndex);
     }
 }
+
+#pragma endregion Source Only
 
 ListLinked ListLinked_Create(const char *nameOfType, size_t sizeOfItem)
 {

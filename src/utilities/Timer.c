@@ -1,5 +1,7 @@
 #include "utilities/Timer.h"
-#include "utilities/Maths.h"
+
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 void TimePoint_Update(TimePoint *timePoint)
 {
