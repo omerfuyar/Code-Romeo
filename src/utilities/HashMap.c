@@ -1,8 +1,14 @@
 #include "utilities/HashMap.h"
-#include "utilities/Maths.h"
+
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 #pragma region Source Only
 
+/// @brief
+/// @param key
+/// @param capacity
+/// @return
 size_t HashMap_Hash(const char *key, size_t capacity)
 {
     size_t strLength = strlen(key);

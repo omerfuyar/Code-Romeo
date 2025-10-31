@@ -1,5 +1,7 @@
 #include "utilities/ListArray.h"
-#include "utilities/Maths.h"
+
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t initialCapacity)
 {

@@ -1,5 +1,7 @@
 #include "utilities/String.h"
-#include "utilities/Maths.h"
+
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 String String_CreateCopyS(const char *string, size_t length)
 {
