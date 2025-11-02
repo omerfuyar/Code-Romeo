@@ -3,17 +3,17 @@
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-String String_CreateCopyS(const char *string, size_t length)
+String String_CreateCopySafe(const char *string, size_t length)
 {
-    DebugAssertNullPointerCheck(string);
+    RJGlobal_DebugAssertNullPointerCheck(string);
 
     String createdString = {0};
 
     createdString.length = length;
     createdString.characters = (char *)malloc((createdString.length + 1));
-    DebugAssertNullPointerCheck(createdString.characters);
+    RJGlobal_DebugAssertNullPointerCheck(createdString.characters);
 
-    MemoryCopy(createdString.characters, createdString.length, string);
+    RJGlobal_MemoryCopy(createdString.characters, createdString.length, string);
     createdString.characters[createdString.length] = '\0';
 
     return createdString;
@@ -21,7 +21,7 @@ String String_CreateCopyS(const char *string, size_t length)
 
 void String_Destroy(String *string)
 {
-    DebugAssertNullPointerCheck(string);
+    RJGlobal_DebugAssertNullPointerCheck(string);
 
     string->length = 0;
 
@@ -31,39 +31,39 @@ void String_Destroy(String *string)
 
 void String_Change(String *string, StringView newString)
 {
-    DebugAssertNullPointerCheck(string);
+    RJGlobal_DebugAssertNullPointerCheck(string);
 
     string->length = newString.length;
     string->characters = (char *)realloc(string->characters, (string->length + 1));
-    DebugAssertNullPointerCheck(string->characters);
+    RJGlobal_DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters, string->length, newString.characters);
+    RJGlobal_MemoryCopy(string->characters, string->length, newString.characters);
     string->characters[string->length] = '\0';
 }
 
 void String_ConcatEnd(String *string, StringView other)
 {
-    DebugAssertNullPointerCheck(string);
+    RJGlobal_DebugAssertNullPointerCheck(string);
 
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1));
-    DebugAssertNullPointerCheck(string->characters);
+    RJGlobal_DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + string->length, other.length, other.characters);
+    RJGlobal_MemoryCopy(string->characters + string->length, other.length, other.characters);
     string->length += other.length;
     string->characters[string->length] = '\0';
 }
 
 void String_ConcatBegin(String *string, StringView other)
 {
-    DebugAssertNullPointerCheck(string);
+    RJGlobal_DebugAssertNullPointerCheck(string);
 
-    String buffer = String_CreateCopyS(string->characters, string->length);
+    String buffer = String_CreateCopySafe(string->characters, string->length);
 
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1));
-    DebugAssertNullPointerCheck(string->characters);
+    RJGlobal_DebugAssertNullPointerCheck(string->characters);
 
-    MemoryCopy(string->characters + other.length, (buffer.length + 1), buffer.characters);
-    MemoryCopy(string->characters, other.length, other.characters);
+    RJGlobal_MemoryCopy(string->characters + other.length, (buffer.length + 1), buffer.characters);
+    RJGlobal_MemoryCopy(string->characters, other.length, other.characters);
 
     string->length += other.length;
     string->characters[string->length] = '\0';
@@ -73,8 +73,8 @@ void String_ConcatBegin(String *string, StringView other)
 
 int String_Compare(StringView string, StringView other)
 {
-    DebugAssertNullPointerCheck(string.characters);
-    DebugAssertNullPointerCheck(other.characters);
+    RJGlobal_DebugAssertNullPointerCheck(string.characters);
+    RJGlobal_DebugAssertNullPointerCheck(other.characters);
 
     int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
 
@@ -88,7 +88,7 @@ int String_Compare(StringView string, StringView other)
 
 void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t maxTokenCount)
 {
-    DebugAssertNullPointerCheck(tokenBufferRet);
+    RJGlobal_DebugAssertNullPointerCheck(tokenBufferRet);
 
     size_t tokenCount = 0;
     size_t lastTokenIndex = 0;
@@ -135,20 +135,20 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
 
 char String_GetChar(StringView string, size_t index)
 {
-    DebugAssertNullPointerCheck(string.characters);
+    RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
-    DebugAssert(index <= string.length, "Char index to get can not be less than the string length");
+    RJGlobal_DebugAssert(index <= string.length, "Char index to get can not be less than the string length");
 
     return string.characters[index];
 }
 
 float String_ToFloat(StringView string)
 {
-    DebugAssertNullPointerCheck(string.characters);
+    RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
     size_t copyLength = Min(sizeof(buffer) - 1, string.length);
-    MemoryCopy(buffer, copyLength, string.characters);
+    RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     float result = (float)atof(buffer);
 
@@ -157,11 +157,11 @@ float String_ToFloat(StringView string)
 
 int String_ToInt(StringView string)
 {
-    DebugAssertNullPointerCheck(string.characters);
+    RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
     size_t copyLength = Min(sizeof(buffer) - 1, string.length);
-    MemoryCopy(buffer, copyLength, string.characters);
+    RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     int result = atoi(buffer);
 

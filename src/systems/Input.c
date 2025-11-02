@@ -1,4 +1,5 @@
-#include "tools/Input.h"
+#include "systems/Input.h"
+
 #include <GLFW/glfw3.h>
 
 #pragma region Source Only
@@ -30,7 +31,7 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
     (void)scanCode;
     (void)mods;
 
-    // DebugInfo("Key %d action %s", key, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : action == GLFW_REPEAT ? "repeated" : "unknown");
+    // RJGlobal_DebugInfo("Key %d action %s", key, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : action == GLFW_REPEAT ? "repeated" : "unknown");
 
     if (key >= InputKeyCode_Num0 && key <= InputKeyCode_Num9)
     {
@@ -118,7 +119,7 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
     }
     else
     {
-        DebugWarning("Unhandled key input: %d", key);
+        RJGlobal_DebugWarning("Unhandled key input: %d", key);
     }
 }
 
@@ -126,7 +127,7 @@ void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double 
 {
     (void)window;
 
-    // DebugInfo("Mouse position updated to (%.2f, %.2f)", positionX, positionY);
+    // RJGlobal_DebugInfo("Mouse position updated to (%.2f, %.2f)", positionX, positionY);
 
     INPUT_MOUSE_POSITION.x = (int)positionX;
     INPUT_MOUSE_POSITION.y = (int)positionY;
@@ -137,7 +138,7 @@ void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int
     (void)window;
     (void)mods;
 
-    // DebugInfo("Mouse button %d action %s", button, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : "unknown");
+    // RJGlobal_DebugInfo("Mouse button %d action %s", button, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : "unknown");
 
     if (button >= InputMouseButtonCode_Left && button <= InputMouseButtonCode_Fn5)
     {
@@ -155,7 +156,7 @@ void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int
     }
     else
     {
-        DebugWarning("Unhandled mouse button input: %d", button);
+        RJGlobal_DebugWarning("Unhandled mouse button input: %d", button);
     }
 }
 
@@ -164,7 +165,7 @@ void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offs
     (void)window;
     (void)offsetX;
 
-    // DebugInfo("Mouse scrolled with offset (%.2f, %.2f)", offsetX, offsetY);
+    // RJGlobal_DebugInfo("Mouse scrolled with offset (%.2f, %.2f)", offsetX, offsetY);
 
     INPUT_MOUSE_SCROLL = (float)offsetY;
 }
@@ -173,7 +174,7 @@ void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offs
 
 void Input_Initialize(ContextWindow *window)
 {
-    DebugAssertNullPointerCheck(window);
+    RJGlobal_DebugAssertNullPointerCheck(window);
 
     INPUT_MAIN_WINDOW = window;
 
@@ -188,12 +189,12 @@ void Input_Initialize(ContextWindow *window)
     glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_BUTTON_CALLBACK);
     glfwSetScrollCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_SCROLL_CALLBACK);
 
-    DebugInfo("Input system initialized successfully");
+    RJGlobal_DebugInfo("Input system initialized successfully");
 }
 
 void Input_ConfigureMouseMode(InputMouseMode mode)
 {
-    DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
+    RJGlobal_DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
 
     glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, (int)mode);
 }
@@ -346,7 +347,7 @@ InputState Input_GetKeyState(InputKeyCode key)
     }
     else
     {
-        DebugWarning("Unhandled key input: %d", key);
+        RJGlobal_DebugWarning("Unhandled key input: %d", key);
         return InputState_Released;
     }
 }
@@ -359,7 +360,7 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button)
     }
     else
     {
-        DebugWarning("Unhandled mouse button input: %d", button);
+        RJGlobal_DebugWarning("Unhandled mouse button input: %d", button);
         return InputState_Released;
     }
 }

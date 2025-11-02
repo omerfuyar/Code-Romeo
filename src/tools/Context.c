@@ -1,4 +1,4 @@
-#include "wrappers/Context.h"
+#include "tools/Context.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,19 +12,19 @@ VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NU
 
 ContextWindow *Context_Initialize()
 {
-    DebugAssert(glfwInit(), "Failed to initialize GLFW");
+    RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_OPENGL_VERSION_MAJOR);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_OPENGL_VERSION_MINOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    DebugInfo("ContextManager initialized successfully.");
+    RJGlobal_DebugInfo("ContextManager initialized successfully.");
 
     CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
-    DebugAssertNullPointerCheck(CONTEXT_MAIN_WINDOW.handle);
+    RJGlobal_DebugAssertNullPointerCheck(CONTEXT_MAIN_WINDOW.handle);
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 
-    DebugInfo("Main window created successfully.");
+    RJGlobal_DebugInfo("Main window created successfully.");
 
     return &CONTEXT_MAIN_WINDOW;
 }
@@ -55,7 +55,7 @@ void Context_ConfigureSize(Vector2Int size)
     }
     else
     {
-        DebugWarning("The context resize callback function is NULL. Skipped without calling");
+        RJGlobal_DebugWarning("The context resize callback function is NULL. Skipped without calling");
     }
 }
 
@@ -104,5 +104,5 @@ void Context_Terminate()
     glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
     glfwTerminate();
 
-    DebugInfo("Context terminated successfully.");
+    RJGlobal_DebugInfo("Context terminated successfully.");
 }

@@ -3,11 +3,11 @@
 #include "Global.h"
 
 #include "utilities/String.h"
-#include "utilities/Vectors.h"
+#include "utilities/Vector.h"
 
 #define RESOURCE_FILE_LINE_MAX_CHAR_COUNT 256
 
-#define RESOURCE_PATH "resources" RJ_PATH_DELIMETER_STR
+#define RESOURCE_PATH "resources" RJGLOBAL_PATH_DELIMETER_STR
 
 typedef struct ResourceText
 {

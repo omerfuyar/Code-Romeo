@@ -1,129 +1,130 @@
 #include "Global.h"
 
-#if RJ_PLATFORM_WINDOWS
+#if RJGLOBAL_PLATFORM_WINDOWS
 #include <windows.h>
-#define GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
-#elif RJ_PLATFORM_UNIX
+#define RJGlobal_GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
+#elif RJGLOBAL_PLATFORM_UNIX
 #include <unistd.h>
-#define GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
+#define RJGlobal_GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 #endif
 
-// #pragma message("Build info: " RJ_PLATFORM " | " RJ_COMPILER_NAME " | " RJ_ARCHITECTURE)
+// #pragma message("Build info: " RJGLOBAL_PLATFORM " | " RJGLOBAL_COMPILER_NAME " | " RJGLOBAL_ARCHITECTURE)
 
 #pragma region Source Only
 
-FILE *DEBUG_FILE = NULL;
-char *DEBUG_FILE_NAME_STR = NULL;
-char *GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
-bool TERMINATE_BYPASS_CLEANUP = false;
+/// @brief The debug log file pointer for the application.
+FILE *RJGLOBAL_DEBUG_FILE = NULL;
+char *RJGLOBAL_DEBUG_FILE_NAME_STR = NULL;
+char *RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
+bool RJGLOBAL_TERMINATE_BYPASS_CLEANUP = false;
 
-VoidFunIntCharPtrPtr GLOBAL_SETUP_CALLBACK = NULL;
-VoidFunFloat GLOBAL_LOOP_CALLBACK = NULL;
-VoidFunIntCharptr GLOBAL_TERMINATE_CALLBACK = NULL;
+RJGlobal_VoidFunIntCharPtrPtr RJGLOBAL_SETUP_CALLBACK = NULL;
+RJGlobal_VoidFunFloat RJGLOBAL_LOOP_CALLBACK = NULL;
+RJGlobal_VoidFunIntCharptr RJGLOBAL_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
-void Global_DebugLog(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
+void RJGlobal_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
-    char timeBuffer[RJ_TEMP_BUFFER_SIZE / 4];
+    char timeBuffer[RJGLOBAL_TEMP_BUFFER_SIZE / 4];
 
     timespec_get(&tempSpec, TIME_UTC);
     timer = *localtime(&tempSpec.tv_sec);
     strftime(timeBuffer, sizeof(timeBuffer), RJ_DEBUG_TIME_FORMAT, &timer);
 
-    if (DEBUG_FILE == NULL)
+    if (RJGLOBAL_DEBUG_FILE == NULL)
     {
-        DEBUG_FILE_NAME_STR = (char *)malloc(strlen(Global_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME) + 1);
+        RJGLOBAL_DEBUG_FILE_NAME_STR = (char *)malloc(strlen(RJGlobal_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME) + 1);
 
-        MemoryCopy(DEBUG_FILE_NAME_STR, strlen(Global_GetExecutablePath()), Global_GetExecutablePath());
-        MemoryCopy(DEBUG_FILE_NAME_STR + strlen(Global_GetExecutablePath()), strlen(RJ_DEBUG_FILE_NAME), RJ_DEBUG_FILE_NAME);
+        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR, strlen(RJGlobal_GetExecutablePath()), RJGlobal_GetExecutablePath());
+        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR + strlen(RJGlobal_GetExecutablePath()), strlen(RJ_DEBUG_FILE_NAME), RJ_DEBUG_FILE_NAME);
 
-        DEBUG_FILE_NAME_STR[strlen(Global_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME)] = '\0';
+        RJGLOBAL_DEBUG_FILE_NAME_STR[strlen(RJGlobal_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME)] = '\0';
 
-        remove(DEBUG_FILE_NAME_STR);
+        remove(RJGLOBAL_DEBUG_FILE_NAME_STR);
 
-        if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
+        if (!RJGlobal_FileOpen(RJGLOBAL_DEBUG_FILE, RJGLOBAL_DEBUG_FILE_NAME_STR, "a"))
         {
-            char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
-            snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
+            char buffer[RJGLOBAL_TEMP_BUFFER_SIZE] = {0};
+            snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", RJGLOBAL_DEBUG_FILE_NAME_STR);
             fprintf(stderr, "%s", buffer);
-            TERMINATE_BYPASS_CLEANUP = true;
-            Global_Terminate(EXIT_FAILURE, buffer);
+            RJGLOBAL_TERMINATE_BYPASS_CLEANUP = true;
+            RJGlobal_Terminate(EXIT_FAILURE, buffer);
         }
 
-        fprintf(DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
+        fprintf(RJGLOBAL_DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
 #if RJ_DEBUG_SAFE_LOGGING
-    else if (!FileOpen(DEBUG_FILE, DEBUG_FILE_NAME_STR, "a"))
+    else if (!RJGlobal_FileOpen(RJGLOBAL_DEBUG_FILE, RJGLOBAL_DEBUG_FILE_NAME_STR, "a"))
     {
-        char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
-        snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", DEBUG_FILE_NAME_STR);
+        char buffer[RJGLOBAL_TEMP_BUFFER_SIZE] = {0};
+        snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", RJGLOBAL_DEBUG_FILE_NAME_STR);
         fprintf(stderr, "%s", buffer);
-        Global_Terminate(EXIT_FAILURE, buffer);
+        RJGlobal_Terminate(EXIT_FAILURE, buffer);
     }
 #endif
 
-    char messageBuffer[RJ_TEMP_BUFFER_SIZE * 4] = {0};
+    char messageBuffer[RJGLOBAL_TEMP_BUFFER_SIZE * 4] = {0};
     va_list args;
     va_start(args, format);
     vsnprintf(messageBuffer, sizeof(messageBuffer), format, args);
     va_end(args);
 
-    char finalBuffer[RJ_TEMP_BUFFER_SIZE * 5] = {0};
+    char finalBuffer[RJGLOBAL_TEMP_BUFFER_SIZE * 5] = {0};
 
     snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n",
              timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
-    fprintf(DEBUG_FILE, "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n", timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
+    fprintf(RJGLOBAL_DEBUG_FILE, "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n", timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
 #if RJ_DEBUG_FLUSH_AFTER_LOG
-    fflush(DEBUG_FILE);
+    fflush(RJGLOBAL_DEBUG_FILE);
 #endif
 
 #if RJ_DEBUG_SAFE_LOGGING
-    fclose(DEBUG_FILE);
+    fclose(RJGLOBAL_DEBUG_FILE);
 #endif
 
     if (terminate)
     {
-        Global_Terminate(EXIT_FAILURE, finalBuffer);
+        RJGlobal_Terminate(EXIT_FAILURE, finalBuffer);
     }
 }
 
-const char *Global_GetExecutablePath()
+const char *RJGlobal_GetExecutablePath()
 {
-    if (GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
+    if (RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
     {
-        char buffer[RJ_TEMP_BUFFER_SIZE];
-        GetExePath(buffer, sizeof(buffer));
+        char buffer[RJGLOBAL_TEMP_BUFFER_SIZE];
+        RJGlobal_GetExePath(buffer, sizeof(buffer));
 
         size_t currentIndex = strlen(buffer);
 
-        while (buffer[--currentIndex] != RJ_PATH_DELIMETER_CHAR)
+        while (buffer[--currentIndex] != RJGLOBAL_PATH_DELIMETER_CHAR)
         {
             buffer[currentIndex] = '\0';
         }
         currentIndex++;
 
-        GLOBAL_EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
-        DebugAssertNullPointerCheck(GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
+        RJGlobal_DebugAssertNullPointerCheck(RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
 
-        MemoryCopy(GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex, buffer);
-        GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
+        RJGlobal_MemoryCopy(RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex, buffer);
+        RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
 
-        DebugInfo("Executable path detected : '%s'", GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        RJGlobal_DebugInfo("Executable path detected : '%s'", RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
     }
 
-    return GLOBAL_EXECUTABLE_DIRECTORY_PATH;
+    return RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH;
 }
 
-void Global_Run(int argc, char **argv)
+void RJGlobal_Run(int argc, char **argv)
 {
-    if (GLOBAL_SETUP_CALLBACK != NULL)
+    if (RJGLOBAL_SETUP_CALLBACK != NULL)
     {
-        GLOBAL_SETUP_CALLBACK(argc, argv);
+        RJGLOBAL_SETUP_CALLBACK(argc, argv);
     }
 
     struct timespec currentTime = {0, 0};
@@ -133,7 +134,7 @@ void Global_Run(int argc, char **argv)
 
     timespec_get(&lastTime, TIME_UTC);
 
-    while (GLOBAL_LOOP_CALLBACK != NULL)
+    while (RJGLOBAL_LOOP_CALLBACK != NULL)
     {
         timespec_get(&currentTime, TIME_UTC);
 
@@ -148,65 +149,61 @@ void Global_Run(int argc, char **argv)
 
         DT = (float)elapsedTime.tv_sec + (float)elapsedTime.tv_nsec / 1000000000.0f;
 
-        GLOBAL_LOOP_CALLBACK(DT);
+        RJGLOBAL_LOOP_CALLBACK(DT);
 
         lastTime = currentTime;
     }
 }
 
-void Global_Terminate(int exitCode, char *message)
+void RJGlobal_Terminate(int exitCode, char *message)
 {
-    if (TERMINATE_BYPASS_CLEANUP)
+    if (RJGLOBAL_TERMINATE_BYPASS_CLEANUP)
     {
         fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
         exit(exitCode);
     }
 
-    if (GLOBAL_TERMINATE_CALLBACK != NULL)
+    if (RJGLOBAL_TERMINATE_CALLBACK != NULL)
     {
-        GLOBAL_TERMINATE_CALLBACK(exitCode, message);
+        RJGLOBAL_TERMINATE_CALLBACK(exitCode, message);
     }
 
 #if !RJ_DEBUG_SAFE_LOGGING
-    if (DEBUG_FILE != NULL)
+    if (RJGLOBAL_DEBUG_FILE != NULL)
     {
-        fflush(DEBUG_FILE);
-        fclose(DEBUG_FILE);
-        DEBUG_FILE = NULL;
+        fflush(RJGLOBAL_DEBUG_FILE);
+        fclose(RJGLOBAL_DEBUG_FILE);
+        RJGLOBAL_DEBUG_FILE = NULL;
     }
 #endif
 
-    if (DEBUG_FILE_NAME_STR != NULL)
+    if (RJGLOBAL_DEBUG_FILE_NAME_STR != NULL)
     {
-        free(DEBUG_FILE_NAME_STR);
-        DEBUG_FILE_NAME_STR = NULL;
+        free(RJGLOBAL_DEBUG_FILE_NAME_STR);
+        RJGLOBAL_DEBUG_FILE_NAME_STR = NULL;
     }
 
-    if (GLOBAL_EXECUTABLE_DIRECTORY_PATH != NULL)
+    if (RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH != NULL)
     {
-        free(GLOBAL_EXECUTABLE_DIRECTORY_PATH);
-        GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
+        free(RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
     }
 
     fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
     exit(exitCode);
 }
 
-#pragma region Callbacks
-
-void Global_SetSetupCallback(VoidFunIntCharPtrPtr setupCallback)
+void RJGlobal_SetSetupCallback(RJGlobal_VoidFunIntCharPtrPtr setupCallback)
 {
-    GLOBAL_SETUP_CALLBACK = setupCallback;
+    RJGLOBAL_SETUP_CALLBACK = setupCallback;
 }
 
-void Global_SetLoopCallback(VoidFunFloat loopCallback)
+void RJGlobal_SetLoopCallback(RJGlobal_VoidFunFloat loopCallback)
 {
-    GLOBAL_LOOP_CALLBACK = loopCallback;
+    RJGLOBAL_LOOP_CALLBACK = loopCallback;
 }
 
-void Global_SetTerminateCallback(VoidFunIntCharptr terminateCallback)
+void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
 {
-    GLOBAL_TERMINATE_CALLBACK = terminateCallback;
+    RJGLOBAL_TERMINATE_CALLBACK = terminateCallback;
 }
-
-#pragma endregion Callbacks

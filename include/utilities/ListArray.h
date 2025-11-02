@@ -2,7 +2,7 @@
 
 #include "Global.h"
 
-// The resize multiplier used when the ListArray size reached to the capacity when adding new item
+/// @brief The resize multiplier used when the ListArray size reached to the capacity when adding new item
 #define LIST_ARRAY_RESIZE_MULTIPLIER 2.0f
 
 // The limit for resizing the ListArray when it's size is less than 1/x of the capacity

@@ -1,21 +1,21 @@
-#include "utilities/Vectors.h"
+#include "utilities/Vector.h"
 #include <math.h>
 
 #pragma region Vector2
 
 Vector2 Vector2_Add(Vector2 vector1, Vector2 vector2)
 {
-    return NewVector2(vector1.x + vector2.x, vector1.y + vector2.y);
+    return Vector2_New(vector1.x + vector2.x, vector1.y + vector2.y);
 }
 
 Vector2 Vector2_Scale(Vector2 vector, float scalar)
 {
-    return NewVector2(vector.x * scalar, vector.y * scalar);
+    return Vector2_New(vector.x * scalar, vector.y * scalar);
 }
 
 Vector2Int Vector2_ToInt(Vector2 vector)
 {
-    return NewVector2Int((int)vector.x, (int)vector.y);
+    return Vector2Int_New((int)vector.x, (int)vector.y);
 }
 
 Vector2 Vector2_Normalized(Vector2 vector)
@@ -38,7 +38,7 @@ float Vector2_Dot(Vector2 vector1, Vector2 vector2)
 
 Vector2 Vector2_Lerp(Vector2 startVector, Vector2 endVector, float time)
 {
-    return NewVector2(
+    return Vector2_New(
         startVector.x + (endVector.x - startVector.x) * time,
         startVector.y + (endVector.y - startVector.y) * time);
 }
@@ -49,17 +49,17 @@ Vector2 Vector2_Lerp(Vector2 startVector, Vector2 endVector, float time)
 
 Vector3 Vector3_Add(Vector3 vector1, Vector3 vector2)
 {
-    return NewVector3(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z);
+    return Vector3_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z);
 }
 
 Vector3 Vector3_Scale(Vector3 vector, float scalar)
 {
-    return NewVector3(vector.x * scalar, vector.y * scalar, vector.z * scalar);
+    return Vector3_New(vector.x * scalar, vector.y * scalar, vector.z * scalar);
 }
 
 Vector3Int Vector3_ToInt(Vector3 vector)
 {
-    return NewVector3Int((int)vector.x, (int)vector.y, (int)vector.z);
+    return Vector3Int_New((int)vector.x, (int)vector.y, (int)vector.z);
 }
 
 Vector3 Vector3_Normalized(Vector3 vector)
@@ -80,7 +80,7 @@ float Vector3_Dot(Vector3 vector1, Vector3 vector2)
 
 Vector3 Vector3_Cross(Vector3 vector1, Vector3 vector2)
 {
-    return NewVector3(
+    return Vector3_New(
         vector1.y * vector2.z - vector1.z * vector2.y,
         vector1.z * vector2.x - vector1.x * vector2.z,
         vector1.x * vector2.y - vector1.y * vector2.x);
@@ -88,7 +88,7 @@ Vector3 Vector3_Cross(Vector3 vector1, Vector3 vector2)
 
 Vector3 Vector3_Lerp(Vector3 startVector, Vector3 endVector, float time)
 {
-    return NewVector3(
+    return Vector3_New(
         startVector.x + (endVector.x - startVector.x) * time,
         startVector.y + (endVector.y - startVector.y) * time,
         startVector.z + (endVector.z - startVector.z) * time);
@@ -100,17 +100,17 @@ Vector3 Vector3_Lerp(Vector3 startVector, Vector3 endVector, float time)
 
 Vector4 Vector4_Add(Vector4 vector1, Vector4 vector2)
 {
-    return NewVector4(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w);
+    return Vector4_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w);
 }
 
 Vector4 Vector4_Scale(Vector4 vector, float scalar)
 {
-    return NewVector4(vector.x * scalar, vector.y * scalar, vector.z * scalar, vector.w * scalar);
+    return Vector4_New(vector.x * scalar, vector.y * scalar, vector.z * scalar, vector.w * scalar);
 }
 
 Vector4Int Vector4_ToInt(Vector4 vector)
 {
-    return NewVector4Int((int)vector.x, (int)vector.y, (int)vector.z, (int)vector.w);
+    return Vector4Int_New((int)vector.x, (int)vector.y, (int)vector.z, (int)vector.w);
 }
 
 Vector4 Vector4_Normalized(Vector4 vector)
@@ -133,7 +133,7 @@ float Vector4_Dot(Vector4 vector1, Vector4 vector2)
 
 Vector4 Vector4_Lerp(Vector4 startVector, Vector4 endVector, float time)
 {
-    return NewVector4(
+    return Vector4_New(
         startVector.x + (endVector.x - startVector.x) * time,
         startVector.y + (endVector.y - startVector.y) * time,
         startVector.z + (endVector.z - startVector.z) * time,
@@ -146,17 +146,17 @@ Vector4 Vector4_Lerp(Vector4 startVector, Vector4 endVector, float time)
 
 Vector2Int Vector2Int_Add(Vector2Int vector1, Vector2Int vector2)
 {
-    return NewVector2Int(vector1.x + vector2.x, vector1.y + vector2.y);
+    return Vector2Int_New(vector1.x + vector2.x, vector1.y + vector2.y);
 }
 
 Vector2Int Vector2Int_Scale(Vector2Int vector, float scalar)
 {
-    return NewVector2Int((int)((float)vector.x * scalar), (int)((float)vector.y * scalar));
+    return Vector2Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar));
 }
 
 Vector2 Vector2_ToFloat(Vector2Int vector)
 {
-    return NewVector2((float)vector.x, (float)vector.y);
+    return Vector2_New((float)vector.x, (float)vector.y);
 }
 
 float Vector2Int_Magnitude(Vector2Int vector)
@@ -175,17 +175,17 @@ float Vector2Int_Dot(Vector2Int vector1, Vector2Int vector2)
 
 Vector3Int Vector3Int_Add(Vector3Int vector1, Vector3Int vector2)
 {
-    return NewVector3Int(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z);
+    return Vector3Int_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z);
 }
 
 Vector3Int Vector3Int_Scale(Vector3Int vector, float scalar)
 {
-    return NewVector3Int((int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar));
+    return Vector3Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar));
 }
 
 Vector3 Vector3Int_ToFloat(Vector3Int vector)
 {
-    return NewVector3((float)vector.x, (float)vector.y, (float)vector.z);
+    return Vector3_New((float)vector.x, (float)vector.y, (float)vector.z);
 }
 
 float Vector3Int_Magnitude(Vector3Int vector)
@@ -204,17 +204,17 @@ float Vector3Int_Dot(Vector3Int vector1, Vector3Int vector2)
 
 Vector4Int Vector4Int_Add(Vector4Int vector1, Vector4Int vector2)
 {
-    return NewVector4Int(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w);
+    return Vector4Int_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w);
 }
 
 Vector4Int Vector4Int_Scale(Vector4Int vector, float scalar)
 {
-    return NewVector4Int((int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar), (int)((float)vector.w * scalar));
+    return Vector4Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar), (int)((float)vector.w * scalar));
 }
 
 Vector4 Vector4Int_ToFloat(Vector4Int vector)
 {
-    return NewVector4((float)vector.x, (float)vector.y, (float)vector.z, (float)vector.w);
+    return Vector4_New((float)vector.x, (float)vector.y, (float)vector.z, (float)vector.w);
 }
 
 float Vector4Int_Magnitude(Vector4Int vector)

@@ -4,10 +4,11 @@
 
 #include "utilities/String.h"
 #include "utilities/ListArray.h"
-#include "utilities/Vectors.h"
+#include "utilities/Vector.h"
 
-#include "wrappers/Context.h"
+#include "tools/Context.h"
 
+// todo fix deps
 #include <cglm/mat4.h>
 
 #define RENDERER_OPENGL_CLEAR_COLOR 0.0f, 0.0f, 0.0f, 0.0f

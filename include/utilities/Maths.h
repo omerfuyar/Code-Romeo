@@ -7,59 +7,53 @@
 // These constants have a suffix of '_M' to not conflict with any system variables or macros.
 
 // The value of Pi
-#define RJ_PI 3.14159265f
+#define MATHS_PI 3.14159265f
 
 // The value of Euler's number
-#define RJ_E 2.71828183f
+#define MATHS_E 2.71828183f
 
 // The Earth's gravity in m/s^2
-#define RJ_GRAVITY 9.80665f
+#define MATHS_GRAVITY 9.80665f
 
 // The Universal gravitational constant in m^3 kg^-1 s^-2
-#define RJ_G 6.67430e-11f
+#define MATHS_G 6.67430e-11f
 
 // The speed of light in m/s
-#define RJ_C 299792458.0f
+#define MATHS_C 299792458.0f
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
-#define Abs(a) ((a) < 0 ? -(a) : (a))
-#define Clamp(value, minValue, maxValue) (Min(Max(value, minValue), maxValue))
-#define DegToRad(deg) (deg * RJ_PI / 180.0f)
-#define RadToDeg(rad) (rad * 180.0f / RJ_PI)
-#define RandomRange(min, max) (rand() % ((max) - (min) + 1) + (min))
+#define Maths_Min(a, b) ((a) < (b) ? (a) : (b))
+#define Maths_Max(a, b) ((a) > (b) ? (a) : (b))
+#define Maths_Abs(a) ((a) < 0 ? -(a) : (a))
+#define Maths_Clamp(value, minValue, maxValue) (Maths_Min(Maths_Max(value, minValue), maxValue))
+#define Maths_DegToRad(deg) (deg * MATHS_PI / 180.0f)
+#define Maths_RadToDeg(rad) (rad * 180.0f / MATHS_PI)
+#define Maths_RandomRange(min, max) (rand() % ((max) - (min) + 1) + (min))
 
 #pragma endregion Macros
 
 // Returns the logarithm of the value to the base
-float Log(float value, float base);
+float Maths_Log(float value, float base);
 
 // Returns the logarithm of the value to the base 10
-float Log10(float value);
+float Maths_Log10(float value);
 
 // Returns the natural logarithm of the value
-float LogE(float value);
+float Maths_LogE(float value);
 
 // Returns the root of the float value
-float Root(float value, float root);
-
-// Return square root of the float value
-float SquareRoot(float value);
-
-// Returns the cube root of the float value
-float CubeRoot(float value);
+float Maths_Root(float value, float root);
 
 // Returns the sine of the given degree
-float Sin(float deg);
+float Maths_Sin(float deg);
 
 // Returns the cosine of the given degree
-float Cos(float deg);
+float Maths_Cos(float deg);
 
 // Returns the tangent of the given degree
-float Tan(float deg);
+float Maths_Tan(float deg);
 
 // Returns the cotangent of the given degree
-float Cot(float deg);
+float Maths_Cot(float deg);
 
 // Returns the degree value of the given x and y values
-float ATan2(float x, float y);
+float Maths_ATan2(float x, float y);

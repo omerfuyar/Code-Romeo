@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Global.h"
-#include "utilities/Vectors.h"
-#include "wrappers/Context.h"
+#include "utilities/Vector.h"
+#include "tools/Context.h"
 
+/// @brief
 typedef enum InputKeyCode
 {
     InputKeyCode_Space = 32,
@@ -80,6 +81,7 @@ typedef enum InputKeyCode
     InputKeyCode_RightSuper = 347
 } InputKeyCode;
 
+/// @brief
 typedef enum InputMouseButtonCode
 {
     InputMouseButtonCode_Left = 0,
@@ -102,6 +104,7 @@ typedef enum InputState
     InputState_Up = 8
 } InputState;
 
+/// @brief
 typedef enum InputMouseMode
 {
     InputMouseMode_Normal = 0x00034001,  // makes the cursor visible and behaving normally.

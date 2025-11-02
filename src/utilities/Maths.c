@@ -1,27 +1,27 @@
 #include "utilities/Maths.h"
 #include <math.h>
 
-float Log(float value, float base)
+float Maths_Log(float value, float base)
 {
     return logf(value) / logf(base);
 }
 
-float Log10(float value)
+float Maths_Log10(float value)
 {
     return log10f(value);
 }
 
-float LogE(float value)
+float Maths_LogE(float value)
 {
     return logf(value);
 }
 
-float Root(float value, float root)
+float Maths_Root(float value, float root)
 {
     return powf(value, 1.0f / root);
 }
 
-float SquareRoot(float value)
+float Maths_SquareRoot(float value)
 {
     return sqrtf(value);
 }
@@ -31,27 +31,27 @@ float CubeRoot(float value)
     return cbrtf(value);
 }
 
-float Sin(float deg)
+float Maths_Sin(float deg)
 {
-    return sinf(DegToRad(deg));
+    return sinf(Maths_DegToRad(deg));
 }
 
-float Cos(float deg)
+float Maths_Cos(float deg)
 {
-    return cosf(DegToRad(deg));
+    return cosf(Maths_DegToRad(deg));
 }
 
-float Tan(float deg)
+float Maths_Tan(float deg)
 {
-    return tanf(DegToRad(deg));
+    return tanf(Maths_DegToRad(deg));
 }
 
-float Cot(float deg)
+float Maths_Cot(float deg)
 {
-    return 1.0f / Tan(deg);
+    return 1.0f / Maths_Tan(deg);
 }
 
-float ATan2(float x, float y)
+float Maths_ATan2(float x, float y)
 {
-    return RadToDeg(atan2f(y, x));
+    return Maths_RadToDeg(atan2f(y, x));
 }

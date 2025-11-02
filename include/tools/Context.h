@@ -2,10 +2,10 @@
 
 #include "Global.h"
 #include "utilities/String.h"
-#include "utilities/Vectors.h"
+#include "utilities/Vector.h"
 
-#define CONTEXT_OPENGL_VERSION_MAJOR 3
-#define CONTEXT_OPENGL_VERSION_MINOR 3
+#define CONTEXT_VERSION_MAJOR 3
+#define CONTEXT_VERSION_MINOR 3
 
 #pragma region Typedefs
 
