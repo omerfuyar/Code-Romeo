@@ -36,8 +36,17 @@
 
 #pragma region typedefs
 
+#if RJGLOBAL_PLATFORM_WINDOWS
+
 /// @brief 4x4 matrix type for renderer.
 typedef __declspec(align(16)) float Renderer_Matrix4[4][4];
+
+#elif RJGLOBAL_PLATFORM_UNIX
+
+/// @brief 4x4 matrix type for renderer.
+typedef _Alignas(16) float Renderer_Matrix4[4][4];
+
+#endif
 
 /// @brief Handle for a shader object.
 typedef unsigned int RendererShaderHandle;
