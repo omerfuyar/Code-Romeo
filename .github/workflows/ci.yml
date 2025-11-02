@@ -13,6 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        build_type: [Release, Debug]
         include:
           - os: windows-latest
             compiler: msvc
@@ -23,14 +25,12 @@ jobs:
           - os: windows-latest
             compiler: clang
             c_compiler: clang
-
           - os: ubuntu-latest
             compiler: gcc
             c_compiler: gcc
           - os: ubuntu-latest
             compiler: clang
             c_compiler: clang
-
           - os: macos-latest
             compiler: gcc
             c_compiler: gcc
@@ -50,7 +50,7 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt update
-            sudo apt install cmake ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev pkgconf libgl1-mesa-dev
+            sudo apt install cmake ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev pkgconf libgl1-mesa-dev xvfb
             elif [ "$RUNNER_OS" == "macOS" ]; then
             brew install cmake ninja
           elif [ "$RUNNER_OS" == "Windows" ]; then
@@ -69,6 +69,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -S .. -G Ninja -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=Release
+          cmake -S .. -G Ninja -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           cmake --build .
+        shell: bash
+
+      - name: Run graphical app test
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a --server-args="-screen 0 1024x768x24" build/bin/Code-Romeo &
+          sleep 5
+          kill $!
         shell: bash

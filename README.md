@@ -27,7 +27,7 @@ cd Code-Romeo
 
 #### Linux
 ``` shell
-sudo apt install cmake ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev libgl1-mesa-dev pkgconf
+sudo apt install cmake ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev libgl1-mesa-dev pkgconf xvfb
 ```
 
 #### MacOS
