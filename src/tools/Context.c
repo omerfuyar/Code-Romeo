@@ -17,7 +17,8 @@ ContextWindow *Context_Initialize()
     RJGlobal_DebugInfo("ContextManager initialized successfully.");
 
     CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
-    RJGlobal_DebugAssertNullPointerCheck(CONTEXT_MAIN_WINDOW.handle);
+    const char *errorLog = NULL;
+    RJGlobal_DebugAssert(CONTEXT_MAIN_WINDOW.handle != NULL, "Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 

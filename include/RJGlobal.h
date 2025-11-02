@@ -57,7 +57,20 @@
 
 #pragma region Compiler Detection
 
-#if defined(__clang__)
+#if defined(__clang__) && defined(_MSC_VER)
+
+/// @brief Clang compiler is detected.
+#define RJGLOBAL_COMPILER_CLANG 1
+/// @brief GCC compiler is not detected.
+#define RJGLOBAL_COMPILER_GCC 0
+/// @brief MSVC compiler is detected.
+#define RJGLOBAL_COMPILER_MSVC 1
+/// @brief Compiler version number.
+#define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
+/// @brief Compiler name string.
+#define RJGLOBAL_COMPILER_NAME "CLANG-CL"
+
+#elif defined(__clang__)
 
 /// @brief Clang compiler is detected.
 #define RJGLOBAL_COMPILER_CLANG 1
@@ -69,19 +82,6 @@
 #define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
 /// @brief Compiler name string.
 #define RJGLOBAL_COMPILER_NAME "CLANG"
-
-#elif defined(__GNUC__)
-
-/// @brief Clang compiler is not detected.
-#define RJGLOBAL_COMPILER_CLANG 0
-/// @brief GCC compiler is detected.
-#define RJGLOBAL_COMPILER_GCC 1
-/// @brief MSVC compiler is not detected.
-#define RJGLOBAL_COMPILER_MSVC 0
-/// @brief Compiler version number.
-#define RJGLOBAL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
-/// @brief Compiler name string.
-#define RJGLOBAL_COMPILER_NAME "GCC"
 
 #elif defined(_MSC_VER)
 
@@ -95,6 +95,19 @@
 #define RJGLOBAL_COMPILER_VERSION _MSC_VER
 /// @brief Compiler name string.
 #define RJGLOBAL_COMPILER_NAME "MSVC"
+
+#elif defined(__GNUC__)
+
+/// @brief Clang compiler is not detected.
+#define RJGLOBAL_COMPILER_CLANG 0
+/// @brief GCC compiler is detected.
+#define RJGLOBAL_COMPILER_GCC 1
+/// @brief MSVC compiler is not detected.
+#define RJGLOBAL_COMPILER_MSVC 0
+/// @brief Compiler version number.
+#define RJGLOBAL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+/// @brief Compiler name string.
+#define RJGLOBAL_COMPILER_NAME "GCC"
 
 #else
 
@@ -152,7 +165,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdalign.h>
+#include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <float.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>

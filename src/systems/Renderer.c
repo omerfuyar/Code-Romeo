@@ -106,7 +106,7 @@ void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GL
 /// @param position
 /// @param rotation
 /// @param scale
-void TRANSFORM_TO_MODEL_MATRIX(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
+void TRANSFORM_TO_MODEL_MATRIX(Renderer_Matrix4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
 {
     RJGlobal_DebugAssertNullPointerCheck(matrix);
 
@@ -533,7 +533,7 @@ void RendererDebug_StartRendering()
     glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
 }
 
-void RendererDebug_FinishRendering(mat4 *camProjectionMatrix, mat4 *camViewMatrix)
+void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, const Renderer_Matrix4 *camViewMatrix)
 {
     if (RENDERER_DEBUG_VERTICES.count == 0)
     {
@@ -880,7 +880,7 @@ RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapa
 
 RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
-    mat4 offsetMatrix;
+    Renderer_Matrix4 offsetMatrix = {0};
     TRANSFORM_TO_MODEL_MATRIX(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
 
     size_t meshCount = 0;
@@ -1596,7 +1596,7 @@ RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *mo
     batch.model = model;
     batch.scene = scene;
     batch.batchOffsetInScene = scene->batches.count;
-    batch.objectMatrices = ListArray_Create("Matrix 4x4", sizeof(mat4), initialObjectCapacity);
+    batch.objectMatrices = ListArray_Create("Matrix 4x4", sizeof(Renderer_Matrix4), initialObjectCapacity);
     batch.components = ListArray_Create("Renderer Component", sizeof(RendererComponent), initialObjectCapacity);
 
     return (RendererBatch *)ListArray_Add(&scene->batches, &batch);
@@ -1664,7 +1664,7 @@ void RendererScene_Update(RendererScene *scene)
         {
             RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
             TRANSFORM_TO_MODEL_MATRIX(
-                (mat4 *)ListArray_Get(&batch->objectMatrices, j),
+                (Renderer_Matrix4 *)ListArray_Get(&batch->objectMatrices, j),
                 component->positionReference,
                 component->rotationReference,
                 component->scaleReference);
@@ -1692,7 +1692,7 @@ RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *
     component.batch = batch;
     component.componentOffsetInBatch = batch->objectMatrices.count;
 
-    mat4 temp; // dummy, just to allocate the space in list
+    Renderer_Matrix4 temp; // dummy, just to allocate the space in list
     ListArray_Add(&batch->objectMatrices, &temp);
 
     // RJGlobal_DebugInfo("Renderer Component created.");

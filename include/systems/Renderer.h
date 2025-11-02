@@ -36,8 +36,11 @@
 
 #pragma region typedefs
 
-/// @brief 4x4 matrix type.
-typedef float Matrix4[4][4];
+/// @brief 4x4 matrix type for renderer.
+typedef struct Renderer_Matrix4
+{
+    alignas(16) float m[4][4];
+} Renderer_Matrix4;
 
 /// @brief Handle for a shader object.
 typedef unsigned int RendererShaderHandle;
@@ -107,8 +110,8 @@ typedef struct RendererCameraComponent
     Vector3 *positionReference;
     Vector3 *rotationReference;
 
-    Matrix4 projectionMatrix;
-    Matrix4 viewMatrix;
+    Renderer_Matrix4 projectionMatrix;
+    Renderer_Matrix4 viewMatrix;
 
     float size; // fov if perspective, orthographic size if orthographic
     float nearClipPlane;
@@ -148,7 +151,7 @@ typedef struct RendererBatch
 {
     RendererModel *model;
     ListArray components;     // RendererComponent
-    ListArray objectMatrices; // Matrix4, data must be continuous and only matrices because it's directly sent to UBO
+    ListArray objectMatrices; // Renderer_Matrix4, data must be continuous and only matrices because it's directly sent to UBO
 
     RendererScene *scene;
     size_t batchOffsetInScene;
@@ -212,7 +215,7 @@ void RendererDebug_StartRendering();
 /// @brief Should be called before Renderer_FinishRendering to draw all debug shapes.
 /// @param camProjectionMatrix The projection matrix of the camera.
 /// @param camViewMatrix The view matrix of the camera.
-void RendererDebug_FinishRendering(Matrix4 *camProjectionMatrix, Matrix4 *camViewMatrix);
+void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, const Renderer_Matrix4 *camViewMatrix);
 
 /// @brief Draws a line in 3D space for debugging purposes.
 /// @param start The starting point of the line.
