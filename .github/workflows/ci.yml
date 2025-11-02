@@ -13,34 +13,82 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        build_type: [Release, Debug]
         include:
           - os: windows-latest
             compiler: msvc
             c_compiler: cl
+            build_type: Release
+          - os: windows-latest
+            compiler: msvc
+            c_compiler: cl
+            build_type: Debug
           - os: windows-latest
             compiler: clang-cl
             c_compiler: clang-cl
+            build_type: Release
+          - os: windows-latest
+            compiler: clang-cl
+            c_compiler: clang-cl
+            build_type: Debug
           - os: windows-latest
             compiler: clang
             c_compiler: clang
+            build_type: Release
+          - os: windows-latest
+            compiler: clang
+            c_compiler: clang
+            build_type: Debug
+
           - os: ubuntu-latest
             compiler: gcc
             c_compiler: gcc
+            build_type: Release
+          - os: ubuntu-latest
+            compiler: gcc
+            c_compiler: gcc
+            build_type: Debug
           - os: ubuntu-latest
             compiler: clang
             c_compiler: clang
+            build_type: Release
+          - os: ubuntu-latest
+            compiler: clang
+            c_compiler: clang
+            build_type: Debug
+
           - os: macos-latest
             compiler: gcc
             c_compiler: gcc
+            build_type: Release
+          - os: macos-latest
+            compiler: gcc
+            c_compiler: gcc
+            build_type: Debug
           - os: macos-latest
             compiler: clang
             c_compiler: clang
+            build_type: Release
+          - os: macos-latest
+            compiler: clang
+            c_compiler: clang
+            build_type: Debug
 
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Checkout Code-Romeo (the library)
+        uses: actions/checkout@v4
+        with:
+          path: 'Code-Romeo'
+          submodules: 'recursive'
+
+      - name: Checkout Code-Juliett (the application)
+        uses: actions/checkout@v4
+        with:
+          repository: omerfuyar/Code-Juliett
+          path: 'Code-Juliett'
+          submodules: 'recursive'
+
       - name: Install Dependencies
         working-directory: Code-Juliett
         run: |
@@ -60,18 +108,6 @@ jobs:
       - name: Add MSVC to PATH
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Checkout Code-Romeo (the library)
-        uses: actions/checkout@v4
-        with:
-          path: 'Code-Romeo'
-
-      - name: Checkout Code-Juliett (the application)
-        uses: actions/checkout@v4
-        with:
-          repository: omerfuyar/Code-Juliett
-          path: 'Code-Juliett'
-          submodules: 'recursive'
 
       - name: Swap Code-Romeo with the version under test
         run: |
