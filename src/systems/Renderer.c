@@ -106,7 +106,7 @@ void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GL
 /// @param position
 /// @param rotation
 /// @param scale
-void TRANSFORM_TO_MODEL_MATRIX(const Renderer_Matrix4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
+void TRANSFORM_TO_MODEL_MATRIX(Renderer_Matrix4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
 {
     RJGlobal_DebugAssertNullPointerCheck(matrix);
 
