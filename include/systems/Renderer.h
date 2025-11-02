@@ -36,17 +36,11 @@
 
 #pragma region typedefs
 
-#if RJGLOBAL_COMPILER_MSVC
-
 /// @brief 4x4 matrix type for renderer.
-typedef __declspec(align(16)) float Renderer_Matrix4[4][4];
-
-#else
-
-/// @brief 4x4 matrix type for renderer.
-typedef float Renderer_Matrix4[4][4] __attribute__((aligned(16)));
-
-#endif
+typedef struct Renderer_Matrix4
+{
+    alignas(16) float m[4][4];
+} Renderer_Matrix4;
 
 /// @brief Handle for a shader object.
 typedef unsigned int RendererShaderHandle;
