@@ -1,0 +1,74 @@
+name: Code-Romeo-CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            compiler: msvc
+            c_compiler: cl
+          - os: windows-latest
+            compiler: clang-cl
+            c_compiler: clang-cl
+          - os: windows-latest
+            compiler: clang
+            c_compiler: clang
+
+          - os: ubuntu-latest
+            compiler: gcc
+            c_compiler: gcc
+          - os: ubuntu-latest
+            compiler: clang
+            c_compiler: clang
+
+          - os: macos-latest
+            compiler: gcc
+            c_compiler: gcc
+          - os: macos-latest
+            compiler: clang
+            c_compiler: clang
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install Dependencies
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt update
+            sudo apt install cmake ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev pkgconf
+            elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install cmake ninja
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            winget install -e --id Kitware.CMake
+            winget install -e --id Ninja-build.Ninja
+            echo "C:\Program Files\CMake\bin" >> $env:GITHUB_PATH
+            echo "C:\Program Files\Ninja" >> $env:GITHUB_PATH
+          fi
+        shell: bash
+
+      - name: Add MSVC to PATH
+        if: runner.os == 'Windows' && matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure and Build
+        run: |
+          mkdir build
+          cd build
+          cmake -S .. -G Ninja -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=Release
+          cmake --build .
+        shell: bash
