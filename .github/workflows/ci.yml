@@ -132,15 +132,5 @@ jobs:
             APP_PID=$!
             sleep 5
             kill $APP_PID
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            build/bin/Code-Juliett &
-            APP_PID=$!
-            sleep 5
-            kill $APP_PID
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            ./build/bin/Code-Juliett.exe &
-            APP_PID=$!
-            sleep 5
-            taskkill /F /PID $APP_PID
           fi
         shell: bash

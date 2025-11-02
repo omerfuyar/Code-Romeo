@@ -11,11 +11,6 @@ ContextWindow *Context_Initialize()
 {
     RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
-    if (getenv("GITHUB_ACTIONS") != NULL)
-    {
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    }
-
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
