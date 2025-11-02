@@ -43,15 +43,8 @@ typedef __declspec(align(16)) float Renderer_Matrix4[4][4];
 
 #else
 
-typedef float _Renderer_Matrix4[4][4];
-
-typedef struct __Renderer_Matrix4
-{
-    _Alignas(16) float m[4][4];
-} __Renderer_Matrix4;
-
 /// @brief 4x4 matrix type for renderer.
-#define Renderer_Matrix4 __Renderer_Matrix4
+typedef float Renderer_Matrix4[4][4] __attribute__((aligned(16)));
 
 #endif
 

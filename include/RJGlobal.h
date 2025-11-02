@@ -165,7 +165,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdalign.h>
+#include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <float.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>

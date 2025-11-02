@@ -880,7 +880,7 @@ RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapa
 
 RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
-    Renderer_Matrix4 offsetMatrix;
+    Renderer_Matrix4 offsetMatrix = {0};
     TRANSFORM_TO_MODEL_MATRIX(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
 
     size_t meshCount = 0;
