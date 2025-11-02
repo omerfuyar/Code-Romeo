@@ -80,6 +80,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: 'Code-Romeo'
+
+      - name: Checkout Code-Juliett (the application)
+        uses: actions/checkout@v4
+        with:
+          repository: omerfuyar/Code-Juliett
+          path: 'Code-Juliett'
+          submodules: 'recursive'
+
+      - name: Checkout Code-Romeo (the library)
+        uses: actions/checkout@v4
+        with:
+          path: 'Code-Romeo'
           submodules: 'recursive'
 
       - name: Checkout Code-Juliett (the application)
