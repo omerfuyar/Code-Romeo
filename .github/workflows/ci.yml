@@ -41,17 +41,13 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository and submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
       - name: Install Dependencies
+        working-directory: Code-Juliett
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt update
             sudo apt install cmake ninja-build libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev pkgconf libgl1-mesa-dev xvfb
-            elif [ "$RUNNER_OS" == "macOS" ]; then
+          elif [ "$RUNNER_OS" == "macOS" ]; then
             brew install cmake ninja
           elif [ "$RUNNER_OS" == "Windows" ]; then
             winget install -e --id Kitware.CMake --accept-source-agreements --accept-package-agreements --silent
@@ -65,7 +61,26 @@ jobs:
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Checkout Code-Romeo (the library)
+        uses: actions/checkout@v4
+        with:
+          path: 'Code-Romeo'
+
+      - name: Checkout Code-Juliett (the application)
+        uses: actions/checkout@v4
+        with:
+          repository: omerfuyar/Code-Juliett
+          path: 'Code-Juliett'
+          submodules: 'recursive'
+
+      - name: Swap Code-Romeo with the version under test
+        run: |
+          rm -rf Code-Juliett/dependencies/Romeo
+          mv Code-Romeo Code-Juliett/dependencies/Romeo
+        shell: bash
+
       - name: Configure and Build
+        working-directory: Code-Juliett
         run: |
           mkdir build
           cd build
@@ -73,10 +88,23 @@ jobs:
           cmake --build .
         shell: bash
 
-      - name: Run graphical app test
-        if: runner.os == 'Linux'
+      - name: Run graphical app
+        working-directory: Code-Juliett
         run: |
-          xvfb-run -a --server-args="-screen 0 1024x768x24" build/bin/Code-Romeo &
-          sleep 5
-          kill $!
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            xvfb-run -a --server-args="-screen 0 1024x768x24" build/bin/Code-Juliett &
+            APP_PID=$!
+            sleep 5
+            kill $APP_PID
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            build/bin/Code-Juliett &
+            APP_PID=$!
+            sleep 5
+            kill $APP_PID
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            ./build/bin/Code-Juliett.exe &
+            APP_PID=$!
+            sleep 5
+            taskkill /F /PID $APP_PID
+          fi
         shell: bash
