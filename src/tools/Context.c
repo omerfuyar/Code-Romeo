@@ -11,6 +11,12 @@ ContextWindow *Context_Initialize()
 {
     RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
+    const char *env = getenv("CI");
+    if (env != NULL && strcmp(env, "true") == 0)
+    {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
