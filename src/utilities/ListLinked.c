@@ -1,7 +1,7 @@
 #include "utilities/ListLinked.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define ListLinked_Min(a, b) ((a) < (b) ? (a) : (b))
+#define ListLinked_Max(a, b) ((a) > (b) ? (a) : (b))
 
 #pragma region Source Only
 
@@ -129,8 +129,8 @@ void ListLinked_Destroy(ListLinked *list)
     size_t nameOfTypeLength = strlen(list->nameOfType);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
-    tempTitle[Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+    RJGlobal_MemoryCopy(tempTitle, ListLinked_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
+    tempTitle[ListLinked_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     if (list->head != NULL)
     {

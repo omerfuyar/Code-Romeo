@@ -1,7 +1,7 @@
 #include "utilities/HashMap.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define HashMap_Min(a, b) ((a) < (b) ? (a) : (b))
+#define HashMap_Max(a, b) ((a) > (b) ? (a) : (b))
 
 #pragma region Source Only
 
@@ -59,8 +59,8 @@ void HashMap_Destroy(HashMap *map)
     size_t nameOfTypeLength = strlen(map->nameOfType);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);
-    tempTitle[Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+    RJGlobal_MemoryCopy(tempTitle, HashMap_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);
+    tempTitle[HashMap_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     free(map->nameOfType);
     map->nameOfType = NULL;

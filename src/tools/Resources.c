@@ -5,6 +5,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+#pragma region ResourceText
+
 ResourceText *ResourceText_Create(StringView name, StringView relativePath)
 {
     ResourceText *resource = (ResourceText *)malloc(sizeof(ResourceText));
@@ -99,6 +101,10 @@ void ResourceText_Destroy(ResourceText *resource)
     RJGlobal_DebugInfo("Resource '%s' destroyed successfully.", tempTitle);
 }
 
+#pragma endregion ResourceText
+
+#pragma region ResourceImage
+
 ResourceImage *ResourceImage_Create(StringView title, StringView path)
 {
     ResourceImage *resourceImage = (ResourceImage *)malloc(sizeof(ResourceImage));
@@ -144,3 +150,5 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
 
     RJGlobal_DebugInfo("Resource Image '%s' destroyed successfully.", tempTitle);
 }
+
+#pragma endregion ResourceImage

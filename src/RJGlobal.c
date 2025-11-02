@@ -1,18 +1,21 @@
-#include "Global.h"
+#include "RJGlobal.h"
 
 #if RJGLOBAL_PLATFORM_WINDOWS
+
 #include <windows.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
+
 #elif RJGLOBAL_PLATFORM_UNIX
+
 #include <unistd.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
+
 #endif
 
 // #pragma message("Build info: " RJGLOBAL_PLATFORM " | " RJGLOBAL_COMPILER_NAME " | " RJGLOBAL_ARCHITECTURE)
 
 #pragma region Source Only
 
-/// @brief The debug log file pointer for the application.
 FILE *RJGLOBAL_DEBUG_FILE = NULL;
 char *RJGLOBAL_DEBUG_FILE_NAME_STR = NULL;
 char *RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
@@ -32,16 +35,16 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
 
     timespec_get(&tempSpec, TIME_UTC);
     timer = *localtime(&tempSpec.tv_sec);
-    strftime(timeBuffer, sizeof(timeBuffer), RJ_DEBUG_TIME_FORMAT, &timer);
+    strftime(timeBuffer, sizeof(timeBuffer), RJGLOBAL_DEBUG_TIME_FORMAT, &timer);
 
     if (RJGLOBAL_DEBUG_FILE == NULL)
     {
-        RJGLOBAL_DEBUG_FILE_NAME_STR = (char *)malloc(strlen(RJGlobal_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME) + 1);
+        RJGLOBAL_DEBUG_FILE_NAME_STR = (char *)malloc(strlen(RJGlobal_GetExecutablePath()) + strlen(RJGLOBAL_DEBUG_FILE_NAME) + 1);
 
         RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR, strlen(RJGlobal_GetExecutablePath()), RJGlobal_GetExecutablePath());
-        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR + strlen(RJGlobal_GetExecutablePath()), strlen(RJ_DEBUG_FILE_NAME), RJ_DEBUG_FILE_NAME);
+        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR + strlen(RJGlobal_GetExecutablePath()), strlen(RJGLOBAL_DEBUG_FILE_NAME), RJGLOBAL_DEBUG_FILE_NAME);
 
-        RJGLOBAL_DEBUG_FILE_NAME_STR[strlen(RJGlobal_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME)] = '\0';
+        RJGLOBAL_DEBUG_FILE_NAME_STR[strlen(RJGlobal_GetExecutablePath()) + strlen(RJGLOBAL_DEBUG_FILE_NAME)] = '\0';
 
         remove(RJGLOBAL_DEBUG_FILE_NAME_STR);
 
@@ -56,7 +59,7 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
 
         fprintf(RJGLOBAL_DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
-#if RJ_DEBUG_SAFE_LOGGING
+#if RJGLOBAL_DEBUG_SAFE_LOGGING
     else if (!RJGlobal_FileOpen(RJGLOBAL_DEBUG_FILE, RJGLOBAL_DEBUG_FILE_NAME_STR, "a"))
     {
         char buffer[RJGLOBAL_TEMP_BUFFER_SIZE] = {0};
@@ -79,11 +82,11 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
 
     fprintf(RJGLOBAL_DEBUG_FILE, "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n", timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
-#if RJ_DEBUG_FLUSH_AFTER_LOG
+#if RJGLOBAL_DEBUG_FLUSH_AFTER_LOG
     fflush(RJGLOBAL_DEBUG_FILE);
 #endif
 
-#if RJ_DEBUG_SAFE_LOGGING
+#if RJGLOBAL_DEBUG_SAFE_LOGGING
     fclose(RJGLOBAL_DEBUG_FILE);
 #endif
 
@@ -168,7 +171,7 @@ void RJGlobal_Terminate(int exitCode, char *message)
         RJGLOBAL_TERMINATE_CALLBACK(exitCode, message);
     }
 
-#if !RJ_DEBUG_SAFE_LOGGING
+#if !RJGLOBAL_DEBUG_SAFE_LOGGING
     if (RJGLOBAL_DEBUG_FILE != NULL)
     {
         fflush(RJGLOBAL_DEBUG_FILE);

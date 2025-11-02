@@ -1,7 +1,7 @@
 #include "utilities/String.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define String_Min(a, b) ((a) < (b) ? (a) : (b))
+#define String_Max(a, b) ((a) > (b) ? (a) : (b))
 
 String String_CreateCopySafe(const char *string, size_t length)
 {
@@ -76,7 +76,7 @@ int String_Compare(StringView string, StringView other)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
     RJGlobal_DebugAssertNullPointerCheck(other.characters);
 
-    int result = strncmp(string.characters, other.characters, Min(string.length, other.length));
+    int result = strncmp(string.characters, other.characters, String_Min(string.length, other.length));
 
     if (string.length != other.length && result == 0)
     {
@@ -86,7 +86,7 @@ int String_Compare(StringView string, StringView other)
     return result;
 }
 
-void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t maxTokenCount)
+void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t String_MaxTokenCount)
 {
     RJGlobal_DebugAssertNullPointerCheck(tokenBufferRet);
 
@@ -94,7 +94,7 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
     size_t lastTokenIndex = 0;
 
     size_t index = 0;
-    while (index < string.length && tokenCount < maxTokenCount)
+    while (index < string.length && tokenCount < String_MaxTokenCount)
     {
         if (String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
         {
@@ -121,7 +121,7 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
         }
     }
 
-    if (lastTokenIndex < string.length && tokenCount < maxTokenCount)
+    if (lastTokenIndex < string.length && tokenCount < String_MaxTokenCount)
     {
         tokenBufferRet[tokenCount] = scs(string.characters + lastTokenIndex, string.length - lastTokenIndex);
         tokenCount++;
@@ -147,7 +147,7 @@ float String_ToFloat(StringView string)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    size_t copyLength = Min(sizeof(buffer) - 1, string.length);
+    size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     float result = (float)atof(buffer);
@@ -160,7 +160,7 @@ int String_ToInt(StringView string)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
-    size_t copyLength = Min(sizeof(buffer) - 1, string.length);
+    size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     int result = atoi(buffer);

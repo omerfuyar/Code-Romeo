@@ -1,12 +1,15 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
 #include "utilities/Vector.h"
 #include "utilities/String.h"
 #include "utilities/ListArray.h"
 
+/// @brief Number of iterations to perform when resolving collisions in a physics scene.
 #define PHYSICS_COLLISION_RESOLVE_ITERATIONS 2
+
+#pragma region Typedefs
 
 /// @brief Represents a physics scene containing components and global physics properties.
 typedef struct PhysicsScene
@@ -32,6 +35,8 @@ typedef struct PhysicsComponent
     float mass;
     bool isStatic;
 } PhysicsComponent;
+
+#pragma endregion Typedefs
 
 #pragma region Physics
 

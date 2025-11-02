@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 #include "utilities/Vector.h"
 #include "tools/Context.h"
 
-/// @brief
+/// @brief Key codes for input handling.
 typedef enum InputKeyCode
 {
     InputKeyCode_Space = 32,
@@ -81,7 +81,7 @@ typedef enum InputKeyCode
     InputKeyCode_RightSuper = 347
 } InputKeyCode;
 
-/// @brief
+/// @brief Mouse button codes for input handling.
 typedef enum InputMouseButtonCode
 {
     InputMouseButtonCode_Left = 0,
@@ -104,7 +104,7 @@ typedef enum InputState
     InputState_Up = 8
 } InputState;
 
-/// @brief
+/// @brief Mouse modes for the input system.
 typedef enum InputMouseMode
 {
     InputMouseMode_Normal = 0x00034001,  // makes the cursor visible and behaving normally.

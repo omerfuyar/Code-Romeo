@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
+
+#pragma region Typedefs
 
 /// @brief A node in the linked list.
 typedef struct ListLinkedNode
@@ -17,6 +19,8 @@ typedef struct ListLinked
     size_t sizeOfItem;
     char *nameOfType;
 } ListLinked;
+
+#pragma endregion Typedefs
 
 /// @brief Creator function for ListLinked.
 /// @param nameOfType Name of the item type to store in the list.

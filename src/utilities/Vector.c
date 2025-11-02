@@ -1,4 +1,5 @@
 #include "utilities/Vector.h"
+
 #include <math.h>
 
 #pragma region Vector2

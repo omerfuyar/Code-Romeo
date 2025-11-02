@@ -33,6 +33,7 @@ typedef struct RendererDebugVertex
     Color vertexColor;
 } RendererDebugVertex;
 
+/// @brief Texture object for the renderer.
 typedef struct RendererTexture
 {
     String name;
@@ -54,6 +55,10 @@ RendererShaderProgramHandle RENDERER_DEBUG_SHADER_PROGRAM = 0;
 RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
 RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
 
+/// @brief
+/// @param window
+/// @param width
+/// @param height
 void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 {
     RJGlobal_DebugAssertNullPointerCheck(window);
@@ -69,6 +74,14 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
+/// @brief
+/// @param source
+/// @param type
+/// @param id
+/// @param severity
+/// @param length
+/// @param message
+/// @param userParam
 void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
     (void)source;
@@ -88,7 +101,12 @@ void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GL
     }
 }
 
-void TransformToModelMatrix(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
+/// @brief
+/// @param matrix
+/// @param position
+/// @param rotation
+/// @param scale
+void TRANSFORM_TO_MODEL_MATRIX(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
 {
     RJGlobal_DebugAssertNullPointerCheck(matrix);
 
@@ -863,7 +881,7 @@ RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapa
 RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
     mat4 offsetMatrix;
-    TransformToModelMatrix(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
+    TRANSFORM_TO_MODEL_MATRIX(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
 
     size_t meshCount = 0;
     String modelName = {0};
@@ -1645,7 +1663,7 @@ void RendererScene_Update(RendererScene *scene)
         for (size_t j = 0; j < batch->objectMatrices.count; j++)
         {
             RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
-            TransformToModelMatrix(
+            TRANSFORM_TO_MODEL_MATRIX(
                 (mat4 *)ListArray_Get(&batch->objectMatrices, j),
                 component->positionReference,
                 component->rotationReference,

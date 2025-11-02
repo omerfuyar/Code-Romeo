@@ -1,17 +1,17 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
 #pragma region typedefs
 
-// A vector that contains 2 float values. Can be used with helper functions.
+/// @brief A vector that contains 2 float values. Can be used with helper functions.
 typedef struct Vector2
 {
     float x;
     float y;
 } Vector2;
 
-// A vector that contains 3 float values. Can be used with helper functions.
+/// @brief A vector that contains 3 float values. Can be used with helper functions.
 typedef struct Vector3
 {
     float x;
@@ -19,7 +19,7 @@ typedef struct Vector3
     float z;
 } Vector3;
 
-// A vector that contains 4 float values. Can be used with helper functions.
+/// @brief A vector that contains 4 float values. Can be used with helper functions.
 typedef struct Vector4
 {
     float x;
@@ -30,14 +30,14 @@ typedef struct Vector4
 
 typedef Vector4 Color;
 
-// A vector that contains 2 integer values. Can be used with helper functions.
+/// @brief A vector that contains 2 integer values. Can be used with helper functions.
 typedef struct Vector2Int
 {
     int x;
     int y;
 } Vector2Int;
 
-// A vector that contains 3 integer values. Can be used with helper functions.
+/// @brief A vector that contains 3 integer values. Can be used with helper functions.
 typedef struct Vector3Int
 {
     int x;
@@ -45,7 +45,7 @@ typedef struct Vector3Int
     int z;
 } Vector3Int;
 
-// A vector that contains 4 integer values. Can be used with helper functions.
+/// @brief A vector that contains 4 integer values. Can be used with helper functions.
 typedef struct Vector4Int
 {
     int x;
@@ -54,19 +54,34 @@ typedef struct Vector4Int
     int w;
 } Vector4Int;
 
+#pragma endregion typedefs
+
+/// @brief Creates a new Vector2 struct.
 #define Vector2_New(x, y) ((Vector2){(x), (y)})
+/// @brief Creates a new Vector3 struct.
 #define Vector3_New(x, y, z) ((Vector3){(x), (y), (z)})
+/// @brief Creates a new Vector4 struct.
 #define Vector4_New(x, y, z, w) ((Vector4){(x), (y), (z), (w)})
+/// @brief Creates a new Color struct.
 #define Color_New(x, y, z, w) Vector4_New(x, y, z, w)
+/// @brief Creates a new Vector2Int struct.
 #define Vector2Int_New(x, y) ((Vector2Int){(x), (y)})
+/// @brief Creates a new Vector3Int struct.
 #define Vector3Int_New(x, y, z) ((Vector3Int){(x), (y), (z)})
+/// @brief Creates a new Vector4Int struct.
 #define Vector4Int_New(x, y, z, w) ((Vector4Int){(x), (y), (z), (w)})
 
+/// @brief Creates new Vector2 with all components set to the same value.
 #define Vector2_NewN(n) (Vector2_New(n, n))
+/// @brief Creates new Vector3 with all components set to the same value.
 #define Vector3_NewN(n) (Vector3_New(n, n, n))
+/// @brief Creates new Vector4 with all components set to the same value.
 #define Vector4_NewN(n) (Vector4_New(n, n, n, n))
+/// @brief Creates new Vector2Int with all components set to the same value.
 #define Vector2Int_NewN(n) (Vector2Int_New(n, n))
+/// @brief Creates new Vector3Int with all components set to the same value.
 #define Vector3Int_NewN(n) (Vector3Int_New(n, n, n))
+/// @brief Creates new Vector4Int with all components set to the same value.
 #define Vector4Int_NewN(n) (Vector4Int_New(n, n, n, n))
 
 #define Vector2_Zero Vector2_NewN(0.0f)
@@ -99,8 +114,6 @@ typedef struct Vector4Int
 #define Color_Magenta Color_New(1.0f, 0.0f, 1.0f, 1.0f)
 #define Color_Gray Color_New(0.5f, 0.5f, 0.5f, 1.0f)
 #define Color_Clear Color_New(0.0f, 0.0f, 0.0f, 0.0f)
-
-#pragma endregion typedefs
 
 #pragma region Vector2
 

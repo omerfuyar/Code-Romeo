@@ -25,6 +25,12 @@ float INPUT_MOUSE_SCROLL = 0.0f;
 Vector2Int INPUT_MOUSE_POSITION = {0};
 Vector2Int INPUT_PREVIOUS_MOUSE_POSITION = {0};
 
+/// @brief
+/// @param window
+/// @param key
+/// @param scanCode
+/// @param action
+/// @param mods
 void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, int mods)
 {
     (void)window;
@@ -123,6 +129,10 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
     }
 }
 
+/// @brief
+/// @param window
+/// @param positionX
+/// @param positionY
 void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double positionY)
 {
     (void)window;
@@ -133,6 +143,11 @@ void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double 
     INPUT_MOUSE_POSITION.y = (int)positionY;
 }
 
+/// @brief
+/// @param window
+/// @param button
+/// @param action
+/// @param mods
 void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int mods)
 {
     (void)window;
@@ -160,6 +175,10 @@ void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int
     }
 }
 
+/// @brief
+/// @param window
+/// @param offsetX
+/// @param offsetY
 void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offsetY)
 {
     (void)window;

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
+
+#pragma region Typedefs
 
 /// @brief A dynamic hash map implementation. Can be used with any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct HashMap
@@ -11,6 +13,8 @@ typedef struct HashMap
     size_t sizeOfItem;
     char *nameOfType;
 } HashMap;
+
+#pragma endregion Typedefs
 
 /// @brief Creator function for HashMap.
 /// @param nameOfType Name of the type stored in the hash map.

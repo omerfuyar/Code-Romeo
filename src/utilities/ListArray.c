@@ -1,7 +1,7 @@
 #include "utilities/ListArray.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define ListArray_Min(a, b) ((a) < (b) ? (a) : (b))
+#define ListArray_Max(a, b) ((a) > (b) ? (a) : (b))
 
 ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t initialCapacity)
 {
@@ -36,8 +36,8 @@ void ListArray_Destroy(ListArray *list)
     size_t nameOfTypeLength = strlen(list->nameOfType);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
-    tempTitle[Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+    RJGlobal_MemoryCopy(tempTitle, ListArray_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
+    tempTitle[ListArray_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     free(list->data);
     list->data = NULL;
@@ -77,7 +77,7 @@ void ListArray_Resize(ListArray *list, size_t newCapacity)
     RJGlobal_DebugInfo("ListArray '%s' resized from %zu to %zu.", list->nameOfType, list->capacity, newCapacity);
 
     list->capacity = newCapacity;
-    list->count = Min(list->count, list->capacity);
+    list->count = ListArray_Min(list->count, list->capacity);
 }
 
 void *ListArray_Get(const ListArray *list, size_t index)
@@ -193,9 +193,9 @@ void ListArray_RemoveAtIndex(ListArray *list, size_t index)
     RJGlobal_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %zu, index: %zu", list->nameOfType, list->count, index);
 
 #if LIST_ARRAY_CUT_RESIZE
-    if (list->count - 1 > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - 1 < (size_t)((double)list->capacity / LIST_ARRAY_MIN_DECIMAL_LIMIT))
+    if (list->count - 1 > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - 1 < (size_t)((double)list->capacity / LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT))
     {
-        RJGlobal_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, LIST_ARRAY_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJGlobal_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 #endif
@@ -219,9 +219,9 @@ void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount)
     RJGlobal_DebugAssert(itemCount > 0, "Item count to remove from ListArray '%s' must be greater than 0.", list->nameOfType);
 
 #if LIST_ARRAY_CUT_RESIZE
-    if (list->count - itemCount > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - itemCount < (size_t)((double)list->capacity / LIST_ARRAY_MIN_DECIMAL_LIMIT))
+    if (list->count - itemCount > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - itemCount < (size_t)((double)list->capacity / LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT))
     {
-        RJGlobal_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, LIST_ARRAY_MIN_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJGlobal_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %zu to %zu.", list->nameOfType, LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT, list->capacity, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (size_t)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 #endif
@@ -242,14 +242,14 @@ void ListArray_RemoveItem(ListArray *list, const void *item)
     RJGlobal_DebugAssertNullPointerCheck(list);
     RJGlobal_DebugAssertNullPointerCheck(item);
 
-    long long itemIndex = ListArray_IndexOf(list, item);
-    if (itemIndex == -1)
+    long long iteListArray_Mindex = ListArray_IndexOf(list, item);
+    if (iteListArray_Mindex == -1)
     {
         RJGlobal_DebugWarning("Item not found in ListArray '%s'. Cannot remove.", list->nameOfType);
         return;
     }
 
-    ListArray_RemoveAtIndex(list, (size_t)itemIndex);
+    ListArray_RemoveAtIndex(list, (size_t)iteListArray_Mindex);
 }
 
 void *ListArray_Pop(ListArray *list)

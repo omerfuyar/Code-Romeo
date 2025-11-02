@@ -1,15 +1,12 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
 #include "utilities/String.h"
 #include "utilities/ListArray.h"
 #include "utilities/Vector.h"
 
 #include "tools/Context.h"
-
-// todo fix deps
-#include <cglm/mat4.h>
 
 #define RENDERER_OPENGL_CLEAR_COLOR 0.0f, 0.0f, 0.0f, 0.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
@@ -38,6 +35,9 @@
 #define RENDERER_BATCH_INITIAL_CAPACITY 16
 
 #pragma region typedefs
+
+/// @brief 4x4 matrix type.
+typedef float Matrix4[4][4];
 
 /// @brief Handle for a shader object.
 typedef unsigned int RendererShaderHandle;
@@ -107,8 +107,8 @@ typedef struct RendererCameraComponent
     Vector3 *positionReference;
     Vector3 *rotationReference;
 
-    mat4 projectionMatrix;
-    mat4 viewMatrix;
+    Matrix4 projectionMatrix;
+    Matrix4 viewMatrix;
 
     float size; // fov if perspective, orthographic size if orthographic
     float nearClipPlane;
@@ -148,7 +148,7 @@ typedef struct RendererBatch
 {
     RendererModel *model;
     ListArray components;     // RendererComponent
-    ListArray objectMatrices; // mat4, data must be continuous and only matrices because it's directly sent to UBO
+    ListArray objectMatrices; // Matrix4, data must be continuous and only matrices because it's directly sent to UBO
 
     RendererScene *scene;
     size_t batchOffsetInScene;
@@ -212,7 +212,7 @@ void RendererDebug_StartRendering();
 /// @brief Should be called before Renderer_FinishRendering to draw all debug shapes.
 /// @param camProjectionMatrix The projection matrix of the camera.
 /// @param camViewMatrix The view matrix of the camera.
-void RendererDebug_FinishRendering(mat4 *camProjectionMatrix, mat4 *camViewMatrix);
+void RendererDebug_FinishRendering(Matrix4 *camProjectionMatrix, Matrix4 *camViewMatrix);
 
 /// @brief Draws a line in 3D space for debugging purposes.
 /// @param start The starting point of the line.

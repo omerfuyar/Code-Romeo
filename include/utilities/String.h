@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
 /// @brief Buffer size for numeric to string conversions.
 #define STRING_TO_NUMERIC_CHAR_BUFFER 32
+
+#pragma region Typedefs
 
 /// @brief Standard string type for the entire project. Can be used with helper functions for heap or by itself for stack. Owner of its memory.
 typedef struct String
@@ -18,6 +20,8 @@ typedef struct StringView
     const char *characters;
     size_t length;
 } StringView;
+
+#pragma endregion Typedefs
 
 /// @brief Creates a new String object from a char array safely. Allocates its own memory and copies the string. Can be used with dynamic strings.
 /// @param string Any char pointer.

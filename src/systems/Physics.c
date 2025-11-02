@@ -4,6 +4,11 @@
 
 #pragma region Source Only
 
+/// @brief
+/// @param scene
+/// @param staticComponent
+/// @param dynamicComponent
+/// @param overlap
 void PhysicsScene_ResolveStaticVsDynamic(const PhysicsScene *scene, PhysicsComponent *staticComponent, PhysicsComponent *dynamicComponent, Vector3 overlap)
 {
     float move = 0.0f;
@@ -55,6 +60,11 @@ void PhysicsScene_ResolveStaticVsDynamic(const PhysicsScene *scene, PhysicsCompo
     }
 }
 
+/// @brief
+/// @param scene
+/// @param firstComponent
+/// @param secondComponent
+/// @param overlap
 void PhysicsScene_ResolveDynamicVsDynamic(const PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent, Vector3 overlap)
 {
     float totalInvMass = 1.0f / firstComponent->mass + 1.0f / secondComponent->mass;
@@ -138,6 +148,10 @@ void PhysicsScene_ResolveDynamicVsDynamic(const PhysicsScene *scene, PhysicsComp
             oneOverMassSum);
 }
 
+/// @brief
+/// @param scene
+/// @param firstComponent
+/// @param secondComponent
 void PhysicsScene_ResolveCollision(const PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent)
 {
     RJGlobal_DebugAssertNullPointerCheck(scene);

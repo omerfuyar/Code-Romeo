@@ -56,7 +56,7 @@ There are modules that are providing framework elements to the user, elements un
 *   **Functions:** `Prefix_PascalCase` - Name of the module or type to indicate must be prefixed to the function name like `RendererScene_CreateBatch`, `Context_Initialize` and `RJGlobal_GetExecutablePath`. Macro functions must also follow this rule.
 *   **Enum Members:** `Prefix_PascalCase` - The enum type must be prefixed to the enum value like `InputKeyCode_F`, `InputState_Down` and `InputMouseMode_Hidden`.
 *   **Variables:** `camelCase` - Local variables like `window` and `deltaTime`.
-*   **Macros & Constants:** `ALL_CAPS_SNAKE_CASE` - Constant variables or global values like `RJGLOBAL_BUILD_DEBUG` and `RJGLOBAL_DEBUG_FILE`.
+*   **Constants & Internals:** `ALL_CAPS_SNAKE_CASE` - Constant variables or global values/functions not exposed to user like `RJGLOBAL_BUILD_DEBUG` and `RJGLOBAL_DEBUG_FILE`.
 
 ## Module / File Management
 
@@ -78,7 +78,7 @@ Currently there are no standard error handling systems in the framework. There a
 
 ## Documentation Guidelines
 
-Currently there are no documentation for entire files. But all public elements in header files must have documentation blocks explaining their purpose and usage. Internal elements which are not exposed to the user must also have documentation. Documentation must follow these formats:
+Currently there are no documentation for entire files. But all public elements in header files must have documentation blocks explaining their purpose and usage. Internal elements which are not exposed to the user does not required to have documentation, but it is encouraged. Documentation must follow these formats:
 
 ### Functions
 
@@ -102,7 +102,7 @@ int String_Compare(StringView string, StringView other);
 
 ### Others
 
-Other elements like types, enums and macros must have a brief documentation block explaining their purpose:
+Other elements like types, enums and macros (if not explicit like `Vector3_One`) must have a brief documentation block explaining their purpose:
 
 ``` C
 /// @brief The resize multiplier used when the ListArray size reached to the capacity when adding new item
@@ -121,23 +121,29 @@ FILE *RJGLOBAL_DEBUG_FILE = NULL;
 
 ## Git Workflow
 
-1.  **Branching:** All new features, bugfixes, or refactors must be done on a separate branch. It is not ok to commit directly to `main` branch.
-    *   **feature/<feature>** - `feature/text-rendering`
-    *   **fix/<bug>** - `fix/physics-collision-bug`
-    *   **refactor/<area>** - `refactor/material-system`
-    *   **docs/<area>** - `docs/update-readme`
+### Branching
 
-2.  **Commit Messages:** Commit messages must follow the format:
-    ```
-    -General info for the change
-    
-    --Sub info if needed
+All new features, bugfixes, or refactors must be done on a separate branch. It is not ok to commit directly to `main` branch:
 
-    ---...
+*   **feature/<feature>** - `feature/text-rendering`
+*   **fix/<bug>** - `fix/physics-collision-bug`
+*   **refactor/<area>** - `refactor/material-system`
+*   **docs/<area>** - `docs/update-readme`
 
-    -Other changes if any
-    ...
-    ```
+### Commit Messages 
+
+Commit messages must follow the format:
+
+```
+-General info for the change
+
+--Sub info if needed
+
+---...
+
+-Other changes if any
+...
+```
 
 ## For development
 * Sanitizers may be enabled by adding commands "-DENABLE_ASAN=ON -DENABLE_UBSAN=ON" to the configuration command .
@@ -147,3 +153,13 @@ FILE *RJGLOBAL_DEBUG_FILE = NULL;
 $asanDll = Get-ChildItem -Path "path\to\LLVM" -Recurse -Filter "clang_rt.asan_dynamic-x86_64.dll" | Select-Object -First 1
 Copy-Item $asanDll.FullName -Destination "path\to\exe"
 ```
+
+## After development
+
+Before the merge to main branch, make sure:
+
+*   All new public elements have documentation blocks.
+*   All new modules follow the folder structure and naming conventions.
+*   All new code is compiling without any errors with all of the compilers.
+*   All tests are passing and application is running without errors.
+*   Commit messages are following the format.

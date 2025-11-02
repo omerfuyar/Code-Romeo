@@ -3,12 +3,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-/// @brief Global main window context instance.
 ContextWindow CONTEXT_MAIN_WINDOW = {0};
-/// @brief Global resize callback function pointer.
-VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
-/// @brief Global log callback function pointer.
-VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
+Context_VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
+Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
 
 ContextWindow *Context_Initialize()
 {
@@ -29,7 +26,7 @@ ContextWindow *Context_Initialize()
     return &CONTEXT_MAIN_WINDOW;
 }
 
-void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, VoidFunVoidptrIntInt resizeCallback)
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, Context_VoidFunVoidptrIntInt resizeCallback)
 {
     Context_ConfigureTitle(title);
     Context_ConfigureResizeCallback(resizeCallback);
@@ -83,7 +80,7 @@ void Context_ConfigureFullScreen(bool fullScreen)
     }
 }
 
-void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback)
+void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback)
 {
     CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = callback;
 
@@ -92,7 +89,7 @@ void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback)
     Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
 }
 
-void Context_ConfigureLogCallback(VoidFunUintUintUintUintIntCcharptrCvoidptr callback)
+void Context_ConfigureLogCallback(Context_VoidFunUintUintUintUintIntCcharptrCvoidptr callback)
 {
     CONTEXT_MAIN_WINDOW_LOG_CALLBACK = callback;
 

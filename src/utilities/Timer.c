@@ -1,7 +1,7 @@
 #include "utilities/Timer.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define Timer_Min(a, b) ((a) < (b) ? (a) : (b))
+#define Timer_Max(a, b) ((a) > (b) ? (a) : (b))
 
 void TimePoint_Update(TimePoint *timePoint)
 {
@@ -47,8 +47,8 @@ void Timer_Destroy(Timer *timer)
     size_t titleLength = strlen(timer->title);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
-    tempTitle[Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
+    RJGlobal_MemoryCopy(tempTitle, Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
+    tempTitle[Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
 
     free(timer->title);
     timer->title = NULL;
