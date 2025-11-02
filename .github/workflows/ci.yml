@@ -41,6 +41,18 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Checkout Code-Romeo (the library)
+        uses: actions/checkout@v4
+        with:
+          path: 'Code-Romeo'
+
+      - name: Checkout Code-Juliett (the application)
+        uses: actions/checkout@v4
+        with:
+          repository: omerfuyar/Code-Juliett
+          path: 'Code-Juliett'
+          submodules: 'recursive'
+
       - name: Install Dependencies
         working-directory: Code-Juliett
         run: |
@@ -60,18 +72,6 @@ jobs:
       - name: Add MSVC to PATH
         if: runner.os == 'Windows' && matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Checkout Code-Romeo (the library)
-        uses: actions/checkout@v4
-        with:
-          path: 'Code-Romeo'
-
-      - name: Checkout Code-Juliett (the application)
-        uses: actions/checkout@v4
-        with:
-          repository: omerfuyar/Code-Juliett
-          path: 'Code-Juliett'
-          submodules: 'recursive'
 
       - name: Swap Code-Romeo with the version under test
         run: |
