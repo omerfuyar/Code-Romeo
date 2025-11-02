@@ -1,4 +1,4 @@
-#include "tools/Renderer.h"
+#include "systems/Renderer.h"
 
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
@@ -9,13 +9,13 @@
 
 #pragma region Source Only
 
-#define OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
+#define RENDERER_OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
 
-#define DebugCheckRenderer()                                               \
-    do                                                                     \
-    {                                                                      \
-        GLenum glError = glGetError();                                     \
-        DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
+#define RendererDebug_CheckError()                                                  \
+    do                                                                              \
+    {                                                                               \
+        GLenum glError = glGetError();                                              \
+        RJGlobal_DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
     } while (0)
 
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (SCENE CREATE)
@@ -33,6 +33,7 @@ typedef struct RendererDebugVertex
     Color vertexColor;
 } RendererDebugVertex;
 
+/// @brief Texture object for the renderer.
 typedef struct RendererTexture
 {
     String name;
@@ -54,9 +55,13 @@ RendererShaderProgramHandle RENDERER_DEBUG_SHADER_PROGRAM = 0;
 RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
 RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
 
+/// @brief
+/// @param window
+/// @param width
+/// @param height
 void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 {
-    DebugAssertNullPointerCheck(window);
+    RJGlobal_DebugAssertNullPointerCheck(window);
 
     RENDERER_MAIN_WINDOW->size.x = width;
     RENDERER_MAIN_WINDOW->size.y = height;
@@ -69,6 +74,14 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
     glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
 }
 
+/// @brief
+/// @param source
+/// @param type
+/// @param id
+/// @param severity
+/// @param length
+/// @param message
+/// @param userParam
 void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
     (void)source;
@@ -78,19 +91,24 @@ void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GL
 
     if (type == GL_DEBUG_TYPE_ERROR)
     {
-        DebugError("OpenGL Error :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
-                   type, severity, message);
+        RJGlobal_DebugError("OpenGL Error :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
+                            type, severity, message);
     }
     else
     {
-        DebugInfo("OpenGL Log :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
-                  type, severity, message);
+        RJGlobal_DebugInfo("OpenGL Log :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
+                           type, severity, message);
     }
 }
 
-void TransformToModelMatrix(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
+/// @brief
+/// @param matrix
+/// @param position
+/// @param rotation
+/// @param scale
+void TRANSFORM_TO_MODEL_MATRIX(mat4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
 {
-    DebugAssertNullPointerCheck(matrix);
+    RJGlobal_DebugAssertNullPointerCheck(matrix);
 
     glm_mat4_identity((vec4 *)matrix);
 
@@ -113,12 +131,12 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 
         if (String_Compare(scv(currentTexture->name), name) == 0)
         {
-            DebugInfo("Texture '%.*s' found in texture pool, reusing it.", (int)name.length, name.characters);
+            RJGlobal_DebugInfo("Texture '%.*s' found in texture pool, reusing it.", (int)name.length, name.characters);
             return currentTexture;
         }
     }
 
-    DebugAssertNullPointerCheck(data);
+    RJGlobal_DebugAssertNullPointerCheck(data);
 
     RendererTexture *texture = (RendererTexture *)ListArray_Add(&RENDERER_MAIN_TEXTURES, NULL);
     texture->index = RENDERER_MAIN_TEXTURES.count - 1;
@@ -129,8 +147,8 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
     size_t dataSize = (size_t)(size.x * size.y * channels);
 
     texture->data = malloc(dataSize);
-    DebugAssertNullPointerCheck(texture->data);
-    MemoryCopy(texture->data, dataSize, data);
+    RJGlobal_DebugAssertNullPointerCheck(texture->data);
+    RJGlobal_MemoryCopy(texture->data, dataSize, data);
 
     glGenTextures(1, &texture->handle);
     glBindTexture(GL_TEXTURE_2D, texture->handle);
@@ -157,7 +175,7 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
         format = GL_RED;
         break;
     default:
-        DebugError("Unsupported number of channels (%d) for texture '%.*s'.", texture->channels, (int)name.length, name.characters);
+        RJGlobal_DebugError("Unsupported number of channels (%d) for texture '%.*s'.", texture->channels, (int)name.length, name.characters);
         break;
     }
 
@@ -166,29 +184,29 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    DebugInfo("Texture '%.*s' created successfully.", (int)name.length, name.characters);
+    RJGlobal_DebugInfo("Texture '%.*s' created successfully.", (int)name.length, name.characters);
 
     return texture;
 }
 
 void RendererTexture_Destroy(RendererTexture *texture)
 {
-    DebugAssertNullPointerCheck(texture);
+    RJGlobal_DebugAssertNullPointerCheck(texture);
 
-    char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, texture->name.length), texture->name.characters);
-    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, texture->name.length)] = '\0';
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, texture->name.length), texture->name.characters);
+    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, texture->name.length)] = '\0';
 
     String_Destroy(&texture->name);
     free(texture->data);
     texture->data = NULL;
-    texture->size = NewVector2IntN(0);
+    texture->size = Vector2Int_NewN(0);
     texture->channels = 0;
 
     glDeleteTextures(1, &texture->handle);
     texture->handle = 0;
 
-    DebugInfo("Texture '%s' destroyed successfully.", tempTitle);
+    RJGlobal_DebugInfo("Texture '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion Renderer Texture
@@ -198,7 +216,7 @@ void RendererTexture_Destroy(RendererTexture *texture)
 RendererMesh *RendererMesh_CreateEmpty(size_t initialIndexCapacity, RendererMaterial *material)
 {
     RendererMesh *mesh = malloc(sizeof(RendererMesh));
-    DebugAssertNullPointerCheck(mesh);
+    RJGlobal_DebugAssertNullPointerCheck(mesh);
 
     mesh->indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
     mesh->material = material;
@@ -208,7 +226,7 @@ RendererMesh *RendererMesh_CreateEmpty(size_t initialIndexCapacity, RendererMate
 
 void RendererMesh_Destroy(RendererMesh *mesh)
 {
-    DebugAssertNullPointerCheck(mesh);
+    RJGlobal_DebugAssertNullPointerCheck(mesh);
 
     ListArray_Destroy(&mesh->indices);
 
@@ -226,12 +244,12 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
 void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
 {
-    DebugAssertNullPointerCheck(window);
+    RJGlobal_DebugAssertNullPointerCheck(window);
 
     RENDERER_MAIN_WINDOW = window;
     RENDERER_MAIN_TEXTURES = ListArray_Create("Renderer Texture", sizeof(RendererTexture), initialTextureCapacity);
 
-    DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
+    RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
     Context_ConfigureLogCallback(RENDERER_MAIN_WINDOW_LOG_CALLBACK);
@@ -241,7 +259,7 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    DebugInfo("Renderer initialized successfully.");
+    RJGlobal_DebugInfo("Renderer initialized successfully.");
 }
 
 void Renderer_Terminate()
@@ -265,7 +283,7 @@ void Renderer_Terminate()
 
     RENDERER_MAIN_SHADER_PROGRAM = 0;
 
-    DebugInfo("Renderer terminated successfully.");
+    RJGlobal_DebugInfo("Renderer terminated successfully.");
 }
 
 void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource)
@@ -285,8 +303,8 @@ void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmen
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
     glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
 
-    DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Vertex shader compiled successfully.");
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Vertex shader compiled successfully.");
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
@@ -295,8 +313,8 @@ void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmen
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
     glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
 
-    DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Fragment shader compiled successfully.");
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Fragment shader compiled successfully.");
 
     RENDERER_MAIN_SHADER_PROGRAM = glCreateProgram();
     glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, vertexShader);
@@ -306,20 +324,20 @@ void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmen
     glGetProgramiv(RENDERER_MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
     glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
 
-    DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    DebugInfo("Shader program linked and created successfully.");
+    RJGlobal_DebugInfo("Shader program linked and created successfully.");
 }
 
 void Renderer_StartRendering()
 {
     if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW->handle))
     {
-        DebugInfo("Main window close input received");
-        Global_Terminate(EXIT_SUCCESS, "Main window close input received");
+        RJGlobal_DebugInfo("Main window close input received");
+        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
     }
 
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
@@ -334,7 +352,7 @@ void Renderer_FinishRendering()
 
 void Renderer_RenderScene(RendererScene *scene)
 {
-    DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(scene);
 
     glBindVertexArray(scene->vao);
     glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
@@ -354,12 +372,12 @@ void Renderer_RenderScene(RendererScene *scene)
         glBufferData(GL_UNIFORM_BUFFER,
                      (long long)(batch->objectMatrices.sizeOfItem * batch->objectMatrices.count),
                      batch->objectMatrices.data,
-                     OPENGL_DRAW_TYPE);
+                     RENDERER_OPENGL_DRAW_TYPE);
 
         glBufferData(GL_ARRAY_BUFFER,
                      (long long)(batch->model->vertices.sizeOfItem * batch->model->vertices.count),
                      batch->model->vertices.data,
-                     OPENGL_DRAW_TYPE);
+                     RENDERER_OPENGL_DRAW_TYPE);
 
         for (size_t j = 0; j < batch->model->meshes.count; j++)
         {
@@ -393,7 +411,7 @@ void Renderer_RenderScene(RendererScene *scene)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                          (long long)(mesh->indices.sizeOfItem * mesh->indices.count),
                          mesh->indices.data,
-                         OPENGL_DRAW_TYPE);
+                         RENDERER_OPENGL_DRAW_TYPE);
 
             glDrawElementsInstanced(GL_TRIANGLES,
                                     (GLsizei)mesh->indices.count,
@@ -403,14 +421,14 @@ void Renderer_RenderScene(RendererScene *scene)
         }
     }
 
-    // DebugCheckRenderer();
+    // RendererDebug_CheckError();
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // DebugInfo("Scene '%s' rendered", scene.name.characters);
+    // RJGlobal_DebugInfo("Scene '%s' rendered", scene.name.characters);
 }
 
 #pragma endregion Renderer
@@ -434,8 +452,8 @@ void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragment
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
     glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
 
-    DebugAssert(glslHasCompiled != GL_FALSE, "Debug Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Debug Vertex shader compiled successfully.");
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Debug Vertex shader compiled successfully.");
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
@@ -444,8 +462,8 @@ void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragment
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
     glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
 
-    DebugAssert(glslHasCompiled != GL_FALSE, "Debug Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
-    DebugInfo("Debug Fragment shader compiled successfully.");
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Debug Fragment shader compiled successfully.");
 
     RENDERER_DEBUG_SHADER_PROGRAM = glCreateProgram();
     glAttachShader(RENDERER_DEBUG_SHADER_PROGRAM, vertexShader);
@@ -455,7 +473,7 @@ void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragment
     glGetProgramiv(RENDERER_DEBUG_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
     glGetProgramInfoLog(RENDERER_DEBUG_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
 
-    DebugAssert(glslHasCompiled != GL_FALSE, "Debug Shader program linking failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Shader program linking failed. Logs:\n%s", glslInfoLog);
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -479,7 +497,7 @@ void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragment
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    DebugInfo("Debug Renderer initialized successfully.");
+    RJGlobal_DebugInfo("Debug Renderer initialized successfully.");
 }
 
 void RendererDebug_Terminate()
@@ -507,7 +525,7 @@ void RendererDebug_Terminate()
     RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
     RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
 
-    DebugInfo("Debug Renderer terminated successfully.");
+    RJGlobal_DebugInfo("Debug Renderer terminated successfully.");
 }
 
 void RendererDebug_StartRendering()
@@ -528,7 +546,7 @@ void RendererDebug_FinishRendering(mat4 *camProjectionMatrix, mat4 *camViewMatri
 
     glBindVertexArray(RENDERER_DEBUG_VAO);
     glBindBuffer(GL_ARRAY_BUFFER, RENDERER_DEBUG_VBO);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(RENDERER_DEBUG_VERTICES.sizeOfItem * RENDERER_DEBUG_VERTICES.count), RENDERER_DEBUG_VERTICES.data, OPENGL_DRAW_TYPE);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(RENDERER_DEBUG_VERTICES.sizeOfItem * RENDERER_DEBUG_VERTICES.count), RENDERER_DEBUG_VERTICES.data, RENDERER_OPENGL_DRAW_TYPE);
 
     glDrawArrays(GL_LINES, 0, (GLsizei)RENDERER_DEBUG_VERTICES.count);
 
@@ -592,8 +610,8 @@ ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFile
 
     size_t mtlLineCount = 0;
     StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
-    DebugAssertNullPointerCheck(mtlLines);
-    MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
+    RJGlobal_DebugAssertNullPointerCheck(mtlLines);
+    RJGlobal_MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
 
     size_t mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -635,7 +653,7 @@ ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFile
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
             currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-            DebugAssertNullPointerCheck(currentMaterial);
+            RJGlobal_DebugAssertNullPointerCheck(currentMaterial);
 
             ListArray_Add(&materials, &currentMaterial);
 
@@ -649,30 +667,30 @@ ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFile
         else if (String_Compare(mtlFirstToken, strKA) == 0)
         {
             currentMaterial->ambientColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKE) == 0)
         {
             currentMaterial->emissiveColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKD) == 0)
         {
             currentMaterial->diffuseColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKS) == 0)
         {
             currentMaterial->specularColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strNI) == 0)
         {
@@ -699,8 +717,8 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t
 
     size_t mtlLineCount = 0;
     StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
-    DebugAssertNullPointerCheck(mtlLines);
-    MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
+    RJGlobal_DebugAssertNullPointerCheck(mtlLines);
+    RJGlobal_MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
 
     size_t mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -742,7 +760,7 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
             currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-            DebugAssertNullPointerCheck(currentMaterial);
+            RJGlobal_DebugAssertNullPointerCheck(currentMaterial);
 
             ListArray_Add(&materials, &currentMaterial);
 
@@ -756,30 +774,30 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t
         else if (String_Compare(mtlFirstToken, strKA) == 0)
         {
             currentMaterial->ambientColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKE) == 0)
         {
             currentMaterial->emissiveColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKD) == 0)
         {
             currentMaterial->diffuseColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strKS) == 0)
         {
             currentMaterial->specularColor =
-                NewVector3(String_ToFloat(scv(mtlLineTokens[1])),
-                           String_ToFloat(scv(mtlLineTokens[2])),
-                           String_ToFloat(scv(mtlLineTokens[3])));
+                Vector3_New(String_ToFloat(scv(mtlLineTokens[1])),
+                            String_ToFloat(scv(mtlLineTokens[2])),
+                            String_ToFloat(scv(mtlLineTokens[3])));
         }
         else if (String_Compare(mtlFirstToken, strNI) == 0)
         {
@@ -802,13 +820,13 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t
 
 void RendererMaterial_Destroy(RendererMaterial *material)
 {
-    material->ambientColor = NewVector3(-1.0f, -1.0f, -1.0f);
-    material->diffuseColor = NewVector3(-1.0f, -1.0f, -1.0f);
+    material->ambientColor = Vector3_New(-1.0f, -1.0f, -1.0f);
+    material->diffuseColor = Vector3_New(-1.0f, -1.0f, -1.0f);
     material->dissolve = -1.0f;
     material->illuminationModel = -1;
     String_Destroy(&material->name);
     material->refractionIndex = -1.0f;
-    material->specularColor = NewVector3(-1.0f, -1.0f, -1.0f);
+    material->specularColor = Vector3_New(-1.0f, -1.0f, -1.0f);
     material->specularExponent = -1.0f;
 
     free(material);
@@ -851,7 +869,7 @@ void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererM
 RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity)
 {
     RendererModel *model = malloc(sizeof(RendererModel));
-    DebugAssertNullPointerCheck(model);
+    RJGlobal_DebugAssertNullPointerCheck(model);
 
     model->name = scc(name);
     model->vertices = ListArray_Create("Renderer Mesh Vertex", sizeof(RendererMeshVertex), initialVertexCapacity);
@@ -863,7 +881,7 @@ RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapa
 RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset)
 {
     mat4 offsetMatrix;
-    TransformToModelMatrix(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
+    TRANSFORM_TO_MODEL_MATRIX(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
 
     size_t meshCount = 0;
     String modelName = {0};
@@ -873,8 +891,8 @@ RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCo
     size_t totalVertexUvCount = 0;
 
     StringView *mdlLines = (StringView *)malloc(mdlFileLineCount * sizeof(StringView));
-    DebugAssertNullPointerCheck(mdlLines);
-    MemorySet(mdlLines, mdlFileLineCount * sizeof(StringView), 0);
+    RJGlobal_DebugAssertNullPointerCheck(mdlLines);
+    RJGlobal_MemorySet(mdlLines, mdlFileLineCount * sizeof(StringView), 0);
 
     size_t lineTokenCount = 0;
     StringView mdlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -920,8 +938,8 @@ RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCo
     }
 
     size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
-    DebugAssertNullPointerCheck(faceCounts);
-    MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
+    RJGlobal_DebugAssertNullPointerCheck(faceCounts);
+    RJGlobal_MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
 
     {
         size_t tempMeshIndex = 0;
@@ -977,15 +995,15 @@ RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCo
                            (float *)&vertexPosition);
 
             RendererMeshVertex createdVertex;
-            createdVertex.vertexPosition = NewVector3(vertexPosition[0], vertexPosition[1], vertexPosition[2]);
+            createdVertex.vertexPosition = Vector3_New(vertexPosition[0], vertexPosition[1], vertexPosition[2]);
 
             ListArray_Add(&model->vertices, &createdVertex);
         }
         else if (String_Compare(firstToken, strVT) == 0) // vt 0.073128 0.431854
         {
             Vector2 vertexUv =
-                NewVector2(String_ToFloat(scv(mdlLineTokens[1])),
-                           String_ToFloat(scv(mdlLineTokens[2])));
+                Vector2_New(String_ToFloat(scv(mdlLineTokens[1])),
+                            String_ToFloat(scv(mdlLineTokens[2])));
 
             ListArray_Add(&globalVertexUvPool, &vertexUv);
         }
@@ -1042,7 +1060,7 @@ RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCo
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
 
-                // DebugInfo("Comparing material '%.*s' with '%.*s'...", material->name.length, material->name.characters, lineTokens[1].length, lineTokens[1].characters);
+                // RJGlobal_DebugInfo("Comparing material '%.*s' with '%.*s'...", material->name.length, material->name.characters, lineTokens[1].length, lineTokens[1].characters);
 
                 if (String_Compare(scv(material->name), scv(mdlLineTokens[1])) == 0)
                 {
@@ -1052,7 +1070,7 @@ RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCo
                 }
             }
 
-            DebugAssert(materialFound, "Material '%.*s' not found in material pool when trying to assign it to mesh in model '%.*s'.", mdlLineTokens[1].length, mdlLineTokens[1].characters, model->name.length, model->name.characters);
+            RJGlobal_DebugAssert(materialFound, "Material '%.*s' not found in material pool when trying to assign it to mesh in model '%.*s'.", mdlLineTokens[1].length, mdlLineTokens[1].characters, model->name.length, model->name.characters);
         }
         else if (String_Compare(firstToken, strO) == 0)
         {
@@ -1074,7 +1092,7 @@ RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCo
     free(mdlLines);
     free(faceCounts);
 
-    DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes.", model->name.characters, model->meshes.count);
+    RJGlobal_DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes.", model->name.characters, model->meshes.count);
 
     return model;
 }
@@ -1084,8 +1102,8 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
     size_t modelCount = 0;
 
     StringView *mdlLines = (StringView *)malloc(mdlFileLineCount * sizeof(StringView));
-    DebugAssertNullPointerCheck(mdlLines);
-    MemorySet(mdlLines, mdlFileLineCount * sizeof(StringView), 0);
+    RJGlobal_DebugAssertNullPointerCheck(mdlLines);
+    RJGlobal_MemorySet(mdlLines, mdlFileLineCount * sizeof(StringView), 0);
 
     size_t mdlLineTokenCount = 0;
     StringView mdlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -1117,24 +1135,24 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
     RendererModel *currentModel = NULL;
 
     size_t *vertexPositionCounts = (size_t *)malloc(modelCount * sizeof(size_t));
-    DebugAssertNullPointerCheck(vertexPositionCounts);
-    MemorySet(vertexPositionCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_DebugAssertNullPointerCheck(vertexPositionCounts);
+    RJGlobal_MemorySet(vertexPositionCounts, modelCount * sizeof(size_t), 0);
 
     size_t *vertexUvCounts = (size_t *)malloc(modelCount * sizeof(size_t));
-    DebugAssertNullPointerCheck(vertexUvCounts);
-    MemorySet(vertexUvCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_DebugAssertNullPointerCheck(vertexUvCounts);
+    RJGlobal_MemorySet(vertexUvCounts, modelCount * sizeof(size_t), 0);
 
     size_t *vertexNormalCounts = (size_t *)malloc(modelCount * sizeof(size_t));
-    DebugAssertNullPointerCheck(vertexNormalCounts);
-    MemorySet(vertexNormalCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_DebugAssertNullPointerCheck(vertexNormalCounts);
+    RJGlobal_MemorySet(vertexNormalCounts, modelCount * sizeof(size_t), 0);
 
     size_t *meshCounts = (size_t *)malloc(modelCount * sizeof(size_t));
-    DebugAssertNullPointerCheck(meshCounts);
-    MemorySet(meshCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_DebugAssertNullPointerCheck(meshCounts);
+    RJGlobal_MemorySet(meshCounts, modelCount * sizeof(size_t), 0);
 
     String *modelNames = (String *)malloc(modelCount * sizeof(String));
-    DebugAssertNullPointerCheck(modelNames);
-    MemorySet(modelNames, modelCount * sizeof(String), 0);
+    RJGlobal_DebugAssertNullPointerCheck(modelNames);
+    RJGlobal_MemorySet(modelNames, modelCount * sizeof(String), 0);
 
     {
         size_t tempModelIndex = 0;
@@ -1169,8 +1187,8 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
     }
 
     size_t **faceCounts = (size_t **)malloc(modelCount * sizeof(size_t *));
-    DebugAssertNullPointerCheck(faceCounts);
-    MemorySet(faceCounts, modelCount * sizeof(size_t *), 0);
+    RJGlobal_DebugAssertNullPointerCheck(faceCounts);
+    RJGlobal_MemorySet(faceCounts, modelCount * sizeof(size_t *), 0);
 
     {
         size_t tempModelIndex = 0;
@@ -1195,8 +1213,8 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
                 tempModelIndex++;
                 tempMeshIndex = 0;
                 faceCounts[tempModelIndex - 1] = (size_t *)malloc(meshCounts[tempModelIndex - 1] * sizeof(size_t));
-                DebugAssertNullPointerCheck(faceCounts[tempModelIndex - 1]);
-                MemorySet(faceCounts[tempModelIndex - 1], meshCounts[tempModelIndex - 1] * sizeof(size_t), 0);
+                RJGlobal_DebugAssertNullPointerCheck(faceCounts[tempModelIndex - 1]);
+                RJGlobal_MemorySet(faceCounts[tempModelIndex - 1], meshCounts[tempModelIndex - 1] * sizeof(size_t), 0);
             }
         }
     }
@@ -1217,21 +1235,21 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
         if (String_Compare(firstToken, strV) == 0)
         {
             RendererMeshVertex createdVertex;
-            createdVertex.vertexPosition = NewVector3(String_ToFloat(scv(mdlLineTokens[1])), String_ToFloat(scv(mdlLineTokens[2])), String_ToFloat(scv(mdlLineTokens[3])));
+            createdVertex.vertexPosition = Vector3_New(String_ToFloat(scv(mdlLineTokens[1])), String_ToFloat(scv(mdlLineTokens[2])), String_ToFloat(scv(mdlLineTokens[3])));
 
             ListArray_Add(&currentModel->vertices, &createdVertex);
         }
         else if (String_Compare(firstToken, strVT) == 0)
         {
             Vector2 vertexUv =
-                NewVector2(String_ToFloat(scv(mdlLineTokens[1])),
-                           String_ToFloat(scv(mdlLineTokens[2])));
+                Vector2_New(String_ToFloat(scv(mdlLineTokens[1])),
+                            String_ToFloat(scv(mdlLineTokens[2])));
 
             ListArray_Add(&currentVertexUvPool, &vertexUv);
         }
         else if (String_Compare(firstToken, strVN) == 0)
         {
-            Vector3 vertexNormal = NewVector3(String_ToFloat(scv(mdlLineTokens[1])), String_ToFloat(scv(mdlLineTokens[2])), String_ToFloat(scv(mdlLineTokens[3])));
+            Vector3 vertexNormal = Vector3_New(String_ToFloat(scv(mdlLineTokens[1])), String_ToFloat(scv(mdlLineTokens[2])), String_ToFloat(scv(mdlLineTokens[3])));
 
             ListArray_Add(&currentVertexNormalPool, &vertexNormal);
         }
@@ -1264,7 +1282,7 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
 
-                // DebugInfo("Comparing material '%.*s' with '%.*s'...", material->name.length, material->name.characters, lineTokens[1].length, lineTokens[1].characters);
+                // RJGlobal_DebugInfo("Comparing material '%.*s' with '%.*s'...", material->name.length, material->name.characters, lineTokens[1].length, lineTokens[1].characters);
 
                 if (String_Compare(scv(material->name), scv(mdlLineTokens[1])) == 0)
                 {
@@ -1274,7 +1292,7 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
                 }
             }
 
-            DebugAssert(materialFound, "Material '%.*s' not found in material pool when trying to assign it to mesh in model '%.*s'.", mdlLineTokens[1].length, mdlLineTokens[1].characters, currentModel->name.length, currentModel->name.characters);
+            RJGlobal_DebugAssert(materialFound, "Material '%.*s' not found in material pool when trying to assign it to mesh in model '%.*s'.", mdlLineTokens[1].length, mdlLineTokens[1].characters, currentModel->name.length, currentModel->name.characters);
         }
         else if (String_Compare(firstToken, strNEWMDL) == 0)
         {
@@ -1340,11 +1358,11 @@ ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLin
 
 void RendererModel_Destroy(RendererModel *model)
 {
-    DebugAssertNullPointerCheck(model);
+    RJGlobal_DebugAssertNullPointerCheck(model);
 
-    char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, model->name.length), model->name.characters);
-    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, model->name.length)] = '\0';
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, model->name.length), model->name.characters);
+    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, model->name.length)] = '\0';
 
     String_Destroy(&model->name);
 
@@ -1360,7 +1378,7 @@ void RendererModel_Destroy(RendererModel *model)
     free(model);
     model = NULL;
 
-    DebugInfo("Renderer Model '%s' destroyed.", tempTitle);
+    RJGlobal_DebugInfo("Renderer Model '%s' destroyed.", tempTitle);
 }
 
 #pragma endregion Renderer Model
@@ -1370,7 +1388,7 @@ void RendererModel_Destroy(RendererModel *model)
 RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCapacity)
 {
     RendererScene *scene = malloc(sizeof(RendererScene));
-    DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(scene);
 
     scene->name = scc(name);
     scene->camera = NULL;
@@ -1426,15 +1444,15 @@ RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCap
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindVertexArray(0);
 
-    DebugInfo("Renderer Scene '%s' created.", scene->name.characters);
+    RJGlobal_DebugInfo("Renderer Scene '%s' created.", scene->name.characters);
 
     return scene;
 }
 
 RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount)
 {
-    DebugAssertNullPointerCheck(modelPool);
-    DebugAssertNullPointerCheck(objectReferences);
+    RJGlobal_DebugAssertNullPointerCheck(modelPool);
+    RJGlobal_DebugAssertNullPointerCheck(objectReferences);
 
     RendererScene *scene = NULL;
     RendererBatch *currentBatch = NULL;
@@ -1442,8 +1460,8 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFi
     size_t totalObjectIndex = 0;
 
     StringView *scnLines = (StringView *)malloc(scnFileLineCount * sizeof(StringView));
-    DebugAssertNullPointerCheck(scnLines);
-    MemorySet(scnLines, scnFileLineCount * sizeof(StringView), 0);
+    RJGlobal_DebugAssertNullPointerCheck(scnLines);
+    RJGlobal_MemorySet(scnLines, scnFileLineCount * sizeof(StringView), 0);
 
     size_t scnLineTokenCount = 0;
     StringView scnLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -1466,21 +1484,21 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFi
 
         if (String_Compare(firstToken, strP) == 0)
         {
-            DebugAssert(totalObjectIndex < objectCount, "Object reference count %zu is not enough for the imported scene file", objectCount);
+            RJGlobal_DebugAssert(totalObjectIndex < objectCount, "Object reference count %zu is not enough for the imported scene file", objectCount);
             currentComponent = RendererBatch_CreateComponent(currentBatch,
                                                              (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 0 * sizeof(Vector3)),
                                                              (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 1 * sizeof(Vector3)),
                                                              (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 2 * sizeof(Vector3)));
 
-            *currentComponent->positionReference = NewVector3(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
+            *currentComponent->positionReference = Vector3_New(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
         }
         else if (String_Compare(firstToken, strR) == 0)
         {
-            *currentComponent->rotationReference = NewVector3(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
+            *currentComponent->rotationReference = Vector3_New(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
         }
         else if (String_Compare(firstToken, strS) == 0)
         {
-            *currentComponent->scaleReference = NewVector3(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
+            *currentComponent->scaleReference = Vector3_New(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
             totalObjectIndex++;
         }
         else if (String_Compare(firstToken, strNEWSCN) == 0)
@@ -1495,7 +1513,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFi
             {
                 RendererModel *model = *(RendererModel **)ListArray_Get(modelPool, j);
 
-                // DebugInfo("Comparing model '%.*s' with '%.*s'...", model->name.length, model->name.characters, lineTokens[1].length, lineTokens[1].characters);
+                // RJGlobal_DebugInfo("Comparing model '%.*s' with '%.*s'...", model->name.length, model->name.characters, lineTokens[1].length, lineTokens[1].characters);
 
                 if (String_Compare(scv(model->name), scv(scnLineTokens[1])) == 0)
                 {
@@ -1505,24 +1523,24 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFi
                 }
             }
 
-            DebugAssert(modelFound, "Model '%.*s' not found in model pool when trying to assign it to mesh in model '%.*s'.", scnLineTokens[1].length, scnLineTokens[1].characters, currentBatch->model->name.length, currentBatch->model->name.characters);
+            RJGlobal_DebugAssert(modelFound, "Model '%.*s' not found in model pool when trying to assign it to mesh in model '%.*s'.", scnLineTokens[1].length, scnLineTokens[1].characters, currentBatch->model->name.length, currentBatch->model->name.characters);
         }
     }
 
     free(scnLines);
 
-    DebugInfo("Scene %s imported successfully.", scene->name.characters);
+    RJGlobal_DebugInfo("Scene %s imported successfully.", scene->name.characters);
 
     return scene;
 }
 
 void RendererScene_Destroy(RendererScene *scene)
 {
-    DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(scene);
 
-    char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, scene->name.length), scene->name.characters);
-    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, scene->name.length)] = '\0';
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, scene->name.length), scene->name.characters);
+    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, scene->name.length)] = '\0';
 
     String_Destroy(&scene->name);
     scene->camera = NULL;
@@ -1556,13 +1574,13 @@ void RendererScene_Destroy(RendererScene *scene)
     free(scene);
     scene = NULL;
 
-    DebugInfo("Renderer Scene '%s' destroyed.", tempTitle);
+    RJGlobal_DebugInfo("Renderer Scene '%s' destroyed.", tempTitle);
 }
 
 void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *camera)
 {
-    DebugAssertNullPointerCheck(scene);
-    DebugAssertNullPointerCheck(camera);
+    RJGlobal_DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(camera);
 
     scene->camera = camera;
     camera->scene = scene;
@@ -1570,8 +1588,8 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *
 
 RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, size_t initialObjectCapacity)
 {
-    DebugAssertNullPointerCheck(scene);
-    DebugAssertNullPointerCheck(model);
+    RJGlobal_DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(model);
 
     RendererBatch batch = {0};
 
@@ -1586,7 +1604,7 @@ RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *mo
 
 void RendererScene_DestroyBatch(RendererBatch *batch)
 {
-    DebugAssertNullPointerCheck(batch);
+    RJGlobal_DebugAssertNullPointerCheck(batch);
 
     // todo ! be may be wrong
     for (size_t i = batch->batchOffsetInScene + 1; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
@@ -1605,15 +1623,15 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
 
 void RendererScene_Update(RendererScene *scene)
 {
-    DebugAssertNullPointerCheck(scene);
-    DebugAssertNullPointerCheck(scene->camera);
+    RJGlobal_DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(scene->camera);
 
     glm_mat4_identity((vec4 *)&scene->camera->viewMatrix);
     glm_mat4_identity((vec4 *)&scene->camera->projectionMatrix);
 
-    Vector3 direction = Vector3_Normalized(NewVector3(Cos(scene->camera->rotationReference->x) * Cos(scene->camera->rotationReference->y),
-                                                      Sin(scene->camera->rotationReference->x),
-                                                      Cos(scene->camera->rotationReference->x) * Sin(scene->camera->rotationReference->y)));
+    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(scene->camera->rotationReference->x) * Maths_Cos(scene->camera->rotationReference->y),
+                                                       Maths_Sin(scene->camera->rotationReference->x),
+                                                       Maths_Cos(scene->camera->rotationReference->x) * Maths_Sin(scene->camera->rotationReference->y)));
 
     Vector3 center = Vector3_Add(*scene->camera->positionReference, Vector3_Normalized(direction));
 
@@ -1621,7 +1639,7 @@ void RendererScene_Update(RendererScene *scene)
 
     if (scene->camera->isPerspective)
     {
-        glm_perspective(DegToRad(scene->camera->size),
+        glm_perspective(Maths_DegToRad(scene->camera->size),
                         (float)RENDERER_MAIN_WINDOW->size.x / (float)RENDERER_MAIN_WINDOW->size.y,
                         scene->camera->nearClipPlane,
                         scene->camera->farClipPlane,
@@ -1645,7 +1663,7 @@ void RendererScene_Update(RendererScene *scene)
         for (size_t j = 0; j < batch->objectMatrices.count; j++)
         {
             RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
-            TransformToModelMatrix(
+            TRANSFORM_TO_MODEL_MATRIX(
                 (mat4 *)ListArray_Get(&batch->objectMatrices, j),
                 component->positionReference,
                 component->rotationReference,
@@ -1660,11 +1678,11 @@ void RendererScene_Update(RendererScene *scene)
 
 RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference)
 {
-    DebugAssertNullPointerCheck(batch);
-    DebugAssertNullPointerCheck(positionReference);
-    DebugAssertNullPointerCheck(rotationReference);
-    DebugAssertNullPointerCheck(scaleReference);
-    //    DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
+    RJGlobal_DebugAssertNullPointerCheck(batch);
+    RJGlobal_DebugAssertNullPointerCheck(positionReference);
+    RJGlobal_DebugAssertNullPointerCheck(rotationReference);
+    RJGlobal_DebugAssertNullPointerCheck(scaleReference);
+    //    RJGlobal_DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
 
     RendererComponent component = {0};
 
@@ -1677,14 +1695,14 @@ RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *
     mat4 temp; // dummy, just to allocate the space in list
     ListArray_Add(&batch->objectMatrices, &temp);
 
-    // DebugInfo("Renderer Component created.");
+    // RJGlobal_DebugInfo("Renderer Component created.");
 
     return (RendererComponent *)ListArray_Add(&component.batch->components, &component);
 }
 
 void RendererBatch_DestroyComponent(RendererComponent *component)
 {
-    DebugAssertNullPointerCheck(component);
+    RJGlobal_DebugAssertNullPointerCheck(component);
 
     // todo ! be may be wrong
     for (size_t i = component->componentOffsetInBatch + 1; i < component->batch->components.count - component->componentOffsetInBatch; i++)
@@ -1704,7 +1722,7 @@ void RendererBatch_DestroyComponent(RendererComponent *component)
 RendererCameraComponent *RendererCameraComponent_Create(Vector3 *positionReference, Vector3 *rotationReference)
 {
     RendererCameraComponent *camera = malloc(sizeof(RendererCameraComponent));
-    DebugAssertNullPointerCheck(camera);
+    RJGlobal_DebugAssertNullPointerCheck(camera);
 
     camera->scene = NULL;
 
@@ -1722,7 +1740,7 @@ RendererCameraComponent *RendererCameraComponent_Create(Vector3 *positionReferen
 
 void RendererCameraComponent_Destroy(RendererCameraComponent *camera)
 {
-    DebugAssertNullPointerCheck(camera);
+    RJGlobal_DebugAssertNullPointerCheck(camera);
 
     camera->size = -1.0f;
 

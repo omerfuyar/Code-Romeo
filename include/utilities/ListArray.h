@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
-// The resize multiplier used when the ListArray size reached to the capacity when adding new item
+/// @brief The resize multiplier used when the ListArray size reached to the capacity when adding new item
 #define LIST_ARRAY_RESIZE_MULTIPLIER 2.0f
-
-// The limit for resizing the ListArray when it's size is less than 1/x of the capacity
+/// @brief The minimum decimal limit to trigger a cut resize when removing items from the ListArray
 #define LIST_ARRAY_MIN_DECIMAL_LIMIT 4.0f
-
-// Wether should remove functions resize the list to be smaller or not.
+/// @brief Whether remove functions should resize the list to be smaller or not.
 #define LIST_ARRAY_CUT_RESIZE false
+
+#pragma region Typedefs
 
 /// @brief A dynamic array list implementation. Can be used in any type. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct ListArray
@@ -20,6 +20,8 @@ typedef struct ListArray
     size_t sizeOfItem;
     char *nameOfType;
 } ListArray;
+
+#pragma endregion Typedefs
 
 /// @brief Creator function for ListArray.
 /// @param nameOfType Name of the type stored in the list.

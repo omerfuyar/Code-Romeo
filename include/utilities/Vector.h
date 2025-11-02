@@ -1,17 +1,17 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
 #pragma region typedefs
 
-// A vector that contains 2 float values. Can be used with helper functions.
+/// @brief A vector that contains 2 float values. Can be used with helper functions.
 typedef struct Vector2
 {
     float x;
     float y;
 } Vector2;
 
-// A vector that contains 3 float values. Can be used with helper functions.
+/// @brief A vector that contains 3 float values. Can be used with helper functions.
 typedef struct Vector3
 {
     float x;
@@ -19,7 +19,7 @@ typedef struct Vector3
     float z;
 } Vector3;
 
-// A vector that contains 4 float values. Can be used with helper functions.
+/// @brief A vector that contains 4 float values. Can be used with helper functions.
 typedef struct Vector4
 {
     float x;
@@ -30,14 +30,14 @@ typedef struct Vector4
 
 typedef Vector4 Color;
 
-// A vector that contains 2 integer values. Can be used with helper functions.
+/// @brief A vector that contains 2 integer values. Can be used with helper functions.
 typedef struct Vector2Int
 {
     int x;
     int y;
 } Vector2Int;
 
-// A vector that contains 3 integer values. Can be used with helper functions.
+/// @brief A vector that contains 3 integer values. Can be used with helper functions.
 typedef struct Vector3Int
 {
     int x;
@@ -45,7 +45,7 @@ typedef struct Vector3Int
     int z;
 } Vector3Int;
 
-// A vector that contains 4 integer values. Can be used with helper functions.
+/// @brief A vector that contains 4 integer values. Can be used with helper functions.
 typedef struct Vector4Int
 {
     int x;
@@ -54,53 +54,66 @@ typedef struct Vector4Int
     int w;
 } Vector4Int;
 
-#define NewVector2(x, y) ((Vector2){(x), (y)})
-#define NewVector3(x, y, z) ((Vector3){(x), (y), (z)})
-#define NewVector4(x, y, z, w) ((Vector4){(x), (y), (z), (w)})
-#define NewColor(x, y, z, w) NewVector4(x, y, z, w)
-#define NewVector2Int(x, y) ((Vector2Int){(x), (y)})
-#define NewVector3Int(x, y, z) ((Vector3Int){(x), (y), (z)})
-#define NewVector4Int(x, y, z, w) ((Vector4Int){(x), (y), (z), (w)})
-
-#define NewVector2N(n) (NewVector2(n, n))
-#define NewVector3N(n) (NewVector3(n, n, n))
-#define NewVector4N(n) (NewVector4(n, n, n, n))
-#define NewVector2IntN(n) (NewVector2Int(n, n))
-#define NewVector3IntN(n) (NewVector3Int(n, n, n))
-#define NewVector4IntN(n) (NewVector4Int(n, n, n, n))
-
-#define Vector2_Zero NewVector2N(0.0f)
-#define Vector3_Zero NewVector3N(0.0f)
-#define Vector4_Zero NewVector4N(0.0f)
-
-#define Vector2_One NewVector2N(1.0f)
-#define Vector3_One NewVector3N(1.0f)
-#define Vector4_One NewVector4N(1.0f)
-
-#define Vector2_Up NewVector2(0.0f, 1.0f)
-#define Vector2_Down NewVector2(0.0f, -1.0f)
-#define Vector2_Right NewVector2(1.0f, 0.0f)
-#define Vector2_Left NewVector2(-1.0f, 0.0f)
-
-#define Vector3_Up NewVector3(0.0f, 1.0f, 0.0f)
-#define Vector3_Down NewVector3(0.0f, -1.0f, 0.0f)
-#define Vector3_Right NewVector3(1.0f, 0.0f, 0.0f)
-#define Vector3_Left NewVector3(-1.0f, 0.0f, 0.0f)
-#define Vector3_Forward NewVector3(0.0f, 0.0f, 1.0f)
-#define Vector3_Backward NewVector3(0.0f, 0.0f, -1.0f)
-
-#define Color_White NewColor(1.0f, 1.0f, 1.0f, 1.0f)
-#define Color_Black NewColor(0.0f, 0.0f, 0.0f, 1.0f)
-#define Color_Red NewColor(1.0f, 0.0f, 0.0f, 1.0f)
-#define Color_Green NewColor(0.0f, 1.0f, 0.0f, 1.0f)
-#define Color_Blue NewColor(0.0f, 0.0f, 1.0f, 1.0f)
-#define Color_Yellow NewColor(1.0f, 1.0f, 0.0f, 1.0f)
-#define Color_Cyan NewColor(0.0f, 1.0f, 1.0f, 1.0f)
-#define Color_Magenta NewColor(1.0f, 0.0f, 1.0f, 1.0f)
-#define Color_Gray NewColor(0.5f, 0.5f, 0.5f, 1.0f)
-#define Color_Clear NewColor(0.0f, 0.0f, 0.0f, 0.0f)
-
 #pragma endregion typedefs
+
+/// @brief Creates a new Vector2 struct.
+#define Vector2_New(x, y) ((Vector2){(x), (y)})
+/// @brief Creates a new Vector3 struct.
+#define Vector3_New(x, y, z) ((Vector3){(x), (y), (z)})
+/// @brief Creates a new Vector4 struct.
+#define Vector4_New(x, y, z, w) ((Vector4){(x), (y), (z), (w)})
+/// @brief Creates a new Color struct.
+#define Color_New(x, y, z, w) Vector4_New(x, y, z, w)
+/// @brief Creates a new Vector2Int struct.
+#define Vector2Int_New(x, y) ((Vector2Int){(x), (y)})
+/// @brief Creates a new Vector3Int struct.
+#define Vector3Int_New(x, y, z) ((Vector3Int){(x), (y), (z)})
+/// @brief Creates a new Vector4Int struct.
+#define Vector4Int_New(x, y, z, w) ((Vector4Int){(x), (y), (z), (w)})
+
+/// @brief Creates new Vector2 with all components set to the same value.
+#define Vector2_NewN(n) (Vector2_New(n, n))
+/// @brief Creates new Vector3 with all components set to the same value.
+#define Vector3_NewN(n) (Vector3_New(n, n, n))
+/// @brief Creates new Vector4 with all components set to the same value.
+#define Vector4_NewN(n) (Vector4_New(n, n, n, n))
+/// @brief Creates new Vector2Int with all components set to the same value.
+#define Vector2Int_NewN(n) (Vector2Int_New(n, n))
+/// @brief Creates new Vector3Int with all components set to the same value.
+#define Vector3Int_NewN(n) (Vector3Int_New(n, n, n))
+/// @brief Creates new Vector4Int with all components set to the same value.
+#define Vector4Int_NewN(n) (Vector4Int_New(n, n, n, n))
+
+#define Vector2_Zero Vector2_NewN(0.0f)
+#define Vector3_Zero Vector3_NewN(0.0f)
+#define Vector4_Zero Vector4_NewN(0.0f)
+
+#define Vector2_One Vector2_NewN(1.0f)
+#define Vector3_One Vector3_NewN(1.0f)
+#define Vector4_One Vector4_NewN(1.0f)
+
+#define Vector2_Up Vector2_New(0.0f, 1.0f)
+#define Vector2_Down Vector2_New(0.0f, -1.0f)
+#define Vector2_Right Vector2_New(1.0f, 0.0f)
+#define Vector2_Left Vector2_New(-1.0f, 0.0f)
+
+#define Vector3_Up Vector3_New(0.0f, 1.0f, 0.0f)
+#define Vector3_Down Vector3_New(0.0f, -1.0f, 0.0f)
+#define Vector3_Right Vector3_New(1.0f, 0.0f, 0.0f)
+#define Vector3_Left Vector3_New(-1.0f, 0.0f, 0.0f)
+#define Vector3_Forward Vector3_New(0.0f, 0.0f, 1.0f)
+#define Vector3_Backward Vector3_New(0.0f, 0.0f, -1.0f)
+
+#define Color_White Color_New(1.0f, 1.0f, 1.0f, 1.0f)
+#define Color_Black Color_New(0.0f, 0.0f, 0.0f, 1.0f)
+#define Color_Red Color_New(1.0f, 0.0f, 0.0f, 1.0f)
+#define Color_Green Color_New(0.0f, 1.0f, 0.0f, 1.0f)
+#define Color_Blue Color_New(0.0f, 0.0f, 1.0f, 1.0f)
+#define Color_Yellow Color_New(1.0f, 1.0f, 0.0f, 1.0f)
+#define Color_Cyan Color_New(0.0f, 1.0f, 1.0f, 1.0f)
+#define Color_Magenta Color_New(1.0f, 0.0f, 1.0f, 1.0f)
+#define Color_Gray Color_New(0.5f, 0.5f, 0.5f, 1.0f)
+#define Color_Clear Color_New(0.0f, 0.0f, 0.0f, 0.0f)
 
 #pragma region Vector2
 

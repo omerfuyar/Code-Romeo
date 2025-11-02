@@ -1,8 +1,11 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
+/// @brief Buffer size for numeric to string conversions.
 #define STRING_TO_NUMERIC_CHAR_BUFFER 32
+
+#pragma region Typedefs
 
 /// @brief Standard string type for the entire project. Can be used with helper functions for heap or by itself for stack. Owner of its memory.
 typedef struct String
@@ -18,16 +21,18 @@ typedef struct StringView
     size_t length;
 } StringView;
 
+#pragma endregion Typedefs
+
 /// @brief Creates a new String object from a char array safely. Allocates its own memory and copies the string. Can be used with dynamic strings.
 /// @param string Any char pointer.
 /// @param length Length of the given string.
 /// @return Newly created String object holding a pointer to copy of the original string.
-String String_CreateCopyS(const char *string, size_t length);
+String String_CreateCopySafe(const char *string, size_t length);
 
 /// @brief Create a owner copy of the given string it can be a view or owner.
 /// @param stringToCopy String to copy. Not a pointer.
 #define scc(stringToCopy) \
-    String_CreateCopyS(stringToCopy.characters, stringToCopy.length)
+    String_CreateCopySafe(stringToCopy.characters, stringToCopy.length)
 
 /// @brief Create view from string literal.
 /// @param stringLiteral The literal string to create a view of.
@@ -66,9 +71,10 @@ void String_ConcatEnd(String *string, StringView other);
 void String_ConcatBegin(String *string, StringView other);
 
 /// @brief Compares two String objects by subtracting their character arrays.
-/// @param string Pointer to the first String object.
-/// @param other Pointer to the second String object.
-/// @return Negative if string < other, positive if string > other, zero if they are equal.
+/// @param string View of the first String object.
+/// @param other View of the second String object.
+/// @return Zero if they are equal, negative if string < other, positive if string > other.
+/// @note Comparison is done up to the length of the shorter string.
 int String_Compare(StringView string, StringView other);
 
 /// @brief Tokenizes a string into an array of string views. Returned buffer uses the memory of the first string parameter.
@@ -76,7 +82,7 @@ int String_Compare(StringView string, StringView other);
 /// @param delimeter The delimiter to use for tokenization.
 /// @param tokenCountRet A pointer to a size_t variable to store the number of tokens. Leave NULL if not needed.
 /// @param tokenBufferRet A pointer to a StringView buffer to store the tokenized string views.
-/// @param maxTokenCount Max number of tokens to return. The size of the tokenCounts buffer.
+/// @param maxTokenCount Maths_Max number of tokens to return. The size of the tokenCounts buffer.
 void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t maxTokenCount);
 
 /// @brief Gets a character from a String object.

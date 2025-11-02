@@ -1,14 +1,18 @@
 #pragma once
 
-#include "Global.h"
-#include "utilities/String.h"
-#include "utilities/Vectors.h"
+#include "RJGlobal.h"
 
-#define CONTEXT_OPENGL_VERSION_MAJOR 3
-#define CONTEXT_OPENGL_VERSION_MINOR 3
+#include "utilities/String.h"
+#include "utilities/Vector.h"
+
+/// @brief OpenGL context version major number
+#define CONTEXT_VERSION_MAJOR 3
+/// @brief OpenGL context version minor number
+#define CONTEXT_VERSION_MINOR 3
 
 #pragma region Typedefs
 
+/// @brief Structure representing the main window context
 typedef struct ContextWindow
 {
     String title;
@@ -18,9 +22,11 @@ typedef struct ContextWindow
     bool fullScreen;
 } ContextWindow;
 
-typedef void (*VoidFunVoidptrIntInt)(void *, int, int);
+/// @brief Function pointer type used for window resize callback
+typedef void (*Context_VoidFunVoidptrIntInt)(void *, int, int);
 
-typedef void (*VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int, unsigned int, unsigned int, unsigned int, int, const char *, const void *);
+/// @brief Function pointer type used for window log callback
+typedef void (*Context_VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int, unsigned int, unsigned int, unsigned int, int, const char *, const void *);
 
 #pragma endregion Typedefs
 
@@ -34,7 +40,7 @@ ContextWindow *Context_Initialize();
 /// @param vSync Enable/disable vertical synchronization
 /// @param fullScreen Enable/disable fullscreen mode
 /// @param resizeCallback Function to call when window is resized
-void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, VoidFunVoidptrIntInt resizeCallback);
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, Context_VoidFunVoidptrIntInt resizeCallback);
 
 /// @brief Set the window title
 /// @param title New window title text
@@ -54,11 +60,11 @@ void Context_ConfigureFullScreen(bool fullScreen);
 
 /// @brief Set the window resize callback function
 /// @param callback Function to call when window is resized, or NULL to remove callback
-void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback);
+void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback);
 
 /// @brief Set the window log callback function
 /// @param callback Function to call when window log events occur, or NULL to remove callback
-void Context_ConfigureLogCallback(VoidFunUintUintUintUintIntCcharptrCvoidptr callback);
+void Context_ConfigureLogCallback(Context_VoidFunUintUintUintUintIntCcharptrCvoidptr callback);
 
 /// @brief Clean up and terminate the context system
 void Context_Terminate();

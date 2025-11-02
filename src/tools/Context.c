@@ -1,35 +1,32 @@
-#include "wrappers/Context.h"
+#include "tools/Context.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-/// @brief Global main window context instance.
 ContextWindow CONTEXT_MAIN_WINDOW = {0};
-/// @brief Global resize callback function pointer.
-VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
-/// @brief Global log callback function pointer.
-VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
+Context_VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
+Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
 
 ContextWindow *Context_Initialize()
 {
-    DebugAssert(glfwInit(), "Failed to initialize GLFW");
+    RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_OPENGL_VERSION_MAJOR);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_OPENGL_VERSION_MINOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    DebugInfo("ContextManager initialized successfully.");
+    RJGlobal_DebugInfo("ContextManager initialized successfully.");
 
     CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
-    DebugAssertNullPointerCheck(CONTEXT_MAIN_WINDOW.handle);
+    RJGlobal_DebugAssertNullPointerCheck(CONTEXT_MAIN_WINDOW.handle);
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 
-    DebugInfo("Main window created successfully.");
+    RJGlobal_DebugInfo("Main window created successfully.");
 
     return &CONTEXT_MAIN_WINDOW;
 }
 
-void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, VoidFunVoidptrIntInt resizeCallback)
+void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, Context_VoidFunVoidptrIntInt resizeCallback)
 {
     Context_ConfigureTitle(title);
     Context_ConfigureResizeCallback(resizeCallback);
@@ -55,7 +52,7 @@ void Context_ConfigureSize(Vector2Int size)
     }
     else
     {
-        DebugWarning("The context resize callback function is NULL. Skipped without calling");
+        RJGlobal_DebugWarning("The context resize callback function is NULL. Skipped without calling");
     }
 }
 
@@ -83,7 +80,7 @@ void Context_ConfigureFullScreen(bool fullScreen)
     }
 }
 
-void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback)
+void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback)
 {
     CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = callback;
 
@@ -92,7 +89,7 @@ void Context_ConfigureResizeCallback(VoidFunVoidptrIntInt callback)
     Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
 }
 
-void Context_ConfigureLogCallback(VoidFunUintUintUintUintIntCcharptrCvoidptr callback)
+void Context_ConfigureLogCallback(Context_VoidFunUintUintUintUintIntCcharptrCvoidptr callback)
 {
     CONTEXT_MAIN_WINDOW_LOG_CALLBACK = callback;
 
@@ -104,5 +101,5 @@ void Context_Terminate()
     glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
     glfwTerminate();
 
-    DebugInfo("Context terminated successfully.");
+    RJGlobal_DebugInfo("Context terminated successfully.");
 }

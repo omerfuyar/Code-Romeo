@@ -1,11 +1,11 @@
 #include "utilities/Timer.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define Timer_Min(a, b) ((a) < (b) ? (a) : (b))
+#define Timer_Max(a, b) ((a) > (b) ? (a) : (b))
 
 void TimePoint_Update(TimePoint *timePoint)
 {
-    DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
+    RJGlobal_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
 
     struct timespec currentTime = {0, 0};
     timespec_get(&currentTime, TIME_UTC);
@@ -16,7 +16,7 @@ void TimePoint_Update(TimePoint *timePoint)
 
 float TimePoint_ToMilliseconds(const TimePoint *timePoint)
 {
-    DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
+    RJGlobal_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
 
     return ((float)timePoint->seconds * 1000.0f) + ((float)timePoint->nanoseconds / 1000000.0f);
 }
@@ -28,8 +28,8 @@ Timer Timer_Create(const char *title)
     size_t titleLength = strlen(title);
 
     timer.title = (char *)malloc(titleLength + 1);
-    DebugAssertNullPointerCheck(timer.title);
-    MemoryCopy(timer.title, titleLength + 1, title);
+    RJGlobal_DebugAssertNullPointerCheck(timer.title);
+    RJGlobal_MemoryCopy(timer.title, titleLength + 1, title);
     timer.title[titleLength] = '\0';
 
     timer.isRunning = false;
@@ -42,27 +42,27 @@ Timer Timer_Create(const char *title)
 
 void Timer_Destroy(Timer *timer)
 {
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+    RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
     size_t titleLength = strlen(timer->title);
 
-    char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
-    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    RJGlobal_MemoryCopy(tempTitle, Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
+    tempTitle[Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
 
     free(timer->title);
     timer->title = NULL;
 
-    DebugInfo("Timer '%s' destroyed.", tempTitle);
+    RJGlobal_DebugInfo("Timer '%s' destroyed.", tempTitle);
 }
 
 void Timer_Start(Timer *timer)
 {
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+    RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
     if (timer->isRunning)
     {
-        DebugWarning("Timer '%s' is already running. Cannot start.", timer->title);
+        RJGlobal_DebugWarning("Timer '%s' is already running. Cannot start.", timer->title);
         return;
     }
 
@@ -73,11 +73,11 @@ void Timer_Start(Timer *timer)
 
 void Timer_Stop(Timer *timer)
 {
-    DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+    RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
     if (!timer->isRunning)
     {
-        DebugWarning("Timer '%s' is not running. Cannot stop.", timer->title);
+        RJGlobal_DebugWarning("Timer '%s' is not running. Cannot stop.", timer->title);
         return;
     }
 
@@ -88,7 +88,7 @@ void Timer_Stop(Timer *timer)
 
 void Timer_Reset(Timer *timer)
 {
-    DebugAssertNullPointerCheck(timer);
+    RJGlobal_DebugAssertNullPointerCheck(timer);
 
     TimePoint_Update(&timer->endTime);
     timer->startTime = timer->endTime;
@@ -96,7 +96,7 @@ void Timer_Reset(Timer *timer)
 
 TimePoint Timer_GetElapsedTime(const Timer *timer)
 {
-    DebugAssertNullPointerCheck(timer);
+    RJGlobal_DebugAssertNullPointerCheck(timer);
 
     TimePoint elapsedTime;
     elapsedTime.seconds = timer->endTime.seconds - timer->startTime.seconds;
@@ -113,7 +113,7 @@ TimePoint Timer_GetElapsedTime(const Timer *timer)
 
 time_t Timer_GetElapsedNanoseconds(const Timer *timer)
 {
-    DebugAssertNullPointerCheck(timer);
+    RJGlobal_DebugAssertNullPointerCheck(timer);
 
     TimePoint elapsedTime = Timer_GetElapsedTime(timer);
     return elapsedTime.seconds * 1000000000 + elapsedTime.nanoseconds;
@@ -121,7 +121,7 @@ time_t Timer_GetElapsedNanoseconds(const Timer *timer)
 
 float Timer_GetElapsedMilliseconds(const Timer *timer)
 {
-    DebugAssertNullPointerCheck(timer);
+    RJGlobal_DebugAssertNullPointerCheck(timer);
 
     TimePoint elapsedTime = Timer_GetElapsedTime(timer);
     return TimePoint_ToMilliseconds(&elapsedTime);

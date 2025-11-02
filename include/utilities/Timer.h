@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Global.h"
+#include "RJGlobal.h"
 
 #pragma region typedefs
 
@@ -19,6 +19,8 @@ typedef struct Timer
     TimePoint endTime;
     bool isRunning;
 } Timer;
+
+#pragma endregion typedefs
 
 /// @brief Gets the current time point in seconds and nanoseconds.
 /// @param timePoint Time Point to update with the current time.
@@ -59,7 +61,7 @@ TimePoint Timer_GetElapsedTime(const Timer *timer);
 /// @return Elapsed time of the timer in nanoseconds.
 time_t Timer_GetElapsedNanoseconds(const Timer *timer);
 
-/// @brief
-/// @param timer
-/// @return
+/// @brief Gets the elapsed time of the timer in milliseconds. Does not stop the timer or update its end time. User must stop the timer before calling this.
+/// @param timer Pointer to the timer to get elapsed time from.
+/// @return Elapsed time of the timer in milliseconds.
 float Timer_GetElapsedMilliseconds(const Timer *timer);

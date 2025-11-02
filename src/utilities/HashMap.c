@@ -1,7 +1,7 @@
 #include "utilities/HashMap.h"
 
-#define Min(a, b) ((a) < (b) ? (a) : (b))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define HashMap_Min(a, b) ((a) < (b) ? (a) : (b))
+#define HashMap_Max(a, b) ((a) > (b) ? (a) : (b))
 
 #pragma region Source Only
 
@@ -36,31 +36,31 @@ HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacit
     size_t nameOfTypeLength = strlen(nameOfType);
 
     map.nameOfType = (char *)malloc(nameOfTypeLength + 1);
-    DebugAssertNullPointerCheck(map.nameOfType);
-    MemoryCopy(map.nameOfType, nameOfTypeLength + 1, nameOfType);
+    RJGlobal_DebugAssertNullPointerCheck(map.nameOfType);
+    RJGlobal_MemoryCopy(map.nameOfType, nameOfTypeLength + 1, nameOfType);
     map.nameOfType[nameOfTypeLength] = '\0';
 
     map.count = 0;
     map.data = (void *)malloc(capacity * sizeOfItem);
-    DebugAssertNullPointerCheck(map.data);
+    RJGlobal_DebugAssertNullPointerCheck(map.data);
 
-    MemorySet(map.data, map.sizeOfItem * map.capacity, 0);
+    RJGlobal_MemorySet(map.data, map.sizeOfItem * map.capacity, 0);
 
-    DebugInfo("HashMap '%s' created with initial capacity: %zu, size of item: %zu", nameOfType, capacity, sizeOfItem);
+    RJGlobal_DebugInfo("HashMap '%s' created with initial capacity: %zu, size of item: %zu", nameOfType, capacity, sizeOfItem);
 
     return map;
 }
 
 void HashMap_Destroy(HashMap *map)
 {
-    DebugAssertNullPointerCheck(map);
-    DebugAssertNullPointerCheck(map->data);
+    RJGlobal_DebugAssertNullPointerCheck(map);
+    RJGlobal_DebugAssertNullPointerCheck(map->data);
 
     size_t nameOfTypeLength = strlen(map->nameOfType);
 
-    char tempTitle[RJ_TEMP_BUFFER_SIZE];
-    MemoryCopy(tempTitle, Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);
-    tempTitle[Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    RJGlobal_MemoryCopy(tempTitle, HashMap_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);
+    tempTitle[HashMap_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     free(map->nameOfType);
     map->nameOfType = NULL;
@@ -72,16 +72,16 @@ void HashMap_Destroy(HashMap *map)
     map->count = 0;
     map->sizeOfItem = 0;
 
-    DebugInfo("HashMap '%s' destroyed.", tempTitle);
+    RJGlobal_DebugInfo("HashMap '%s' destroyed.", tempTitle);
 }
 
 void HashMap_Register(HashMap *map, const char *key, const void *value)
 {
-    DebugAssertNullPointerCheck(map);
+    RJGlobal_DebugAssertNullPointerCheck(map);
 
     void *targetLocation = (void *)((char *)map->data + HashMap_Hash(key, map->capacity) * map->sizeOfItem);
 
-    MemoryCopy(targetLocation, map->sizeOfItem, value);
+    RJGlobal_MemoryCopy(targetLocation, map->sizeOfItem, value);
 
     map->count++;
 }
