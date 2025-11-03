@@ -26,7 +26,7 @@ typedef struct StringView
 /// @brief Creates a new String object from a char array safely. Allocates its own memory and copies the string. Can be used with dynamic strings.
 /// @param string Any char pointer.
 /// @param length Length of the given string.
-/// @return Newly created String object holding a pointer to copy of the original string.
+/// @return Newly created null terminated String object holding a pointer to copy of the original string.
 String String_CreateCopySafe(const char *string, size_t length);
 
 /// @brief Create a owner copy of the given string it can be a view or owner.

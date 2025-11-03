@@ -182,9 +182,9 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity);
 void Renderer_Terminate();
 
 /// @brief Configures the main shaders for the renderer.
-/// @param vertexShaderSource Source code of the main vertex shader.
-/// @param fragmentShaderSource Source code of the main fragment shader.
-void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource);
+/// @param vertexShaderFile Path and file name of the main vertex shader. The path is relative to the resources folder in executable file directory.
+/// @param fragmentShaderFile Path and file name of the main fragment shader. The path is relative to the resources folder in executable file directory.
+void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
 /// @brief Should be called before using rendering functions.
 void Renderer_StartRendering();
@@ -201,10 +201,10 @@ void Renderer_RenderScene(RendererScene *scene);
 #pragma region Renderer Debug
 
 /// @brief Initialize function for renderer debug functions. Should be called after the Renderer_Initialize function.
-/// @param vertexShaderSource The source file for debug vertex shader.
-/// @param fragmentShaderSource The source file for debug fragment shader.
+/// @param vertexShaderFile The source file for debug vertex shader.
+/// @param fragmentShaderFile The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragmentShaderSource, size_t initialVertexCapacity);
+void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, size_t initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate();
@@ -234,10 +234,9 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
 #pragma region Renderer Material
 
 /// @brief Creates materials from a material file (prefer .mat). File can contain multiple materials but textures of them will be ignored. Use RendererMaterial_CreateFromFileTextured and to create a material with texture.
-/// @param matFileData Source code of the material file.
-/// @param matFileLineCount Number of lines in the material file source.
+/// @param matFile Path and file name of the material (.mat) file. The path is relative to the resources folder in executable file directory.
 /// @return Created material list type of the list is RendererMaterial*.
-ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFileLineCount);
+ListArray RendererMaterial_CreateFromFile(StringView matFile);
 
 /// @brief Creates materials from a material file (prefer .mat) with the argument texture. It copies the texture data into OpenGL so the original data can be freed after this function.
 /// @param matFileData Source code of the material file.
@@ -259,22 +258,19 @@ void RendererMaterial_Destroy(RendererMaterial *material);
 
 // todo fix docs
 /// @brief Creates a model from an MDL file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
-/// @param mdlFileData Source code of the OBJ file.
-/// @param mdlFileLineCount Number of lines in the OBJ file source.
+/// @param matFile Path and file name of the model (.mat) file. The path is relative to the resources folder in executable file directory.
 /// @param materialPool Pointer to a list array of material pointer pointers (RendererMaterial **) to use for the model.
 /// @param positionOffset Position offset to freely adjust final model position.
 /// @param rotationOffset Rotation offset to freely adjust final model rotation.
 /// @param scaleOffset Scale offset to freely adjust final model scale.
 /// @return Created model with vertices and indices.
-RendererModel *RendererModel_Create(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
+RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materialPool, Vector3 positionOffset, Vector3 rotationOffset, Vector3 scaleOffset);
 
 // todo fix docs
 /// @brief Creates a model from an MDL file source. The .obj and its other files (like .mtl) must be in the same directory. Only supports models with triangular faces. doesn't support objects with normal maps but without UVs (x//x signature).
-/// @param mdlFileData Source code of the OBJ file.
-/// @param mdlFileLineCount Number of lines in the OBJ file source.
-/// @param materialPool Pointer to a list array of material pointer pointers (RendererMaterial **) to use for the model.
+/// @param matFile Path and file name of the model (.mat) file. The path is relative to the resources folder in executable file directory.
 /// @return Created model with vertices and indices.
-ListArray RendererModel_CreateFromFile(StringView mdlFileData, size_t mdlFileLineCount, const ListArray *materialPool);
+ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *materialPool);
 
 /// @brief Destroyer function for renderer model.
 /// @param model Model to destroy.
@@ -292,15 +288,14 @@ RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCap
 
 // todo fix docs
 /// @brief
-/// @param scnFileData
-/// @param scnFileLineCount
+/// @param scnFile
 /// @param modelPool
 /// @param objectReferences
 /// @param transformOffsetInObject
 /// @param totalObjectSize
 /// @param objectCount
 /// @return
-RendererScene *RendererScene_CreateFromFile(StringView scnFileData, size_t scnFileLineCount, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount);
+RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount);
 
 /// @brief Destroyer function for object scene
 /// @param scene Scene to destroy
