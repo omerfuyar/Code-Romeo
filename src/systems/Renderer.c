@@ -1,5 +1,7 @@
 #include "systems/Renderer.h"
 
+#include "tools/Resources.h"
+
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
 
@@ -286,19 +288,24 @@ void Renderer_Terminate()
     RJGlobal_DebugInfo("Renderer terminated successfully.");
 }
 
-void Renderer_ConfigureShaders(StringView vertexShader, StringView fragmentShader)
+void Renderer_ConfigureShaders(StringView vertexShaderPath, StringView fragmentShaderPath)
 {
     if (RENDERER_MAIN_SHADER_PROGRAM != 0)
     {
         glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
     }
 
+    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderPath);
+    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderPath);
+
     GLint glslHasCompiled = 0;
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (const GLchar *const *)&vertexShaderSource.characters, NULL);
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
     glCompileShader(vertexShader);
+
+    ResourceText_Destroy(rscVertexShader);
 
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
     glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
@@ -307,8 +314,10 @@ void Renderer_ConfigureShaders(StringView vertexShader, StringView fragmentShade
     RJGlobal_DebugInfo("Vertex shader compiled successfully.");
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, (const GLchar *const *)&fragmentShaderSource.characters, NULL);
+    glShaderSource(fragmentShader, 1, (const GLchar *const *)&rscFragmentShader->data.characters, NULL);
     glCompileShader(fragmentShader);
+
+    ResourceText_Destroy(rscFragmentShader);
 
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
     glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
@@ -604,14 +613,16 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
 
 #pragma region Renderer Material
 
-ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFileLineCount)
+ListArray RendererMaterial_CreateFromFile(StringView matFile)
 {
+    ResourceText *rscMaterial = ResourceText_Create(matFile);
+
     size_t materialCount = 0;
 
     size_t mtlLineCount = 0;
-    StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
+    StringView *mtlLines = (StringView *)malloc(rscMaterial->lineCount * sizeof(StringView));
     RJGlobal_DebugAssertNullPointerCheck(mtlLines);
-    RJGlobal_MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
+    RJGlobal_MemorySet(mtlLines, rscMaterial->lineCount * sizeof(StringView), 0);
 
     size_t mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -628,7 +639,8 @@ ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFile
     StringView strD = scl("d");
     StringView strILLNUM = scl("illum");
 
-    String_Tokenize(matFileData, strNewline, &mtlLineCount, mtlLines, matFileLineCount);
+    String_Tokenize(scv(rscMaterial->data), strNewline, &mtlLineCount, mtlLines, rscMaterial->lineCount);
+
     for (size_t j = 0; j < mtlLineCount; j++) // count
     {
         String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
@@ -707,6 +719,7 @@ ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFile
     }
 
     free(mtlLines);
+    ResourceText_Destroy(rscMaterial);
 
     return materials;
 }

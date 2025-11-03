@@ -182,9 +182,9 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity);
 void Renderer_Terminate();
 
 /// @brief Configures the main shaders for the renderer.
-/// @param vertexShader Path and filename of the main vertex shader. The path is relative to the resources folder in executable file directory.
-/// @param fragmentShader Path and filename of the main fragment shader. The path is relative to the resources folder in executable file directory.
-void Renderer_ConfigureShaders(StringView vertexShader, StringView fragmentShader);
+/// @param vertexShaderPath Path and file name of the main vertex shader. The path is relative to the resources folder in executable file directory.
+/// @param fragmentShaderPath Path and file name of the main fragment shader. The path is relative to the resources folder in executable file directory.
+void Renderer_ConfigureShaders(StringView vertexShaderPath, StringView fragmentShaderPath);
 
 /// @brief Should be called before using rendering functions.
 void Renderer_StartRendering();
@@ -201,10 +201,10 @@ void Renderer_RenderScene(RendererScene *scene);
 #pragma region Renderer Debug
 
 /// @brief Initialize function for renderer debug functions. Should be called after the Renderer_Initialize function.
-/// @param vertexShader The source file for debug vertex shader.
-/// @param fragmentShader The source file for debug fragment shader.
+/// @param vertexShaderPath The source file for debug vertex shader.
+/// @param fragmentShaderPath The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShader, StringView fragmentShader, size_t initialVertexCapacity);
+void RendererDebug_Initialize(StringView vertexShaderPath, StringView fragmentShaderPath, size_t initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate();
@@ -234,10 +234,9 @@ void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
 #pragma region Renderer Material
 
 /// @brief Creates materials from a material file (prefer .mat). File can contain multiple materials but textures of them will be ignored. Use RendererMaterial_CreateFromFileTextured and to create a material with texture.
-/// @param matFileData Source code of the material file.
-/// @param matFileLineCount Number of lines in the material file source.
+/// @param matFile Path and file name of the material (.mat) file. The path is relative to the resources folder in executable file directory.
 /// @return Created material list type of the list is RendererMaterial*.
-ListArray RendererMaterial_CreateFromFile(StringView matFileData, size_t matFileLineCount);
+ListArray RendererMaterial_CreateFromFile(StringView matFile);
 
 /// @brief Creates materials from a material file (prefer .mat) with the argument texture. It copies the texture data into OpenGL so the original data can be freed after this function.
 /// @param matFileData Source code of the material file.

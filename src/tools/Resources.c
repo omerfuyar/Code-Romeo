@@ -7,13 +7,12 @@
 
 #pragma region ResourceText
 
-ResourceText *ResourceText_Create(StringView name, StringView relativePath)
+ResourceText *ResourceText_Create(StringView file)
 {
     ResourceText *resource = (ResourceText *)malloc(sizeof(ResourceText));
     RJGlobal_DebugAssertNullPointerCheck(resource);
 
-    resource->name = scc(name);
-    resource->path = scc(relativePath);
+    resource->file = scc(file);
 
     // size_t pathCount = 0;
     // String pathBuffer[RJGLOBAL_TEMP_BUFFER_SIZE / 32];
@@ -24,24 +23,23 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
     //    String_ConcatEnd(&resource->path, pathBuffer[i]);
     //}
 
-    String fullPath = scc(resource->path);
+    String fullPath = scc(resource->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
-    String_ConcatEnd(&fullPath, scv(resource->name));
 
     size_t lineCount = 0;
     int character = 0;
 
-    FILE *file = NULL;
-    RJGlobal_DebugAssertFileOpenCheck(file, fullPath.characters, "r");
-    while ((character = fgetc(file)) != EOF)
+    FILE *fileHandle = NULL;
+    RJGlobal_DebugAssertFileOpenCheck(fileHandle, fullPath.characters, "r");
+    while ((character = fgetc(fileHandle)) != EOF)
     {
         if (character == '\n')
         {
             lineCount++;
         }
     }
-    fclose(file);
+    fclose(fileHandle);
 
     resource->lineCount = lineCount;
 
@@ -55,14 +53,14 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
     lineBuffer[0] = '\0';
     size_t dataIndex = 0;
 
-    RJGlobal_DebugAssertFileOpenCheck(file, fullPath.characters, "r");
-    while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, file))
+    RJGlobal_DebugAssertFileOpenCheck(fileHandle, fullPath.characters, "r");
+    while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, fileHandle))
     {
         size_t lineLength = strlen(lineBuffer);
         RJGlobal_MemoryCopy(dataBuffer + dataIndex, lineLength, lineBuffer);
         dataIndex += lineLength;
     }
-    fclose(file);
+    fclose(fileHandle);
 
     dataBuffer[dataIndex] = '\0';
 
@@ -73,7 +71,7 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
 
     String_Destroy(&fullPath);
 
-    RJGlobal_DebugInfo("Resource '%s' loaded.", resource->name.characters);
+    RJGlobal_DebugInfo("Resource '%s' loaded.", resource->file.characters);
 
     return resource;
 }
@@ -81,14 +79,13 @@ ResourceText *ResourceText_Create(StringView name, StringView relativePath)
 void ResourceText_Destroy(ResourceText *resource)
 {
     RJGlobal_DebugAssertNullPointerCheck(resource);
-    RJGlobal_DebugAssertNullPointerCheck(resource->name.characters);
+    RJGlobal_DebugAssertNullPointerCheck(resource->file.characters);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resource->name.length), resource->name.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resource->name.length)] = '\0';
+    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resource->file.length), resource->file.characters);
+    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resource->file.length)] = '\0';
 
-    String_Destroy(&resource->name);
-    String_Destroy(&resource->path);
+    String_Destroy(&resource->file);
     String_Destroy(&resource->data);
     resource->lineCount = 0;
 
@@ -105,18 +102,16 @@ void ResourceText_Destroy(ResourceText *resource)
 
 #pragma region ResourceImage
 
-ResourceImage *ResourceImage_Create(StringView title, StringView path)
+ResourceImage *ResourceImage_Create(StringView file)
 {
     ResourceImage *resourceImage = (ResourceImage *)malloc(sizeof(ResourceImage));
     RJGlobal_DebugAssertNullPointerCheck(resourceImage);
 
-    resourceImage->name = scc(title);
-    resourceImage->path = scc(path);
+    resourceImage->file = scc(file);
 
-    String fullPath = scc(resourceImage->path);
+    String fullPath = scc(resourceImage->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
-    String_ConcatEnd(&fullPath, scv(resourceImage->name));
 
     stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 4);
@@ -124,7 +119,7 @@ ResourceImage *ResourceImage_Create(StringView title, StringView path)
 
     String_Destroy(&fullPath);
 
-    RJGlobal_DebugInfo("Resource Image '%s' loaded.", resourceImage->name.characters);
+    RJGlobal_DebugInfo("Resource Image '%s' loaded.", resourceImage->file.characters);
 
     return resourceImage;
 }
@@ -134,11 +129,10 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     RJGlobal_DebugAssertNullPointerCheck(resourceImage);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resourceImage->name.length), resourceImage->name.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resourceImage->name.length)] = '\0';
+    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resourceImage->file.length), resourceImage->file.characters);
+    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resourceImage->file.length)] = '\0';
 
-    String_Destroy(&resourceImage->name);
-    String_Destroy(&resourceImage->path);
+    String_Destroy(&resourceImage->file);
     resourceImage->channels = 0;
     resourceImage->size = Vector2Int_New(0, 0);
 

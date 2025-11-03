@@ -15,8 +15,7 @@
 /// @brief Resource representation for text files.
 typedef struct ResourceText
 {
-    String name;
-    String path;
+    String file;
     String data;
     size_t lineCount;
 } ResourceText;
@@ -24,8 +23,7 @@ typedef struct ResourceText
 /// @brief Resource representation for image files.
 typedef struct ResourceImage
 {
-    String name;
-    String path;
+    String file;
     void *data;
     Vector2Int size;
     int channels;
@@ -36,10 +34,9 @@ typedef struct ResourceImage
 #pragma region ResourceText
 
 /// @brief Creates a new resource.
-/// @param name The name of the resource file. (e.g. "vertex.glsl")
-/// @param path The file path of the resource in resources folder. Excluding file name. (e.g. "shaders/").
+/// @param file The file path of the resource in resources folder. Including file name. (e.g. "shaders/vertex.glsl").
 /// @return Pointer to the created resource.
-ResourceText *ResourceText_Create(StringView name, StringView path);
+ResourceText *ResourceText_Create(StringView file);
 
 /// @brief Destroys a resource.
 /// @param resource The resource to destroy.
@@ -50,10 +47,9 @@ void ResourceText_Destroy(ResourceText *resource);
 #pragma region ResourceImage
 
 /// @brief Creates a new resource image. Looks for a resources folder in executable directory.
-/// @param name The name of the resource image. (e.g. "texture.png")
-/// @param path The file path of the resource image in resources folder. Excluding file name. (e.g. "images/").
+/// @param file The file path of the resource image in resources folder. Including file name. (e.g. "images/texture.png").
 /// @return Pointer to the created resource image.
-ResourceImage *ResourceImage_Create(StringView name, StringView path);
+ResourceImage *ResourceImage_Create(StringView file);
 
 /// @brief Destroys a resource image.
 /// @param resourceImage The resource image to destroy.
