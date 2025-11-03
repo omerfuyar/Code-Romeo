@@ -286,7 +286,7 @@ void Renderer_Terminate()
     RJGlobal_DebugInfo("Renderer terminated successfully.");
 }
 
-void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource)
+void Renderer_ConfigureShaders(StringView vertexShader, StringView fragmentShader)
 {
     if (RENDERER_MAIN_SHADER_PROGRAM != 0)
     {

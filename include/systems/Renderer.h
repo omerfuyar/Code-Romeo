@@ -182,9 +182,9 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity);
 void Renderer_Terminate();
 
 /// @brief Configures the main shaders for the renderer.
-/// @param vertexShaderSource Source code of the main vertex shader.
-/// @param fragmentShaderSource Source code of the main fragment shader.
-void Renderer_ConfigureShaders(StringView vertexShaderSource, StringView fragmentShaderSource);
+/// @param vertexShader Path and filename of the main vertex shader. The path is relative to the resources folder in executable file directory.
+/// @param fragmentShader Path and filename of the main fragment shader. The path is relative to the resources folder in executable file directory.
+void Renderer_ConfigureShaders(StringView vertexShader, StringView fragmentShader);
 
 /// @brief Should be called before using rendering functions.
 void Renderer_StartRendering();
@@ -201,10 +201,10 @@ void Renderer_RenderScene(RendererScene *scene);
 #pragma region Renderer Debug
 
 /// @brief Initialize function for renderer debug functions. Should be called after the Renderer_Initialize function.
-/// @param vertexShaderSource The source file for debug vertex shader.
-/// @param fragmentShaderSource The source file for debug fragment shader.
+/// @param vertexShader The source file for debug vertex shader.
+/// @param fragmentShader The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShaderSource, StringView fragmentShaderSource, size_t initialVertexCapacity);
+void RendererDebug_Initialize(StringView vertexShader, StringView fragmentShader, size_t initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate();
