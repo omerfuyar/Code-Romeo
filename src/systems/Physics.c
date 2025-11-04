@@ -235,8 +235,7 @@ void PhysicsScene_Destroy(PhysicsScene *scene)
     RJGlobal_DebugAssertNullPointerCheck(scene);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, scene->name.length), scene->name.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, scene->name.length)] = '\0';
+    scb(scene->name, tempTitle);
 
     for (size_t i = scene->components.count - 1; i < scene->components.count; i--)
     {

@@ -3,7 +3,10 @@
 #include "RJGlobal.h"
 
 /// @brief Buffer size for numeric to string conversions.
-#define STRING_TO_NUMERIC_CHAR_BUFFER 32
+#define STRING_NUMERIC_CHAR_BUFFER 32
+
+/// @brief Buffer size for scb macro.
+#define STRING_TEMP_BUFFER_SIZE 128
 
 #pragma region Typedefs
 
@@ -49,6 +52,13 @@ String String_CreateCopySafe(const char *string, size_t length);
 /// @param length Length of the string.
 #define scs(string, stringLength) \
     (StringView) { .characters = string, .length = stringLength }
+
+/// @brief Copies max STRING_TEMP_BUFFER_SIZE number of characters from string data to buffer. Adds a null terminator at the end of the buffer.
+/// @param string String object to create a buffer.
+/// @param buffer Buffer to use.
+#define scb(string, buffer)                                                                                                                              \
+    RJGlobal_MemoryCopy(buffer, ((STRING_TEMP_BUFFER_SIZE - 1) < (string.length) ? (STRING_TEMP_BUFFER_SIZE - 1) : (string.length)), string.characters); \
+    buffer[((STRING_TEMP_BUFFER_SIZE - 1) < (string.length) ? (STRING_TEMP_BUFFER_SIZE - 1) : (string.length))] = '\0'
 
 /// @brief Destroys a String object and frees its memory if it is a copy.
 /// @param string Pointer to the String object to destroy.
