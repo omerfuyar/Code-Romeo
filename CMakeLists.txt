@@ -39,6 +39,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw/include
     ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cglm/include
     ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/stb/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/miniaudio/include
 )
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")

@@ -1,6 +1,6 @@
 #include "systems/Renderer.h"
 
-#include "tools/Resources.h"
+#include "tools/Resource.h"
 
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
