@@ -115,14 +115,14 @@
 #include <time.h>
 #include <limits.h>
 
-#if RJGLOBAL_PLATFORM_WINDOWS
+#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_WINDOWS
 
 /// @brief Character used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_CHAR '\\'
 /// @brief String used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_STR "\\"
 
-#elif RJGLOBAL_PLATFORM_UNIX
+#else
 
 /// @brief Character used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_CHAR '/'
