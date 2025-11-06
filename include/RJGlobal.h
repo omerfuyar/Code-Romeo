@@ -8,21 +8,21 @@
 
 #if defined(_WIN32)
 
-/// @brief Current platform specifier.
+/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
 #define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_WINDOWS
 /// @brief Platform name string.
 #define RJGLOBAL_PLATFORM_STRING "WINDOWS"
 
 #elif defined(__linux__)
 
-/// @brief Current platform specifier.
+/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
 #define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_LINUX
 /// @brief Platform name string.
 #define RJGLOBAL_PLATFORM_STRING "LINUX"
 
 #elif defined(__APPLE__) && defined(__MACH__)
 
-/// @brief Current platform specifier.
+/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
 #define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_MACOS
 /// @brief Platform name string.
 #define RJGLOBAL_PLATFORM_STRING "MACOS"
@@ -33,7 +33,7 @@
 
 #endif
 
-#if RJGLOBAL_PLATFORM_LINUX || RJGLOBAL_PLATFORM_MACOS
+#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_LINUX || RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_MACOS
 
 /// @brief Current platform is Unix-like.
 #define RJGLOBAL_PLATFORM_UNIX 1
@@ -56,7 +56,7 @@
 
 #if defined(__clang__) && defined(_MSC_VER)
 
-/// @brief Current compiler specifier.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
 #define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_CLANGCL
 /// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
@@ -65,7 +65,7 @@
 
 #elif defined(__clang__)
 
-/// @brief Current compiler specifier.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
 #define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_CLANG
 /// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
@@ -74,7 +74,7 @@
 
 #elif defined(_MSC_VER)
 
-/// @brief Current compiler specifier.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
 #define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_MSVC
 /// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION _MSC_VER
@@ -83,7 +83,7 @@
 
 #elif defined(__GNUC__)
 
-/// @brief Current compiler specifier.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
 #define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_GCC
 /// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
