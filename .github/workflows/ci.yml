@@ -97,18 +97,19 @@ jobs:
       - name: Run graphical app
         working-directory: Code-Juliett
         run: |
+          BUILD_DIR="${{ matrix.build_type == 'd' && 'debug' || 'release' }}"
           if [ "$RUNNER_OS" == "Linux" ]; then
-            xvfb-run -a --server-args="-screen 0 1024x768x24" build/${{ matrix.build_type }}/Code-Juliett &
+            xvfb-run -a --server-args="-screen 0 1024x768x24" build/$BUILD_DIR/Code-Juliett &
             APP_PID=$!
             sleep 5
             kill $APP_PID
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            build/${{ matrix.build_type }}/Code-Juliett &
+            build/$BUILD_DIR/Code-Juliett &
             APP_PID=$!
             sleep 5
             kill $APP_PID
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            ./build/${{ matrix.build_type }}/Code-Juliett.exe &
+            ./build/$BUILD_DIR/Code-Juliett.exe &
             APP_PID=$!
             sleep 5
             taskkill /F /PID $APP_PID
