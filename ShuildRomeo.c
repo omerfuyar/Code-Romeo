@@ -31,19 +31,21 @@ int main(int argc, char **argv)
     SHU_CompilerTryConfigure(argv[1]);
 
     SHU_CompilerSetFlags("-w -DCGLM_STATIC");
-#if SHUM_PLATFORM == SHUM_PLATFORM_WINDOWS
+#if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
 #endif
+
+    char *arcOutputDirectory = isDebug ? "build/debug/" : "build/release/";
 
     SHU_ModuleBegin("cglm");
     SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
     SHU_ModuleAddSourceDirectory("dependencies/cglm/src/");
-    SHU_ModuleCompile("build/arc/", SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     SHU_ModuleBegin("glfw");
     SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
     SHU_ModuleAddSourceDirectory("dependencies/glfw/src/");
-    SHU_ModuleCompile("build/arc/", SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     char *compilerFlags = NULL;
 
@@ -51,20 +53,11 @@ int main(int argc, char **argv)
     {
         if (strcmp(argv[1], "clang-cl") == 0 || strcmp(argv[1], "cl") == 0)
         {
-            compilerFlags =
-                "/Zi /Od /W4 /permissive- /GS /WX /wd4324";
-
-            SHU_CompilerSetFlags(compilerFlags);
+            compilerFlags = "/Zi /Od /W4 /permissive- /GS /WX /wd4324";
         }
         else if (strcmp(argv[1], "clang") == 0 || strcmp(argv[1], "gcc") == 0)
         {
-            compilerFlags =
-                "-g -O0 -Wall -Werror -Wextra -Wshadow -Wpedantic -Wconversion \
-            -Wnull-dereference -Wunused-result -Wno-strict-prototypes \
-            -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-value \
-            -fstack-protector-strong";
-
-            SHU_CompilerSetFlags(compilerFlags);
+            compilerFlags = "-g -O0 -Wall -Werror -Wextra -Wshadow -Wpedantic -Wconversion -Wnull-dereference -Wunused-result -Wno-strict-prototypes -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-value -fstack-protector-strong";
         }
         else
         {
@@ -75,17 +68,11 @@ int main(int argc, char **argv)
     {
         if (strcmp(argv[1], "clang-cl") == 0 || strcmp(argv[1], "cl") == 0)
         {
-            compilerFlags =
-                "/O2 /DNDEBUG";
-
-            SHU_CompilerSetFlags(compilerFlags);
+            compilerFlags = "/O2 /DNDEBUG";
         }
         else if (strcmp(argv[1], "clang") == 0 || strcmp(argv[1], "gcc") == 0)
         {
-            compilerFlags =
-                "-O3 -DNDEBUG";
-
-            SHU_CompilerSetFlags(compilerFlags);
+            compilerFlags = "-O3 -DNDEBUG";
         }
         else
         {
@@ -93,14 +80,16 @@ int main(int argc, char **argv)
         }
     }
 
+    SHU_CompilerSetFlags(compilerFlags);
+
     SHU_CompilerAddFlags("-DCGLM_STATIC");
-#if SHUM_PLATFORM == SHUM_PLATFORM_WINDOWS
+#if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
 #endif
 
-    SHU_Log(0, SHUM_COLOR_BLUE("[Romeo]"), "Build info : %s", buildTypeString);
-    SHU_Log(0, SHUM_COLOR_BLUE("[Romeo]"), "Compiler info : %s", argv[1]);
-    SHU_Log(0, SHUM_COLOR_BLUE("[Romeo]"), "Compile options : %s", compilerFlags);
+    SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Build info : %s", buildTypeString);
+    SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Compiler info : %s", argv[1]);
+    SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Compile options : %s", compilerFlags);
 
     SHU_ModuleBegin("Code-Romeo");
 
@@ -113,7 +102,7 @@ int main(int argc, char **argv)
     SHU_ModuleAddSourceDirectory("src/");
     SHU_ModuleAddSourcefile("dependencies/glad/src/glad.c");
 
-    SHU_ModuleCompile("build/arc/", SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     return 0;
 }
