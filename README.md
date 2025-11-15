@@ -25,9 +25,9 @@ sudo apt install libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev li
 
 ## Build
 
-* Project uses my own [build library](https://github.com/omerfuyar/shuild) to build all sub dependencies. User just needs to compile the shuildRomeo.c to build static libraries into build/release/. I will use clang for examples but you can use your own (clang/gcc/msvc).
+* Project uses my own [build library](https://github.com/omerfuyar/shuild) to build all sub dependencies. User just needs to compile the ShuildRomeo.c to build static libraries into build/release/. I will use clang for examples but you can use your own (clang/gcc/msvc).
 
 ``` shell
-clang shuildRomeo.c -o shuildRomeo -O3
-./shuildRomeo clang r
+clang ShuildRomeo.c -o ShuildRomeo -O3
+./ShuildRomeo clang r
 ```

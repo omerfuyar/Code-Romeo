@@ -82,35 +82,36 @@ jobs:
           mv Code-Romeo Code-Juliett/dependencies/Romeo
         shell: bash
 
-      - name: Build shuildJuliett
+      - name: Build ShuildJuliett
         working-directory: Code-Juliett
         run: |
-          ${{ matrix.c_compiler }} shuildJuliett.c -O3 -o shuildJuliett${{ runner.os == 'Windows' && '.exe' || '' }}
+          ${{ matrix.c_compiler }} ShuildJuliett.c -O3 -o ShuildJuliett${{ runner.os == 'Windows' && '.exe' || '' }}
         shell: bash
 
       - name: Build Code-Juliett
         working-directory: Code-Juliett
         run: |
-          ./shuildJuliett${{ runner.os == 'Windows' && '.exe' || '' }} ${{ matrix.c_compiler }} ${{ matrix.build_type }} all
+          ./ShuildJuliett${{ runner.os == 'Windows' && '.exe' || '' }} ${{ matrix.c_compiler }} ${{ matrix.build_type }} all
         shell: bash
 
       - name: Run graphical app
         working-directory: Code-Juliett
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            xvfb-run -a --server-args="-screen 0 1024x768x24" build/${{ matrix.build_type }}/Code-Juliett &
+          BUILD_DIR="${{ matrix.build_type == 'd' && 'debug' || 'release' }}"
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            xvfb-run -a --server-args="-screen 0 1024x768x24" build/$BUILD_DIR/Code-Juliett &
             APP_PID=$!
             sleep 5
             kill $APP_PID
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            build/${{ matrix.build_type }}/Code-Juliett &
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            build/$BUILD_DIR/Code-Juliett &
             APP_PID=$!
             sleep 5
             kill $APP_PID
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            ./build/${{ matrix.build_type }}/Code-Juliett.exe &
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            build/$BUILD_DIR/Code-Juliett.exe &
             APP_PID=$!
             sleep 5
-            taskkill /F /PID $APP_PID
+            taskkill //F //PID $APP_PID
           fi
         shell: bash
