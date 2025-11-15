@@ -5,7 +5,6 @@ on:
     branches: [ "**" ]
   pull_request:
     branches: [ "main" ]
-
   workflow_dispatch:
 
 jobs:
@@ -16,48 +15,42 @@ jobs:
         include:
           - os: windows-latest
             c_compiler: cl
-            build_type: Release
+            build_type: r
           - os: windows-latest
             c_compiler: cl
-            build_type: Debug
-          - os: windows-latest
-            c_compiler: clang-cl
-            build_type: Release
-          - os: windows-latest
-            c_compiler: clang-cl
-            build_type: Debug
+            build_type: d
           - os: windows-latest
             c_compiler: clang
-            build_type: Release
+            build_type: r
           - os: windows-latest
             c_compiler: clang
-            build_type: Debug
+            build_type: d
 
           - os: ubuntu-latest
             c_compiler: gcc
-            build_type: Release
+            build_type: r
           - os: ubuntu-latest
             c_compiler: gcc
-            build_type: Debug
+            build_type: d
           - os: ubuntu-latest
             c_compiler: clang
-            build_type: Release
+            build_type: r
           - os: ubuntu-latest
             c_compiler: clang
-            build_type: Debug
+            build_type: d
 
           - os: macos-latest
             c_compiler: gcc
-            build_type: Release
+            build_type: r
           - os: macos-latest
             c_compiler: gcc
-            build_type: Debug
+            build_type: d
           - os: macos-latest
             c_compiler: clang
-            build_type: Release
+            build_type: r
           - os: macos-latest
             c_compiler: clang
-            build_type: Debug
+            build_type: d
 
     runs-on: ${{ matrix.os }}
 
@@ -75,17 +68,14 @@ jobs:
           path: 'Code-Juliett'
           submodules: 'recursive'
 
-      - name: Install Dependencies
-        working-directory: Code-Juliett
+      - name: Install Dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt update
-            sudo apt install libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev libgl1-mesa-dev xvfb
-          fi
-        shell: bash
+          sudo apt update
+          sudo apt install libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev xvfb
 
       - name: Add MSVC to PATH
-        if: runner.os == 'Windows' && (matrix.c_compiler == 'cl' || matrix.c_compiler == 'clang-cl')
+        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Swap Code-Romeo with the version under test
@@ -94,31 +84,33 @@ jobs:
           mv Code-Romeo Code-Juliett/dependencies/Romeo
         shell: bash
 
-      - name: Configure and Build
+      - name: Build shuildJuliett
         working-directory: Code-Juliett
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            ${{ matrix.c_compiler }} shuildJuliett.c ${{ matrix.build_type == 'cl' && '' || '-o shuildJuliett.exe' }} 
-          fi
-          ./shuildJuliett ${{ matrix.c_compiler }} ${{ matrix.build_type == 'Debug' && 'd' || 'r' }}
+          ${{ matrix.c_compiler }} shuildJuliett.c -O3 -o shuildJuliett${{ runner.os == 'Windows' && '.exe' || '' }}
+        shell: bash
+
+      - name: Build Code-Juliett
+        working-directory: Code-Juliett
+        run: |
+          ./shuildJuliett${{ runner.os == 'Windows' && '.exe' || '' }} ${{ matrix.c_compiler }} ${{ matrix.build_type }} all
         shell: bash
 
       - name: Run graphical app
         working-directory: Code-Juliett
         run: |
-          BUILD_TYPE_LOWER=$(echo "${{ matrix.build_type }}" | tr '[:upper:]' '[:lower:]')
           if [ "$RUNNER_OS" == "Linux" ]; then
-            xvfb-run -a --server-args="-screen 0 1024x768x24" build/$BUILD_TYPE_LOWER/Code-Juliett &
+            xvfb-run -a --server-args="-screen 0 1024x768x24" build/${{ matrix.build_type }}/Code-Juliett &
             APP_PID=$!
             sleep 5
             kill $APP_PID
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            build/$BUILD_TYPE_LOWER/Code-Juliett &
+            build/${{ matrix.build_type }}/Code-Juliett &
             APP_PID=$!
             sleep 5
             kill $APP_PID
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            ./build/$BUILD_TYPE_LOWER/Code-Juliett.exe &
+            ./build/${{ matrix.build_type }}/Code-Juliett.exe &
             APP_PID=$!
             sleep 5
             taskkill /F /PID $APP_PID
