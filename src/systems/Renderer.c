@@ -7,7 +7,26 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#if RJGLOBAL_COMPILER_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Weverything"
+#elif RJGLOBAL_COMPILER_GCC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weverything"
+#elif RJGLOBAL_COMPILER_MSVC
+#pragma warning(push, 0)
+#endif
+
 #include <cglm/cglm.h>
+
+#if RJGLOBAL_COMPILER_CLANG
+#pragma clang diagnostic pop
+#elif RJGLOBAL_COMPILER_GCC
+#pragma GCC diagnostic pop
+#elif RJGLOBAL_COMPILER_MSVC
+#pragma warning(pop)
+#endif
 
 #pragma region Source Only
 
