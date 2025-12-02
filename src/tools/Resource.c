@@ -13,7 +13,7 @@
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include "stb/stb_image.h"
 
 #if RJGLOBAL_COMPILER_CLANG
 #pragma clang diagnostic pop

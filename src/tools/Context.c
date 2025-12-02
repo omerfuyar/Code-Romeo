@@ -1,7 +1,7 @@
 #include "tools/Context.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
 
 ContextWindow CONTEXT_MAIN_WINDOW = {0};
 Context_VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;

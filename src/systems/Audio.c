@@ -5,7 +5,27 @@
 #include "tools/Resource.h"
 
 #define MINIAUDIO_IMPLEMENTATION
-#include <miniaudio/miniaudio.h>
+
+#if RJGLOBAL_COMPILER_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Weverything"
+#elif RJGLOBAL_COMPILER_GCC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weverything"
+#elif RJGLOBAL_COMPILER_MSVC
+#pragma warning(push, 0)
+#endif
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "miniaudio/miniaudio.h"
+
+#if RJGLOBAL_COMPILER_CLANG
+#pragma clang diagnostic pop
+#elif RJGLOBAL_COMPILER_GCC
+#pragma GCC diagnostic pop
+#elif RJGLOBAL_COMPILER_MSVC
+#pragma warning(pop)
+#endif
 
 #pragma region Source Only
 

@@ -5,8 +5,8 @@
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
 
 #if RJGLOBAL_COMPILER_CLANG
 #pragma clang diagnostic push
@@ -18,7 +18,7 @@
 #pragma warning(push, 0)
 #endif
 
-#include <cglm/cglm.h>
+#include "cglm/cglm.h"
 
 #if RJGLOBAL_COMPILER_CLANG
 #pragma clang diagnostic pop

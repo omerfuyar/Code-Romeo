@@ -1,13 +1,13 @@
-#define SHUM_NO_RUN_LOG
-#define SHUM_MAX_COMMAND_BUFFER_SIZE 8192
+#define SHUC_NO_RUN_LOG
+#define SHUC_MAX_COMMAND_BUFFER_SIZE 8192
 #define SHUILD_IMPLEMENTATION
 #include "shuild.h"
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc < 3)
     {
-        return 1;
+        goto usageError;
     }
 
     char isDebug = -1;
@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     }
 
     SHU_CompilerTryConfigure(argv[1]);
+    SHU_Automate(argc, argv);
 
     SHU_CompilerSetFlags("-w -DCGLM_STATIC");
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
@@ -37,17 +38,35 @@ int main(int argc, char **argv)
 
     char *arcOutputDirectory = isDebug ? "build/debug/" : "build/release/";
 
-    SHU_ModuleBegin("cglm");
-    SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
-    SHU_ModuleAddSourceDirectory("dependencies/cglm/src/");
-    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
-
-    SHU_ModuleBegin("glfw");
-    SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
-    SHU_ModuleAddSourceDirectory("dependencies/glfw/src/");
-    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
-
     char *compilerFlags = NULL;
+
+    if (argc > 3)
+    {
+        if (strcmp(argv[1], "clang-cl") == 0 || strcmp(argv[1], "cl") == 0)
+        {
+            compilerFlags = "/O2 /DNDEBUG";
+        }
+        else if (strcmp(argv[1], "clang") == 0 || strcmp(argv[1], "gcc") == 0)
+        {
+            compilerFlags = "-O3 -DNDEBUG";
+        }
+        else
+        {
+            return 3;
+        }
+
+        SHU_CompilerAddFlags(compilerFlags);
+
+        SHU_ModuleBegin("cglm");
+        SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
+        SHU_ModuleAddSourceDirectory("dependencies/cglm/src/");
+        SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+
+        SHU_ModuleBegin("glfw");
+        SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
+        SHU_ModuleAddSourceDirectory("dependencies/glfw/src/");
+        SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+    }
 
     if (isDebug)
     {
@@ -98,6 +117,7 @@ int main(int argc, char **argv)
     SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
     SHU_ModuleAddIncludeDirectory("dependencies/glad/include/");
     SHU_ModuleAddIncludeDirectory("dependencies/stb/include/");
+    SHU_ModuleAddIncludeDirectory("dependencies/miniaudio/include/");
 
     SHU_ModuleAddSourceDirectory("src/");
     SHU_ModuleAddSourcefile("dependencies/glad/src/glad.c");
@@ -105,4 +125,8 @@ int main(int argc, char **argv)
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     return 0;
+
+usageError:
+    SHU_LogInfo("Usage is <compiler> <d/r> [all]");
+    return 1;
 }
