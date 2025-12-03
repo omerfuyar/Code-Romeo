@@ -8,7 +8,31 @@
 
 ## Quick Solutions Comparison
 
-### Option 1: Handle-Based System ⭐ **RECOMMENDED**
+### Option 0: Batch-Only Operations (No Individual Destroy) ⭐ **SIMPLEST**
+**Complexity:** Very Low  
+**Implementation Time:** 1-2 days  
+**Performance Impact:** None (actually improves cache usage)  
+
+**Pros:**
+- ✅ Completely eliminates the problem (no destroy = no shifting)
+- ✅ Zero implementation complexity
+- ✅ Perfect cache-friendly (no fragmentation)
+- ✅ Natural for scene-based games
+- ✅ No API breaking changes for creation
+
+**Cons:**
+- ⚠️ Cannot destroy individual components (use batches instead)
+- ⚠️ Need active flags for "soft delete"
+- ⚠️ Memory not freed until batch cleared
+- ⚠️ Requires different mental model
+
+**When to use:** If your game loads/unloads entire scenes or has natural batch operations (particles, enemies, levels).
+
+**See:** [NO_DESTROY_APPROACH.md](NO_DESTROY_APPROACH.md) for detailed analysis
+
+---
+
+### Option 1: Handle-Based System ⭐ **RECOMMENDED (for flexibility)**
 **Complexity:** Medium  
 **Implementation Time:** 2-3 days  
 **Performance Impact:** Negligible (~1-2 CPU cycles overhead)  
@@ -110,7 +134,32 @@
 
 ## Recommended Approach
 
-### For Most Cases: **Phased Implementation**
+### For Scene-Based Games: **Batch-Only Operations** ⭐ NEW
+
+**If your game naturally loads/unloads entire levels or scenes:**
+
+**Phase 1 (This Week):** Add Batch Clear Operations
+- Add `ClearBatch()` and `ClearScene()` functions
+- Document that individual destroy is unsafe
+- Use batch operations during scene transitions
+
+**Phase 2 (Next Week):** Add Active Flags
+- Add `bool isActive` to components
+- "Destroy" becomes setting flag to false
+- Skip inactive components in update loops
+
+**Phase 3 (Optional):** Add Compaction
+- Compact batches during loading screens
+- Reclaim memory from inactive components
+- Call during safe times only
+
+**Why this approach:**
+- ✅ Simplest solution (1-2 days total)
+- ✅ Perfect for scene-based games
+- ✅ Zero implementation complexity
+- ✅ Excellent cache performance
+
+### For Complex/Dynamic Games: **Phased Implementation**
 
 **Phase 1 (Week 1):** Implement Handle-Based Components
 - Fixes the dangling pointer problem
@@ -132,13 +181,15 @@
 Ask yourself these questions:
 
 1. **How much time do I have?**
-   - <1 day → Tombstone approach or document issue
-   - 2-3 days → Handle-based system (recommended)
+   - <1 day → Batch-only approach or tombstone
+   - 1-2 days → Batch-only with active flags (recommended for scene-based)
+   - 2-3 days → Handle-based system (recommended for flexibility)
    - 1-2 weeks → Handle-based + API simplification
    - 2-3 weeks → Full ECS refactor
 
 2. **What's the target use case?**
-   - Learning/simple games → Single global scene + handles
+   - Scene-based games (levels, screens) → Batch-only operations
+   - Learning/simple games → Batch-only or single global scene
    - Production games → Handle-based system
    - Game engine → Consider ECS
 
@@ -153,6 +204,15 @@ Ask yourself these questions:
    - Low → Even tombstones are fine
 
 ## Getting Started
+
+### If you chose Batch-Only Operations (NEW - Simplest!):
+
+1. Read `NO_DESTROY_APPROACH.md` for detailed analysis
+2. Add `ClearBatch()` and `ClearScene()` functions
+3. Add `bool isActive` to component structs
+4. Modify update loops to skip inactive components
+5. Use during scene transitions and level loading
+6. Optional: Add compaction for long-running games
 
 ### If you chose Handle-Based System:
 
@@ -198,13 +258,19 @@ Ask yourself these questions:
 
 | Your Priority | Recommended Solution |
 |--------------|---------------------|
-| Quick fix | Tombstone approach |
+| Simplest solution | **Batch-only operations** ⭐ |
+| Scene-based games | **Batch-only operations** ⭐ |
+| Quick fix | Batch-only or tombstone |
 | Long-term stability | Handle-based system |
-| Beginner-friendly | Single global scene |
-| Maximum performance | Handle-based or ECS |
-| Minimal changes | Tombstone or documentation |
+| Beginner-friendly | Batch-only or single scene |
+| Maximum performance | Batch-only or ECS |
+| Minimal changes | Batch-only (no API breaks!) |
 | Professional/production | Handle-based system |
-| Learning/educational | Single scene + handles |
+| Learning/educational | Batch-only or single scene |
 | Building a game engine | ECS architecture |
+| Need individual destroy | Handle-based system |
+| Dynamic spawning/despawning | Handle-based system |
 
-**Bottom line:** For most cases, the **Handle-Based Component System** offers the best balance of effort, safety, and long-term maintainability.
+**Bottom line:** 
+- **For scene-based games:** The **Batch-Only Operations** approach is simplest and safest
+- **For complex games with dynamic objects:** The **Handle-Based Component System** offers the best balance of flexibility and safety

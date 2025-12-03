@@ -23,7 +23,7 @@ Destroy(b);
 
 ## The Solution
 
-Use **handles** instead of pointers:
+**Option A: Use handles instead of pointers** (for flexible games)
 
 ```c
 // Create three components (returns handles)
@@ -37,6 +37,30 @@ Destroy(b);
 // Handle 'c' is still VALID! ✅
 // Handles don't become invalid when other components are destroyed
 ```
+
+**Option B: Use batch operations only** (for scene-based games) ⭐ SIMPLER!
+
+```c
+// Don't destroy individual components at all!
+Batch* batch = CreateBatch(...);
+AddComponent(batch, ...);
+AddComponent(batch, ...);
+AddComponent(batch, ...);
+
+// Later: clear entire batch
+ClearBatch(batch);  // All components gone at once
+
+// Or: mark individual as inactive instead of destroying
+component->isActive = false;  // Safe, no pointer invalidation!
+```
+
+**Why batch-only is simpler:**
+- ✅ No destroy = no shifting = no dangling pointers
+- ✅ Perfect for level-based games
+- ✅ Zero implementation complexity
+- ✅ Better cache performance
+
+See [NO_DESTROY_APPROACH.md](NO_DESTROY_APPROACH.md) for details
 
 ## Which Document Should I Read?
 

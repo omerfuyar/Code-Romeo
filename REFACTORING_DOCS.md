@@ -87,6 +87,21 @@ Contains:
 
 ---
 
+### [NO_DESTROY_APPROACH.md](NO_DESTROY_APPROACH.md) ⭐ NEW
+**Purpose:** Alternative solution - batch-only operations  
+**Read Time:** 15 minutes  
+**Best For:** Scene-based games with natural batch operations  
+
+Contains:
+- Eliminates destroy operations entirely
+- Use batch clear/rebuild instead
+- Active flags for "soft delete"
+- Perfect for level-based games
+- Simplest solution (1-2 days)
+- Comparison with other approaches
+
+---
+
 ## The Problem (In Brief)
 
 When components are stored in `ListArray` and destroyed with `ListArray_RemoveAtIndex`, the memory shifts to fill the gap. This invalidates **all pointers** to components that came after the destroyed one, causing crashes and undefined behavior.
@@ -104,9 +119,36 @@ RendererBatch_DestroyComponent(compB);
 compC->position = ...; // CRASH or undefined behavior
 ```
 
-## Recommended Solution
+## Recommended Solutions
 
-**Handle-Based Component System** (Generational Indices)
+### For Scene-Based Games: Batch-Only Operations ⭐ SIMPLEST
+
+Instead of individual destroy, use batch operations:
+```c
+// Don't destroy individual components
+// Instead, clear entire batches during scene transitions
+
+Batch* batch = CreateBatch(...);
+AddComponent(batch, ...);
+AddComponent(batch, ...);
+
+// Later: clear entire batch
+ClearBatch(batch);
+
+// Or: use active flags for soft delete
+component->isActive = false;  // Safe, no shifting!
+```
+
+**Why This Solution?**
+- ✅ Eliminates the problem entirely (no destroy = no shifting)
+- ✅ Simplest implementation (1-2 days)
+- ✅ Perfect for scene/level-based games
+- ✅ Zero API breaking changes
+- ✅ Excellent cache performance
+
+See [NO_DESTROY_APPROACH.md](NO_DESTROY_APPROACH.md) for details.
+
+### For Complex Games: Handle-Based Component System
 
 Instead of returning pointers, return opaque handles:
 ```c
@@ -157,7 +199,15 @@ RendererComponent_SetPosition(batch, compC, ...); // Safe!
 
 ## Getting Started
 
-### If You're the Framework Developer
+### If You're the Framework Developer (Scene-Based Game)
+
+1. Read [NO_DESTROY_APPROACH.md](NO_DESTROY_APPROACH.md) for simplest solution
+2. Add `ClearBatch()` and `ClearScene()` functions
+3. Add `bool isActive` to components
+4. Update loops to skip inactive components
+5. Use during scene transitions
+
+### If You're the Framework Developer (Complex Game)
 
 1. Read [REFACTORING_TIPS.md](REFACTORING_TIPS.md) thoroughly
 2. Review [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)
@@ -206,8 +256,15 @@ These documents are provided as architectural guidance for the Code-Romeo projec
 Code-Romeo/
 ├── README.md                    # Main project README
 ├── REFACTORING_DOCS.md          # This file
+├── START_HERE.md                # Quick orientation for all readers
 ├── QUICK_REFERENCE.md           # Quick decision guide
 ├── DIAGRAMS.md                  # Visual explanations
+├── REFACTORING_TIPS.md          # Comprehensive analysis
+├── IMPLEMENTATION_GUIDE.md      # Step-by-step code guide
+├── MIGRATION_GUIDE.md           # User migration help
+├── NO_DESTROY_APPROACH.md       # Batch-only solution (simplest!) ⭐
+└── CACHE_OPTIMIZATION.md        # Data-oriented design analysis
+```
 ├── REFACTORING_TIPS.md          # Comprehensive analysis
 ├── IMPLEMENTATION_GUIDE.md      # Step-by-step code guide
 └── MIGRATION_GUIDE.md           # User migration help
