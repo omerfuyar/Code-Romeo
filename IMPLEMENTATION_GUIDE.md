@@ -362,6 +362,8 @@ void RendererComponent_SetScaleReference(RendererBatch *batch, ComponentHandle h
 
 #### Step 1.4: Implement New Functions
 
+**Note:** This Phase 1 implementation solves the component handle invalidation problem but still has the matrix shifting issue. This is intentional - Phase 2 addresses the matrix problem separately. The key insight is that component handles remain valid even when matrices shift.
+
 In `src/systems/Renderer.c`:
 
 ```c
