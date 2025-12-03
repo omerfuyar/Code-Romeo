@@ -146,7 +146,7 @@ float String_ToFloat(StringView string)
 {
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
-    char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
+    char buffer[STRING_NUMERIC_CHAR_BUFFER];
     size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
@@ -159,7 +159,7 @@ int String_ToInt(StringView string)
 {
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
-    char buffer[STRING_TO_NUMERIC_CHAR_BUFFER];
+    char buffer[STRING_NUMERIC_CHAR_BUFFER];
     size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';

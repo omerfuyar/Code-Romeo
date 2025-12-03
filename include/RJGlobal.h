@@ -2,38 +2,30 @@
 
 #pragma region Platform Detection
 
+#define RJGLOBAL_PLATFORM_WINDOWS 0
+#define RJGLOBAL_PLATFORM_LINUX 1
+#define RJGLOBAL_PLATFORM_MACOS 2
+
 #if defined(_WIN32)
 
-/// @brief Current platform is Windows.
-#define RJGLOBAL_PLATFORM_WINDOWS 1
-/// @brief Current platform is not Linux.
-#define RJGLOBAL_PLATFORM_LINUX 0
-/// @brief Current platform is not MacOS.
-#define RJGLOBAL_PLATFORM_MACOS 0
+/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
+#define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_WINDOWS
 /// @brief Platform name string.
-#define RJGLOBAL_PLATFORM "WINDOWS"
+#define RJGLOBAL_PLATFORM_STRING "WINDOWS"
 
 #elif defined(__linux__)
 
-/// @brief Current platform is Linux.
-#define RJGLOBAL_PLATFORM_LINUX 1
-/// @brief Current platform is not Windows.
-#define RJGLOBAL_PLATFORM_WINDOWS 0
-/// @brief Current platform is not MacOS.
-#define RJGLOBAL_PLATFORM_MACOS 0
+/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
+#define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_LINUX
 /// @brief Platform name string.
-#define RJGLOBAL_PLATFORM "LINUX"
+#define RJGLOBAL_PLATFORM_STRING "LINUX"
 
 #elif defined(__APPLE__) && defined(__MACH__)
 
-/// @brief Current platform is MacOS.
-#define RJGLOBAL_PLATFORM_MACOS 1
-/// @brief Current platform is not Windows.
-#define RJGLOBAL_PLATFORM_WINDOWS 0
-/// @brief Current platform is not Linux.
-#define RJGLOBAL_PLATFORM_LINUX 0
+/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
+#define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_MACOS
 /// @brief Platform name string.
-#define RJGLOBAL_PLATFORM "MACOS"
+#define RJGLOBAL_PLATFORM_STRING "MACOS"
 
 #else
 
@@ -41,7 +33,7 @@
 
 #endif
 
-#if RJGLOBAL_PLATFORM_LINUX || RJGLOBAL_PLATFORM_MACOS
+#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_LINUX || RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_MACOS
 
 /// @brief Current platform is Unix-like.
 #define RJGLOBAL_PLATFORM_UNIX 1
@@ -57,54 +49,43 @@
 
 #pragma region Compiler Detection
 
+#define RJGLOBAL_COMPILER_CLANG 0
+#define RJGLOBAL_COMPILER_GCC 1
+#define RJGLOBAL_COMPILER_MSVC 2
+#define RJGLOBAL_COMPILER_CLANGCL 3
+
 #if defined(__clang__) && defined(_MSC_VER)
 
-/// @brief Clang compiler is detected.
-#define RJGLOBAL_COMPILER_CLANG 1
-/// @brief GCC compiler is not detected.
-#define RJGLOBAL_COMPILER_GCC 0
-/// @brief MSVC compiler is detected.
-#define RJGLOBAL_COMPILER_MSVC 1
-/// @brief Compiler version number.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
+#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_CLANGCL
+/// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
-/// @brief Compiler name string.
-#define RJGLOBAL_COMPILER_NAME "CLANG-CL"
+/// @brief Current compiler name string.
+#define RJGLOBAL_COMPILER_STRING "CLANG-CL"
 
 #elif defined(__clang__)
 
-/// @brief Clang compiler is detected.
-#define RJGLOBAL_COMPILER_CLANG 1
-/// @brief GCC compiler is not detected.
-#define RJGLOBAL_COMPILER_GCC 0
-/// @brief MSVC compiler is not detected.
-#define RJGLOBAL_COMPILER_MSVC 0
-/// @brief Compiler version number.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
+#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_CLANG
+/// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
-/// @brief Compiler name string.
-#define RJGLOBAL_COMPILER_NAME "CLANG"
+/// @brief Current compiler name string.
+#define RJGLOBAL_COMPILER_STRING "CLANG"
 
 #elif defined(_MSC_VER)
 
-/// @brief Clang compiler is not detected.
-#define RJGLOBAL_COMPILER_CLANG 0
-/// @brief GCC compiler is not detected.
-#define RJGLOBAL_COMPILER_GCC 0
-/// @brief MSVC compiler is detected.
-#define RJGLOBAL_COMPILER_MSVC 1
-/// @brief Compiler version number.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
+#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_MSVC
+/// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION _MSC_VER
-/// @brief Compiler name string.
-#define RJGLOBAL_COMPILER_NAME "MSVC"
+/// @brief Current compiler name string.
+#define RJGLOBAL_COMPILER_STRING "MSVC"
 
 #elif defined(__GNUC__)
 
-/// @brief Clang compiler is not detected.
-#define RJGLOBAL_COMPILER_CLANG 0
-/// @brief GCC compiler is detected.
-#define RJGLOBAL_COMPILER_GCC 1
-/// @brief MSVC compiler is not detected.
-#define RJGLOBAL_COMPILER_MSVC 0
-/// @brief Compiler version number.
+/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
+#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_GCC
+/// @brief Current compiler version number.
 #define RJGLOBAL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 /// @brief Compiler name string.
 #define RJGLOBAL_COMPILER_NAME "GCC"
@@ -116,47 +97,6 @@
 #endif
 
 #pragma endregion Compiler Detection
-
-#pragma region Architecture Detection
-
-#if defined(_M_X64) || defined(__x86_64__)
-
-/// @brief x64 architecture is detected.
-#define RJGLOBAL_ARCHITECTURE_X64 1
-/// @brief x86 architecture is not detected.
-#define RJGLOBAL_ARCHITECTURE_X86 0
-/// @brief ARM architecture is not detected.
-#define RJGLOBAL_ARCHITECTURE_ARM 0
-/// @brief Architecture name string.
-#define RJGLOBAL_ARCHITECTURE "X64"
-
-#elif defined(_M_IX86) || defined(__i386__)
-
-/// @brief x86 architecture is not detected.
-#define RJGLOBAL_ARCHITECTURE_X64 0
-/// @brief x86 architecture is detected.
-#define RJGLOBAL_ARCHITECTURE_X86 1
-/// @brief ARM architecture is not detected.
-#define RJGLOBAL_ARCHITECTURE_ARM 0
-/// @brief Architecture name string.
-#define RJGLOBAL_ARCHITECTURE "X86"
-
-#elif defined(_M_ARM) || defined(__arm__) || defined(__aarch64__)
-
-/// @brief x64 architecture is not detected.
-#define RJGLOBAL_ARCHITECTURE_X64 0
-/// @brief x86 architecture is not detected.
-#define RJGLOBAL_ARCHITECTURE_X86 0
-/// @brief ARM architecture is detected.
-#define RJGLOBAL_ARCHITECTURE_ARM 1
-/// @brief Architecture name string.
-#define RJGLOBAL_ARCHITECTURE "ARM"
-
-#else
-
-#pragma error("Unsupported architecture.")
-
-#endif
 
 #define _POSIX_C_SOURCE 200809L
 #define _CRT_SECURE_NO_WARNINGS
@@ -175,14 +115,14 @@
 #include <time.h>
 #include <limits.h>
 
-#if RJGLOBAL_PLATFORM_WINDOWS
+#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_WINDOWS
 
 /// @brief Character used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_CHAR '\\'
 /// @brief String used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_STR "\\"
 
-#elif RJGLOBAL_PLATFORM_UNIX
+#else
 
 /// @brief Character used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_CHAR '/'

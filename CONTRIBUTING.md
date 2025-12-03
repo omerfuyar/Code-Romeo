@@ -1,6 +1,6 @@
 # Contribution Guidelines & Notes to Myself
 
-Even though I do not think anyone would contribute to my non-significant project, I am writing this file to have a development guideline for myself in this project. This guideline includes:
+Even though I do not think anyone would contribute to my non-significant project, I am writing this file to have a development guideline for myself. This guideline includes:
 
 * Overall `structure of the framework` and `layers` of it.
 * `Module design` and general principles that they are following.
@@ -11,7 +11,7 @@ Even though I do not think anyone would contribute to my non-significant project
 
 *  **Modularity:** The framework is built on a strict layered architecture. Functionality is separated into independent modules with clear responsibilities. The user can pick and choose which modules to include in their application. And that means maybe using another framework for rendering while using this framework for input and context management.
 *  **Freedom:** As said, framework is built to provide modular design. This design do not force user to use any specific design pattern or architecture. User can build their application as they want while using the framework.
-*  **Explicitness:** I try to keep everything explicit. Providing consistent namings and design, Understandable documentation and clear function responsibilities.
+*  **Explicitness:** I try to keep everything explicit. Providing consistent namings and design, understandable documentation and clear function responsibilities.
 
 ## Project Layers
 
@@ -47,6 +47,7 @@ Layers explained above are also represented in the folder structure of the proje
 *   All elements (function, struct, macro, extern variable) for a module must be declared in its corresponding header file in correct folder.
 *   All elements declared in headers must have their documentation. Documentation guidelines are explained in the "Documentation Formats" section below.
 *   All functions in header files must be defined in their corresponding source file under src folder.
+*   Structs and typedefs must be defined in header files. No struct or typedef definitions in source files unless they are internal and not exposed to user.
 
 ## Naming Conventions
 

@@ -1,12 +1,12 @@
 #include "systems/Renderer.h"
 
-#include "tools/Resources.h"
+#include "tools/Resource.h"
 
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
 
 #if RJGLOBAL_COMPILER_CLANG
 #pragma clang diagnostic push
@@ -18,7 +18,7 @@
 #pragma warning(push, 0)
 #endif
 
-#include <cglm/cglm.h>
+#include "cglm/cglm.h"
 
 #if RJGLOBAL_COMPILER_CLANG
 #pragma clang diagnostic pop
@@ -215,8 +215,7 @@ void RendererTexture_Destroy(RendererTexture *texture)
     RJGlobal_DebugAssertNullPointerCheck(texture);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, texture->name.length), texture->name.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, texture->name.length)] = '\0';
+    scb(texture->name, tempTitle);
 
     String_Destroy(&texture->name);
     free(texture->data);
@@ -1408,8 +1407,7 @@ void RendererModel_Destroy(RendererModel *model)
     RJGlobal_DebugAssertNullPointerCheck(model);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, model->name.length), model->name.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, model->name.length)] = '\0';
+    scb(model->name, tempTitle);
 
     String_Destroy(&model->name);
 
@@ -1589,8 +1587,7 @@ void RendererScene_Destroy(RendererScene *scene)
     RJGlobal_DebugAssertNullPointerCheck(scene);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, scene->name.length), scene->name.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, scene->name.length)] = '\0';
+    scb(scene->name, tempTitle);
 
     String_Destroy(&scene->name);
     scene->camera = NULL;

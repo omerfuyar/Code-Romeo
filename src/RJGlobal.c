@@ -1,10 +1,10 @@
 #include "RJGlobal.h"
 
-#if RJGLOBAL_PLATFORM_WINDOWS
+#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_WINDOWS
 #include <windows.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
 
-#elif RJGLOBAL_PLATFORM_UNIX
+#elif RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_UNIX
 #include <unistd.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 

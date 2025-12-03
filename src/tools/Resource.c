@@ -1,4 +1,4 @@
-#include "tools/Resources.h"
+#include "tools/Resource.h"
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
 
@@ -13,7 +13,7 @@
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include "stb/stb_image.h"
 
 #if RJGLOBAL_COMPILER_CLANG
 #pragma clang diagnostic pop
@@ -100,8 +100,7 @@ void ResourceText_Destroy(ResourceText *resource)
     RJGlobal_DebugAssertNullPointerCheck(resource->file.characters);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resource->file.length), resource->file.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resource->file.length)] = '\0';
+    scb(resource->file, tempTitle);
 
     String_Destroy(&resource->file);
     String_Destroy(&resource->data);
@@ -147,8 +146,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     RJGlobal_DebugAssertNullPointerCheck(resourceImage);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resourceImage->file.length), resourceImage->file.characters);
-    tempTitle[Maths_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, resourceImage->file.length)] = '\0';
+    scb(resourceImage->file, tempTitle);
 
     String_Destroy(&resourceImage->file);
     resourceImage->channels = 0;
