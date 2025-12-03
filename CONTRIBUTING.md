@@ -1,6 +1,6 @@
 # Contribution Guidelines & Notes to Myself
 
-Even though I do not think anyone would contribute to my non-significant project, I am writing this file to have a development guideline for myself in this project. This guideline includes:
+Even though I do not think anyone would contribute to my non-significant project, I am writing this file to have a development guideline for myself. This guideline includes:
 
 * Overall `structure of the framework` and `layers` of it.
 * `Module design` and general principles that they are following.
