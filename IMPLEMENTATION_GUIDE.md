@@ -169,8 +169,11 @@ ComponentHandle ComponentPool_Allocate(ComponentPool *pool)
     // Try to reuse a free slot
     if (pool->freeList.count > 0)
     {
-        uint32_t *freeIndex = (uint32_t *)ListArray_Pop(&pool->freeList);
+        // Get the index value before it's removed
+        uint32_t *freeIndex = (uint32_t *)ListArray_Get(&pool->freeList, pool->freeList.count - 1);
         handle.index = *freeIndex;
+        ListArray_Pop(&pool->freeList);  // Remove after reading
+        
         slot = (ComponentSlot *)ListArray_Get(&pool->slots, handle.index);
         
         // Increment generation to invalidate old handles
@@ -402,14 +405,27 @@ void RendererBatch_DestroyComponent(RendererBatch *batch, ComponentHandle handle
     }
     
     // Remove from object matrices
-    // NOTE: This still has the shifting problem! See next section for solution.
+    // NOTE: This still has the shifting problem! See "Phase 2: Advanced" section for solutions.
+    // For now, this is a simplified example showing the handle system basics.
     ListArray_RemoveAtIndex(&batch->objectMatrices, component->componentOffsetInBatch);
+    
+    // Update offsets for all components after this one
+    ComponentPool_Iterate(&batch->componentPool, RendererBatch_UpdateOffsetsCallback, 
+                         (void*)(uintptr_t)component->componentOffsetInBatch);
     
     // Free component from pool
     ComponentPool_Free(&batch->componentPool, handle);
+}
+
+// Callback to update offsets after component destruction
+void RendererBatch_UpdateOffsetsCallback(ComponentHandle handle, void *componentData, void *userData)
+{
+    size_t destroyedOffset = (size_t)(uintptr_t)userData;
+    RendererComponent *comp = (RendererComponent *)componentData;
     
-    // TODO: Update componentOffsetInBatch for all affected components
-    // This is complex - see "Advanced: Remove Matrix Shifting" section below
+    if (comp->componentOffsetInBatch > destroyedOffset) {
+        comp->componentOffsetInBatch--;
+    }
 }
 
 RendererComponent *RendererBatch_GetComponent(const RendererBatch *batch, ComponentHandle handle)
