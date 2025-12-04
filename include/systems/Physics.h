@@ -3,11 +3,12 @@
 #include "RJGlobal.h"
 
 #include "utilities/Vector.h"
-#include "utilities/String.h"
-#include "utilities/ListArray.h"
 
 /// @brief Number of iterations to perform when resolving collisions in a physics scene.
 #define PHYSICS_COLLISION_RESOLVE_ITERATIONS 2
+
+/// @brief Capacity of free indices array of the physics system.
+#define PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE 4
 
 #pragma region Typedefs
 
@@ -16,7 +17,7 @@ typedef RJGlobal_Index PhysicsComponent;
 
 #pragma endregion Typedefs
 
-/// @brief Creates a new physics scene.
+/// @brief Creates a new physics scene. Try keeping entities that have physics component in sequence for best cpu cache performance.
 /// @param componentCapacity The initial capacity for physics components.
 /// @param positionReferences A pointer to the start of position vector references for all objects.
 /// @param drag The drag to be applied to components (0-1).
@@ -48,12 +49,12 @@ void Physics_UpdateComponents(float deltaTime);
 void Physics_ResolveCollisions();
 
 /// @brief Creates a new physics component and adds it to the scene.
-/// @param positionReference A pointer to the position vector of the object.
+/// @param entity The entity associated with the physics component.
 /// @param colliderSize The size of the AABB collider.
 /// @param mass The mass of the object.
 /// @param isStatic Whether the object is static (unmovable).
 /// @return A pointer to the newly created physics component.
-PhysicsComponent Physics_ComponentCreate(RJGlobal_Size positionIndex, Vector3 colliderSize, float mass, bool isStatic);
+PhysicsComponent Physics_ComponentCreate(RJGlobal_Size entity, Vector3 colliderSize, float mass, bool isStatic);
 
 /// @brief Destroys a physics component and removes it from its scene.
 /// @param component The component to destroy.
