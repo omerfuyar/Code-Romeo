@@ -94,7 +94,7 @@ void ListArray_RemoveItem(ListArray *list, const void *item);
 
 /// @brief Pop function for ListArray. Removes the last item in the list and returns it.
 /// @param list ListArray to pop item from.
-/// @return The popped item. NULL if the list is empty.
+/// @return The popped item. NULL if the list is empty. Use the value only for copying, as the data is invalidated after popping.
 void *ListArray_Pop(ListArray *list);
 
 /// @brief Clear function for ListArray. Sets all the data unusable and size to 0. Capacity remains the same.

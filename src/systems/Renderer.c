@@ -4,6 +4,9 @@
 
 #include "utilities/Timer.h"
 #include "utilities/Maths.h"
+#include "utilities/ListLinked.h"
+#include "utilities/ListArray.h"
+#include "utilities/HashMap.h"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -28,9 +31,11 @@
 #pragma warning(pop)
 #endif
 
+#define RENDERER_OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
+
 #pragma region Source Only
 
-#define RENDERER_OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
+#pragma region typedefs
 
 #define RendererDebug_CheckError()                                                  \
     do                                                                              \
@@ -47,6 +52,9 @@ typedef struct RendererMeshVertex
     Vector2 vertexUV;
 } RendererMeshVertex;
 
+/// @brief Index of a mesh within a model.
+typedef uint32_t RendererMeshIndex;
+
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (RENDERER DEBUG INITIALIZE)
 typedef struct RendererDebugVertex
 {
@@ -54,27 +62,179 @@ typedef struct RendererDebugVertex
     Color vertexColor;
 } RendererDebugVertex;
 
+/// @brief 4x4 matrix type for renderer.
+typedef struct Renderer_Matrix4
+{
+    alignas(16) float m[4][4];
+} Renderer_Matrix4;
+
+/// @brief Handle for a shader program object.
+typedef uint32_t RendererShaderProgramHandle;
+/// @brief Handle for a texture object.
+typedef uint32_t RendererTextureHandle;
+
+/// @brief Handle for a uniform location in a shader program.
+typedef int32_t RendererUniformLocationHandle;
+/// @brief Handle for a uniform block in a shader program.
+typedef uint32_t RendererUniformBlockHandle;
+
+/// @brief Handle for a Vertex Array Object.
+typedef uint32_t RendererVAOHandle;
+/// @brief Handle for a Vertex Buffer Object.
+typedef uint32_t RendererVBOHandle;
+/// @brief Handle for an Index Buffer Object.
+typedef uint32_t RendererIBOHandle;
+/// @brief Handle for a Uniform Buffer Object.
+typedef uint32_t RendererUBOHandle;
+
 /// @brief Texture object for the renderer.
 typedef struct RendererTexture
 {
-    String name;
     RJGlobal_Size index;
+    RendererTextureHandle handle;
     void *data;
     Vector2Int size;
     int channels;
-    RendererTextureHandle handle;
 } RendererTexture;
 
-ContextWindow *RENDERER_MAIN_WINDOW = NULL;
-RendererShaderProgramHandle RENDERER_MAIN_SHADER_PROGRAM = 0;
-ListArray RENDERER_MAIN_TEXTURES = {0}; // RendererTexture
+/// @brief A material that holds the rendering properties of a mesh.
+typedef struct RendererMaterial
+{
+    String name; // maybe change with unique id later
 
-RendererVAOHandle RENDERER_DEBUG_VAO = 0;
-RendererVBOHandle RENDERER_DEBUG_VBO = 0;
-ListArray RENDERER_DEBUG_VERTICES = {0}; // RendererDebugVertex
-RendererShaderProgramHandle RENDERER_DEBUG_SHADER_PROGRAM = 0;
-RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
-RendererUniformLocationHandle RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
+    Vector3 ambientColor;
+    Vector3 diffuseColor;
+    Vector3 specularColor;
+    Vector3 emissiveColor;
+    RendererTexture *diffuseMap;
+    float specularExponent;
+    float refractionIndex;
+    float dissolve;
+    int illuminationModel;
+} RendererMaterial;
+
+// todo maybe store textures and mate
+
+typedef struct RendererMesh
+{
+    RendererMaterial *material;
+    ListArray indices; // RendererMeshIndex
+} RendererMesh;
+
+typedef struct RendererModel
+{
+    ListArray vertices; // RendererMeshVertex
+    ListLinked meshes;  // RendererMesh
+} RendererModel;
+
+/// @brief A batch of render components that use the same model.
+typedef struct RENDERER_BATCH
+{
+    RendererModel *model;
+
+    struct RENDERER_DATA
+    {
+        RJGlobal_Size capacity;
+        RJGlobal_Size count;
+        ListArray freeIndices; // RJGlobal_Index
+    } data;
+
+    struct RENDERER_COMPONENTS
+    {
+        RJGlobal_Index *entities;
+
+        Renderer_Matrix4 *objectMatrices;
+
+        Vector3 *positionReferences;
+        Vector3 *rotationReferences;
+        Vector3 *scaleReferences;
+
+        uint8_t *flags;
+    } components;
+} RENDERER_BATCH;
+
+#pragma endregion typedefs
+
+struct RENDERER_MAIN_SCENE
+{
+    ContextWindow *window;
+    ListArray batches;     // RENDERER_BATCH
+    ListArray freeIndices; // RJGlobal_Index
+
+    struct RENDERER_CAMERA
+    {
+        Vector3 *positionReference;
+        Vector3 *rotationReference;
+
+        Renderer_Matrix4 projectionMatrix;
+        Renderer_Matrix4 viewMatrix;
+
+        float *sizeReference; // fov if perspective, orthographic size if orthographic
+        float *nearClipPlaneReference;
+        float *farClipPlaneReference;
+        bool *isPerspectiveReference;
+    } camera;
+
+    struct RENDERER_SHADER
+    {
+        RendererShaderProgramHandle programHandle;
+
+        ListLinked textures; // RendererTexture
+
+        RendererVAOHandle vao;
+        RendererVBOHandle vboModelVertices;
+        RendererIBOHandle iboModelIndices;
+        RendererUBOHandle uboObjectMatrices;
+
+        // HashMap uniforms; // RendererUniformLocationHandle
+        RendererUniformLocationHandle camProjectionMatrix;
+        RendererUniformLocationHandle camViewMatrix;
+        RendererUniformLocationHandle camPosition;
+        RendererUniformLocationHandle camRotation;
+        RendererUniformLocationHandle camSize;
+        RendererUniformLocationHandle camIsPerspective;
+
+        RendererUniformLocationHandle matAmbientColor;
+        RendererUniformLocationHandle matDiffuseColor;
+        RendererUniformLocationHandle matSpecularColor;
+        RendererUniformLocationHandle matEmissiveColor;
+        RendererUniformLocationHandle matSpecularExponent;
+        RendererUniformLocationHandle matDissolve;
+        RendererUniformLocationHandle matDiffuseMap;
+        RendererUniformLocationHandle matHasDiffuseMap;
+
+        RendererUniformBlockHandle objectMatricesHandle;
+    } shader;
+
+    struct RENDERER_DEBUG_SHADER
+    {
+        RendererShaderProgramHandle programHandle;
+
+        ListArray vertices; // RendererDebugVertex
+
+        RendererVAOHandle vao;
+        RendererVBOHandle vbo;
+
+        RendererUniformLocationHandle camProjectionMatrix;
+        RendererUniformLocationHandle camViewMatrix;
+    } debugShader;
+} RMS = {0};
+
+#define rmsGetBatch(batch) (((RENDERER_BATCH *)RMS.batches.data)[batch])
+#define rmsGetEntity(batch, component) (rmsGetBatch(batch).components.entities[component])
+
+#define rmsGetObjectMatrix(batch, component) (rmsGetBatch(batch).components.objectMatrices[component])
+
+#define rmsGetPositionReference(batch, component) (rmsGetBatch(batch).components.positionReferences[component])
+#define rmsGetRotationReference(batch, component) (rmsGetBatch(batch).components.rotationReferences[component])
+#define rmsGetScaleReference(batch, component) (rmsGetBatch(batch).components.scaleReferences[component])
+
+#define rmsGetFlag(batch, component) (rmsGetBatch(batch).components.flags[component])
+
+#define rmsIsActive(batch, component) (rmsGetFlag(batch, component) & RENDERER_FLAG_ACTIVE)
+#define rmsSetActive(batch, component, isActive) (rmsGetFlag(batch, component) = isActive ? (rmsGetFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsGetFlag(batch, component) & ~RENDERER_FLAG_ACTIVE))
+
+#define rmsAssertComponent(batch, component) RJGlobal_DebugAssert(component < rmsGetBatch(batch).data.count + rmsGetBatch(batch).data.freeIndices.count && rmsGetEntity(batch, component) != RJGLOBAL_INDEX_INVALID && rmsIsActive(component), "Renderer component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
 
 /// @brief
 /// @param window
@@ -84,15 +244,15 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 {
     RJGlobal_DebugAssertNullPointerCheck(window);
 
-    RENDERER_MAIN_WINDOW->size.x = width;
-    RENDERER_MAIN_WINDOW->size.y = height;
+    RMS.window->size.x = width;
+    RMS.window->size.y = height;
 
-    if (RENDERER_MAIN_WINDOW->fullScreen)
+    if (RMS.window->fullScreen)
     {
-        glfwGetFramebufferSize(RENDERER_MAIN_WINDOW->handle, &RENDERER_MAIN_WINDOW->size.x, &RENDERER_MAIN_WINDOW->size.y);
+        glfwGetFramebufferSize(RMS.window->handle, &RMS.window->size.x, &RMS.window->size.y);
     }
 
-    glViewport(0, 0, RENDERER_MAIN_WINDOW->size.x, RENDERER_MAIN_WINDOW->size.y);
+    glViewport(0, 0, RMS.window->size.x, RMS.window->size.y);
 }
 
 /// @brief
@@ -146,9 +306,9 @@ void TRANSFORM_TO_MODEL_MATRIX(Renderer_Matrix4 *matrix, const Vector3 *position
 
 RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, Vector2Int size, int channels)
 {
-    for (RJGlobal_Size i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
+    for (RJGlobal_Size i = 0; i < RMS.shader.textures.count; i++)
     {
-        RendererTexture *currentTexture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
+        RendererTexture *currentTexture = (RendererTexture *)ListArray_Get(&RMS.shader.textures, i);
 
         if (String_Compare(scv(currentTexture->name), name) == 0)
         {
@@ -159,8 +319,8 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 
     RJGlobal_DebugAssertNullPointerCheck(data);
 
-    RendererTexture *texture = (RendererTexture *)ListArray_Add(&RENDERER_MAIN_TEXTURES, NULL);
-    texture->index = RENDERER_MAIN_TEXTURES.count - 1;
+    RendererTexture *texture = (RendererTexture *)ListArray_Add(&RMS.shader.textures, NULL); // todo fix
+    texture->index = RMS.shader.textures.count - 1;
     texture->size = size;
     texture->channels = channels;
     texture->name = scc(name);
@@ -257,384 +417,6 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 }
 
 #pragma endregion Renderer Mesh
-
-#pragma endregion Source Only
-
-#pragma region Renderer
-
-void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialTextureCapacity)
-{
-    RJGlobal_DebugAssertNullPointerCheck(window);
-
-    RENDERER_MAIN_WINDOW = window;
-    RENDERER_MAIN_TEXTURES = ListArray_Create("Renderer Texture", sizeof(RendererTexture), initialTextureCapacity);
-
-    RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
-
-    Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
-    Context_ConfigureLogCallback(RENDERER_MAIN_WINDOW_LOG_CALLBACK);
-
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    RJGlobal_DebugInfo("Renderer initialized successfully.");
-}
-
-void Renderer_Terminate()
-{
-    for (RJGlobal_Size i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
-    {
-        RendererTexture *texture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
-
-        RendererTexture_Destroy(texture);
-    }
-
-    if (RENDERER_MAIN_TEXTURES.data != NULL)
-    {
-        ListArray_Destroy(&RENDERER_MAIN_TEXTURES);
-    }
-
-    if (RENDERER_MAIN_SHADER_PROGRAM != 0)
-    {
-        glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
-    }
-
-    RENDERER_MAIN_SHADER_PROGRAM = 0;
-
-    RJGlobal_DebugInfo("Renderer terminated successfully.");
-}
-
-void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
-{
-    if (RENDERER_MAIN_SHADER_PROGRAM != 0)
-    {
-        glDeleteProgram(RENDERER_MAIN_SHADER_PROGRAM);
-    }
-
-    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderFile);
-    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderFile);
-
-    GLint glslHasCompiled = 0;
-    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
-    glCompileShader(vertexShader);
-
-    ResourceText_Destroy(rscVertexShader);
-
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
-
-    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
-    RJGlobal_DebugInfo("Vertex shader compiled successfully.");
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, (const GLchar *const *)&rscFragmentShader->data.characters, NULL);
-    glCompileShader(fragmentShader);
-
-    ResourceText_Destroy(rscFragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
-
-    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
-    RJGlobal_DebugInfo("Fragment shader compiled successfully.");
-
-    RENDERER_MAIN_SHADER_PROGRAM = glCreateProgram();
-    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, vertexShader);
-    glAttachShader(RENDERER_MAIN_SHADER_PROGRAM, fragmentShader);
-    glLinkProgram(RENDERER_MAIN_SHADER_PROGRAM);
-
-    glGetProgramiv(RENDERER_MAIN_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
-    glGetProgramInfoLog(RENDERER_MAIN_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
-
-    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    RJGlobal_DebugInfo("Shader program linked and created successfully.");
-}
-
-void Renderer_StartRendering()
-{
-    if (glfwWindowShouldClose(RENDERER_MAIN_WINDOW->handle))
-    {
-        RJGlobal_DebugInfo("Main window close input received");
-        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
-    }
-
-    glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
-}
-
-void Renderer_FinishRendering()
-{
-    glfwSwapBuffers(RENDERER_MAIN_WINDOW->handle);
-}
-
-void Renderer_RenderScene(RendererScene *scene)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-
-    glBindVertexArray(scene->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
-    glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
-
-    glUniformMatrix4fv(scene->camera->scene->camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->projectionMatrix);
-    glUniformMatrix4fv(scene->camera->scene->camViewMatrix, 1, GL_FALSE, (GLfloat *)&scene->camera->viewMatrix);
-    glUniform3fv(scene->camera->scene->camPosition, 1, (GLfloat *)scene->camera->positionReference);
-    glUniform3fv(scene->camera->scene->camRotation, 1, (GLfloat *)scene->camera->rotationReference);
-
-    for (RJGlobal_Size i = 0; i < scene->batches.count; i++)
-    {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
-        RendererMaterial *previousMaterial = NULL;
-
-        glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(batch->objectMatrices.sizeOfItem * batch->objectMatrices.count),
-                     batch->objectMatrices.data,
-                     RENDERER_OPENGL_DRAW_TYPE);
-
-        glBufferData(GL_ARRAY_BUFFER,
-                     (long long)(batch->model->vertices.sizeOfItem * batch->model->vertices.count),
-                     batch->model->vertices.data,
-                     RENDERER_OPENGL_DRAW_TYPE);
-
-        for (RJGlobal_Size j = 0; j < batch->model->meshes.count; j++)
-        {
-            RendererMesh *mesh = *(RendererMesh **)ListArray_Get(&batch->model->meshes, j);
-
-            if (mesh->material != previousMaterial)
-            {
-                glUniform3fv(scene->matAmbientColor, 1, (GLfloat *)&mesh->material->ambientColor);
-                glUniform3fv(scene->matDiffuseColor, 1, (GLfloat *)&mesh->material->diffuseColor);
-                glUniform3fv(scene->matSpecularColor, 1, (GLfloat *)&mesh->material->specularColor);
-                glUniform3fv(scene->matEmissiveColor, 1, (GLfloat *)&mesh->material->emissiveColor);
-                glUniform1f(scene->matSpecularExponent, mesh->material->specularExponent);
-                glUniform1f(scene->matDissolve, mesh->material->dissolve);
-
-                // Texture binding
-                if (mesh->material->diffuseMap != NULL)
-                {
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap->handle);
-                    glUniform1i(scene->matDiffuseMap, 0);
-                    glUniform1i(scene->matHasDiffuseMap, 1);
-                }
-                else
-                {
-                    glUniform1i(scene->matHasDiffuseMap, 0);
-                }
-
-                previousMaterial = mesh->material;
-            }
-
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                         (long long)(mesh->indices.sizeOfItem * mesh->indices.count),
-                         mesh->indices.data,
-                         RENDERER_OPENGL_DRAW_TYPE);
-
-            glDrawElementsInstanced(GL_TRIANGLES,
-                                    (GLsizei)mesh->indices.count,
-                                    GL_UNSIGNED_INT,
-                                    0,
-                                    (GLsizei)batch->objectMatrices.count);
-        }
-    }
-
-    // RendererDebug_CheckError();
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    // RJGlobal_DebugInfo("Scene '%s' rendered", scene.name.characters);
-}
-
-#pragma endregion Renderer
-
-#pragma region Renderer Debug
-
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJGlobal_Size initialVertexCapacity)
-{
-    RENDERER_DEBUG_VERTICES = ListArray_Create("Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
-
-    glGenVertexArrays(1, &RENDERER_DEBUG_VAO);
-    glGenBuffers(1, &RENDERER_DEBUG_VBO);
-
-    GLint glslHasCompiled = 0;
-    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
-
-    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderFile);
-    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderFile);
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
-    glCompileShader(vertexShader);
-
-    ResourceText_Destroy(rscVertexShader);
-
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
-
-    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
-    RJGlobal_DebugInfo("Debug Vertex shader compiled successfully.");
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, (const GLchar *const *)&rscFragmentShader->data.characters, NULL);
-    glCompileShader(fragmentShader);
-
-    ResourceText_Destroy(rscFragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
-    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
-
-    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
-    RJGlobal_DebugInfo("Debug Fragment shader compiled successfully.");
-
-    RENDERER_DEBUG_SHADER_PROGRAM = glCreateProgram();
-    glAttachShader(RENDERER_DEBUG_SHADER_PROGRAM, vertexShader);
-    glAttachShader(RENDERER_DEBUG_SHADER_PROGRAM, fragmentShader);
-    glLinkProgram(RENDERER_DEBUG_SHADER_PROGRAM);
-
-    glGetProgramiv(RENDERER_DEBUG_SHADER_PROGRAM, GL_LINK_STATUS, &glslHasCompiled);
-    glGetProgramInfoLog(RENDERER_DEBUG_SHADER_PROGRAM, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
-
-    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Shader program linking failed. Logs:\n%s", glslInfoLog);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = glGetUniformLocation(RENDERER_DEBUG_SHADER_PROGRAM, "camProjectionMatrix");
-    RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = glGetUniformLocation(RENDERER_DEBUG_SHADER_PROGRAM, "camViewMatrix");
-
-    glBindVertexArray(RENDERER_DEBUG_VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, RENDERER_DEBUG_VBO);
-
-    size_t offset = 0;
-
-    glVertexAttribPointer(RENDERER_DEBUG_VBO_POSITION_BINDING, 3, GL_FLOAT, GL_FALSE, sizeof(RendererDebugVertex), (void *)offset);
-    glEnableVertexAttribArray(RENDERER_DEBUG_VBO_POSITION_BINDING);
-    offset += sizeof(Vector3);
-
-    glVertexAttribPointer(RENDERER_DEBUG_VBO_COLOR_BINDING, 4, GL_FLOAT, GL_FALSE, sizeof(RendererDebugVertex), (void *)offset);
-    glEnableVertexAttribArray(RENDERER_DEBUG_VBO_COLOR_BINDING);
-    offset += sizeof(Color);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    RJGlobal_DebugInfo("Debug Renderer initialized successfully.");
-}
-
-void RendererDebug_Terminate()
-{
-    if (RENDERER_DEBUG_VBO != 0)
-    {
-        glDeleteBuffers(1, &RENDERER_DEBUG_VBO);
-    }
-
-    if (RENDERER_DEBUG_VAO != 0)
-    {
-        glDeleteVertexArrays(1, &RENDERER_DEBUG_VAO);
-    }
-
-    if (RENDERER_DEBUG_SHADER_PROGRAM != 0)
-    {
-        glDeleteProgram(RENDERER_DEBUG_SHADER_PROGRAM);
-    }
-
-    ListArray_Destroy(&RENDERER_DEBUG_VERTICES);
-
-    RENDERER_DEBUG_VAO = 0;
-    RENDERER_DEBUG_VBO = 0;
-    RENDERER_DEBUG_SHADER_PROGRAM = 0;
-    RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX = 0;
-    RENDERER_DEBUG_UNIFORM_VIEW_MATRIX = 0;
-
-    RJGlobal_DebugInfo("Debug Renderer terminated successfully.");
-}
-
-void RendererDebug_StartRendering()
-{
-    glUseProgram(RENDERER_MAIN_SHADER_PROGRAM);
-}
-
-void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, const Renderer_Matrix4 *camViewMatrix)
-{
-    if (RENDERER_DEBUG_VERTICES.count == 0)
-    {
-        return;
-    }
-
-    glUseProgram(RENDERER_DEBUG_SHADER_PROGRAM);
-    glUniformMatrix4fv(RENDERER_DEBUG_UNIFORM_PROJECTION_MATRIX, 1, GL_FALSE, (GLfloat *)camProjectionMatrix);
-    glUniformMatrix4fv(RENDERER_DEBUG_UNIFORM_VIEW_MATRIX, 1, GL_FALSE, (GLfloat *)camViewMatrix);
-
-    glBindVertexArray(RENDERER_DEBUG_VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, RENDERER_DEBUG_VBO);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(RENDERER_DEBUG_VERTICES.sizeOfItem * RENDERER_DEBUG_VERTICES.count), RENDERER_DEBUG_VERTICES.data, RENDERER_OPENGL_DRAW_TYPE);
-
-    glDrawArrays(GL_LINES, 0, (GLsizei)RENDERER_DEBUG_VERTICES.count);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    ListArray_Clear(&RENDERER_DEBUG_VERTICES);
-}
-
-void RendererDebug_DrawLine(Vector3 start, Vector3 end, Color color)
-{
-    RendererDebugVertex startVertex = (RendererDebugVertex){.vertexColor = color, .vertexPosition = start};
-    RendererDebugVertex endVertex = (RendererDebugVertex){.vertexColor = color, .vertexPosition = end};
-
-    ListArray_Add(&RENDERER_DEBUG_VERTICES, &startVertex);
-    ListArray_Add(&RENDERER_DEBUG_VERTICES, &endVertex);
-}
-
-void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
-{
-    Vector3 halfSize = Vector3_Scale(size, 0.5f);
-    Vector3 min = Vector3_Add(position, Vector3_Scale(halfSize, -1.0f));
-    Vector3 max = Vector3_Add(position, halfSize);
-
-    Vector3 corners[8] = {
-        {min.x, min.y, min.z},
-        {max.x, min.y, min.z},
-        {max.x, max.y, min.z},
-        {min.x, max.y, min.z},
-        {min.x, min.y, max.z},
-        {max.x, min.y, max.z},
-        {max.x, max.y, max.z},
-        {min.x, max.y, max.z}};
-
-    // Bottom face
-    RendererDebug_DrawLine(corners[0], corners[1], color);
-    RendererDebug_DrawLine(corners[1], corners[2], color);
-    RendererDebug_DrawLine(corners[2], corners[3], color);
-    RendererDebug_DrawLine(corners[3], corners[0], color);
-
-    // Top face
-    RendererDebug_DrawLine(corners[4], corners[5], color);
-    RendererDebug_DrawLine(corners[5], corners[6], color);
-    RendererDebug_DrawLine(corners[6], corners[7], color);
-    RendererDebug_DrawLine(corners[7], corners[4], color);
-
-    // Connecting edges
-    RendererDebug_DrawLine(corners[0], corners[4], color);
-    RendererDebug_DrawLine(corners[1], corners[5], color);
-    RendererDebug_DrawLine(corners[2], corners[6], color);
-    RendererDebug_DrawLine(corners[3], corners[7], color);
-}
-
-#pragma endregion Renderer Debug
 
 #pragma region Renderer Material
 
@@ -1428,26 +1210,40 @@ void RendererModel_Destroy(RendererModel *model)
 
 #pragma endregion Renderer Model
 
-#pragma region Renderer Scene
+#pragma endregion Source Only
 
-RendererScene *RendererScene_CreateEmpty(StringView name, RJGlobal_Size initialBatchCapacity)
+#pragma region Renderer
+
+void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapacity)
 {
-    RendererScene *scene = malloc(sizeof(RendererScene));
-    RJGlobal_DebugAssertNullPointerCheck(scene);
+    RJGlobal_DebugAssertNullPointerCheck(window);
 
-    scene->name = scc(name);
-    scene->camera = NULL;
-    scene->batches = ListArray_Create("Renderer Batch", sizeof(RendererBatch), initialBatchCapacity);
+    RMS.window = window;
+    RMS.batches = ListArray_Create("Renderer Batches", sizeof(RENDERER_BATCH), initialBatchCapacity);
 
-    glGenVertexArrays(1, &scene->vao);
-    glGenBuffers(1, &scene->vboModelVertices);
-    glGenBuffers(1, &scene->iboModelIndices);
-    glGenBuffers(1, &scene->uboObjectMatrices);
+    RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
-    glBindVertexArray(scene->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, scene->vboModelVertices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->iboModelIndices);
-    glBindBuffer(GL_UNIFORM_BUFFER, scene->uboObjectMatrices);
+    Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
+    Context_ConfigureLogCallback(RENDERER_MAIN_WINDOW_LOG_CALLBACK);
+
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    RMS.shader.programHandle = glCreateProgram();
+
+    RMS.shader.textures = ListLinked_Create("Renderer Texture", sizeof(RendererTexture));
+
+    glGenVertexArrays(1, &RMS.shader.vao);
+    glGenBuffers(1, &RMS.shader.vboModelVertices);
+    glGenBuffers(1, &RMS.shader.iboModelIndices);
+    glGenBuffers(1, &RMS.shader.uboObjectMatrices);
+
+    glBindVertexArray(RMS.shader.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, RMS.shader.vboModelVertices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RMS.shader.iboModelIndices);
+    glBindBuffer(GL_UNIFORM_BUFFER, RMS.shader.uboObjectMatrices);
 
     size_t offset = 0;
 
@@ -1465,35 +1261,153 @@ RendererScene *RendererScene_CreateEmpty(StringView name, RJGlobal_Size initialB
 
     //! ... other attributes in vertex
 
-    scene->camProjectionMatrix = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camProjectionMatrix");
-    scene->camViewMatrix = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camViewMatrix");
-    scene->camPosition = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camPosition");
-    scene->camRotation = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "camRotation");
+    RMS.shader.camProjectionMatrix = glGetUniformLocation(RMS.shader.programHandle, "camProjectionMatrix");
+    RMS.shader.camViewMatrix = glGetUniformLocation(RMS.shader.programHandle, "camViewMatrix");
+    RMS.shader.camPosition = glGetUniformLocation(RMS.shader.programHandle, "camPosition");
+    RMS.shader.camRotation = glGetUniformLocation(RMS.shader.programHandle, "camRotation");
+    RMS.shader.camSize = glGetUniformLocation(RMS.shader.programHandle, "camSize");
+    RMS.shader.camIsPerspective = glGetUniformLocation(RMS.shader.programHandle, "camIsPerspective");
 
-    scene->matAmbientColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matAmbientColor");
-    scene->matDiffuseColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseColor");
-    scene->matSpecularColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularColor");
-    scene->matEmissiveColor = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matEmissiveColor");
-    scene->matSpecularExponent = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matSpecularExponent");
-    scene->matDissolve = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDissolve");
-    scene->matDiffuseMap = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matDiffuseMap");
-    scene->matHasDiffuseMap = glGetUniformLocation(RENDERER_MAIN_SHADER_PROGRAM, "matHasDiffuseMap");
+    RMS.shader.matAmbientColor = glGetUniformLocation(RMS.shader.programHandle, "matAmbientColor");
+    RMS.shader.matDiffuseColor = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseColor");
+    RMS.shader.matSpecularColor = glGetUniformLocation(RMS.shader.programHandle, "matSpecularColor");
+    RMS.shader.matEmissiveColor = glGetUniformLocation(RMS.shader.programHandle, "matEmissiveColor");
+    RMS.shader.matSpecularExponent = glGetUniformLocation(RMS.shader.programHandle, "matSpecularExponent");
+    RMS.shader.matDissolve = glGetUniformLocation(RMS.shader.programHandle, "matDissolve");
+    RMS.shader.matDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseMap");
+    RMS.shader.matHasDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matHasDiffuseMap");
 
-    scene->objectMatricesHandle = glGetUniformBlockIndex(RENDERER_MAIN_SHADER_PROGRAM, "modelMatrices");
-    glUniformBlockBinding(RENDERER_MAIN_SHADER_PROGRAM, scene->objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
-    glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene->uboObjectMatrices);
+    RMS.shader.objectMatricesHandle = glGetUniformBlockIndex(RMS.shader.programHandle, "modelMatrices");
+    glUniformBlockBinding(RMS.shader.programHandle, RMS.shader.objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
+    glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, RMS.shader.uboObjectMatrices);
     // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindVertexArray(0);
-
-    RJGlobal_DebugInfo("Renderer Scene '%s' created.", scene->name.characters);
-
-    return scene;
+    RJGlobal_DebugInfo("Renderer initialized successfully.");
 }
 
+void Renderer_Terminate()
+{
+    RMS.window = NULL;
+
+    for (RJGlobal_Size batch = RMS.batches.count - 1; batch > 0; batch--)
+    {
+        Renderer_BatchDestroy(batch);
+    }
+
+    ListArray_Destroy(&RMS.batches);
+
+    RMS.camera.positionReference = NULL;
+    RMS.camera.rotationReference = NULL;
+    RMS.camera.sizeReference = NULL;
+    RMS.camera.nearClipPlaneReference = NULL;
+    RMS.camera.farClipPlaneReference = NULL;
+    RMS.camera.isPerspectiveReference = NULL;
+
+    if (RMS.shader.programHandle != 0)
+    {
+        glDeleteProgram(RMS.shader.programHandle);
+    }
+
+    RMS.shader.programHandle = 0;
+
+    for (RJGlobal_Size i = 0; i < RMS.shader.textures.count; i++)
+    {
+        RendererTexture_Destroy((RendererTexture *)ListLinked_RemoveHead(&RMS.shader.textures));
+    }
+
+    ListLinked_Destroy(&RMS.shader.textures);
+
+    glDeleteVertexArrays(1, &RMS.shader.vao);
+    glDeleteBuffers(1, &RMS.shader.vboModelVertices);
+    glDeleteBuffers(1, &RMS.shader.iboModelIndices);
+    glDeleteBuffers(1, &RMS.shader.uboObjectMatrices);
+
+    RMS.shader.vao = 0;
+    RMS.shader.vboModelVertices = 0;
+    RMS.shader.iboModelIndices = 0;
+    RMS.shader.uboObjectMatrices = 0;
+
+    RMS.shader.camProjectionMatrix = 0;
+    RMS.shader.camViewMatrix = 0;
+    RMS.shader.camPosition = 0;
+    RMS.shader.camRotation = 0;
+    RMS.shader.camSize = 0;
+    RMS.shader.camIsPerspective = 0;
+
+    RMS.shader.matAmbientColor = 0;
+    RMS.shader.matDiffuseColor = 0;
+    RMS.shader.matSpecularColor = 0;
+    RMS.shader.matEmissiveColor = 0;
+    RMS.shader.matSpecularExponent = 0;
+    RMS.shader.matDissolve = 0;
+    RMS.shader.matDiffuseMap = 0;
+    RMS.shader.matHasDiffuseMap = 0;
+
+    RMS.shader.objectMatricesHandle = 0;
+
+    RJGlobal_DebugInfo("Renderer terminated successfully.");
+}
+
+void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
+{
+    RJGlobal_DebugAssert(RMS.shader.programHandle != 0, "Initialize the renderer before configuring shaders.");
+
+    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderFile);
+    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderFile);
+
+    GLint glslHasCompiled = 0;
+    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
+
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
+    glCompileShader(vertexShader);
+
+    ResourceText_Destroy(rscVertexShader);
+
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Vertex shader compiled successfully.");
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, (const GLchar *const *)&rscFragmentShader->data.characters, NULL);
+    glCompileShader(fragmentShader);
+
+    ResourceText_Destroy(rscFragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
+
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Fragment shader compiled successfully.");
+
+    glAttachShader(RMS.shader.programHandle, vertexShader);
+    glAttachShader(RMS.shader.programHandle, fragmentShader);
+    glLinkProgram(RMS.shader.programHandle);
+
+    glGetProgramiv(RMS.shader.programHandle, GL_LINK_STATUS, &glslHasCompiled);
+    glGetProgramInfoLog(RMS.shader.programHandle, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Shader program linking failed. Logs:\n%s", glslInfoLog);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    RJGlobal_DebugInfo("Shader program linked and created successfully.");
+}
+
+void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference)
+{
+    RMS.camera.positionReference = positionReference;
+    RMS.camera.rotationReference = rotationReference;
+    RMS.camera.sizeReference = sizeReference;
+    RMS.camera.nearClipPlaneReference = nearClipPlaneReference;
+    RMS.camera.farClipPlaneReference = farClipPlaneReference;
+    RMS.camera.isPerspectiveReference = isPerspectiveReference;
+}
+
+/*
 RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, RJGlobal_Size transformOffsetInObject, RJGlobal_Size totalObjectSize, RJGlobal_Size objectCount)
 {
     RJGlobal_DebugAssertNullPointerCheck(modelPool);
@@ -1581,149 +1495,196 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
 
     return scene;
 }
+*/
 
-void RendererScene_Destroy(RendererScene *scene)
+// todo move this to shader, compute in gpu
+void Renderer_Update()
 {
-    RJGlobal_DebugAssertNullPointerCheck(scene);
+    glm_mat4_identity((vec4 *)&RMS.camera.projectionMatrix);
+    glm_mat4_identity((vec4 *)&RMS.camera.viewMatrix);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(scene->name, tempTitle);
+    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(RMS.camera.rotationReference->x) * Maths_Cos(RMS.camera.rotationReference->y),
+                                                       Maths_Sin(RMS.camera.rotationReference->x),
+                                                       Maths_Cos(RMS.camera.rotationReference->x) * Maths_Sin(RMS.camera.rotationReference->y)));
 
-    String_Destroy(&scene->name);
-    scene->camera = NULL;
+    Vector3 center = Vector3_Add(*RMS.camera.positionReference, Vector3_Normalized(direction));
 
-    for (RJGlobal_Size i = scene->batches.count - 1; i < scene->batches.count; i--)
+    glm_lookat((float *)RMS.camera.positionReference, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RMS.camera.viewMatrix);
+    if (*RMS.camera.isPerspectiveReference)
     {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
-        RendererScene_DestroyBatch(batch);
-    }
-
-    ListArray_Destroy(&scene->batches);
-
-    glDeleteVertexArrays(1, &scene->vao);
-    glDeleteBuffers(1, &scene->vboModelVertices);
-    glDeleteBuffers(1, &scene->iboModelIndices);
-
-    scene->vao = 0;
-    scene->vboModelVertices = 0;
-    scene->iboModelIndices = 0;
-
-    scene->camProjectionMatrix = 0;
-    scene->camViewMatrix = 0;
-    scene->camPosition = 0;
-    scene->camRotation = 0;
-    scene->objectMatricesHandle = 0;
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    free(scene);
-    scene = NULL;
-
-    RJGlobal_DebugInfo("Renderer Scene '%s' destroyed.", tempTitle);
-}
-
-void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *camera)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-    RJGlobal_DebugAssertNullPointerCheck(camera);
-
-    scene->camera = camera;
-    camera->scene = scene;
-}
-
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, RJGlobal_Size initialObjectCapacity)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-    RJGlobal_DebugAssertNullPointerCheck(model);
-
-    RendererBatch batch = {0};
-
-    batch.model = model;
-    batch.scene = scene;
-    batch.batchOffsetInScene = scene->batches.count;
-    batch.objectMatrices = ListArray_Create("Matrix 4x4", sizeof(Renderer_Matrix4), initialObjectCapacity);
-    batch.components = ListArray_Create("Renderer Component", sizeof(RendererComponent), initialObjectCapacity);
-
-    return (RendererBatch *)ListArray_Add(&scene->batches, &batch);
-}
-
-void RendererScene_DestroyBatch(RendererBatch *batch)
-{
-    RJGlobal_DebugAssertNullPointerCheck(batch);
-
-    // todo ! be may be wrong
-    for (RJGlobal_Size i = batch->batchOffsetInScene + 1; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
-    {
-        RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(&batch->scene->batches, i);
-        nextBatch->batchOffsetInScene--;
-    }
-
-    batch->model = NULL;
-
-    ListArray_Destroy(&batch->objectMatrices);
-    ListArray_Destroy(&batch->components);
-
-    ListArray_RemoveAtIndex(&batch->scene->batches, batch->batchOffsetInScene);
-}
-
-void RendererScene_Update(RendererScene *scene)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-    RJGlobal_DebugAssertNullPointerCheck(scene->camera);
-
-    glm_mat4_identity((vec4 *)&scene->camera->viewMatrix);
-    glm_mat4_identity((vec4 *)&scene->camera->projectionMatrix);
-
-    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(scene->camera->rotationReference->x) * Maths_Cos(scene->camera->rotationReference->y),
-                                                       Maths_Sin(scene->camera->rotationReference->x),
-                                                       Maths_Cos(scene->camera->rotationReference->x) * Maths_Sin(scene->camera->rotationReference->y)));
-
-    Vector3 center = Vector3_Add(*scene->camera->positionReference, Vector3_Normalized(direction));
-
-    glm_lookat((float *)scene->camera->positionReference, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&scene->camera->viewMatrix);
-
-    if (scene->camera->isPerspective)
-    {
-        glm_perspective(Maths_DegToRad(scene->camera->size),
-                        (float)RENDERER_MAIN_WINDOW->size.x / (float)RENDERER_MAIN_WINDOW->size.y,
-                        scene->camera->nearClipPlane,
-                        scene->camera->farClipPlane,
-                        (vec4 *)&scene->camera->projectionMatrix);
+        glm_perspective(Maths_DegToRad(*RMS.camera.sizeReference),
+                        (float)RMS.window->size.x / (float)RMS.window->size.y,
+                        *RMS.camera.nearClipPlaneReference,
+                        *RMS.camera.farClipPlaneReference,
+                        (vec4 *)&RMS.camera.projectionMatrix);
     }
     else
     {
-        float sizeX = (float)RENDERER_MAIN_WINDOW->size.x * scene->camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        float sizeY = (float)RENDERER_MAIN_WINDOW->size.y * scene->camera->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeX = (float)RMS.window->size.x * *RMS.camera.sizeReference / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeY = (float)RMS.window->size.y * *RMS.camera.sizeReference / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
 
         glm_ortho(-sizeX, sizeX,
                   -sizeY, sizeY,
-                  scene->camera->nearClipPlane,
-                  scene->camera->farClipPlane,
-                  (vec4 *)&scene->camera->projectionMatrix);
+                  *RMS.camera.nearClipPlaneReference,
+                  *RMS.camera.farClipPlaneReference,
+                  (vec4 *)&RMS.camera.projectionMatrix);
     }
 
-    for (RJGlobal_Size i = 0; i < scene->batches.count; i++)
+    for (RJGlobal_Size batch = 0; batch < RMS.batches.count; batch++)
     {
-        RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
-        for (RJGlobal_Size j = 0; j < batch->objectMatrices.count; j++)
+        for (RJGlobal_Size component = 0; component < rmsGetBatch(batch).data.count; component++)
         {
-            RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
+            if (!rmsIsActive(batch, component))
+            {
+                continue;
+            }
+
             TRANSFORM_TO_MODEL_MATRIX(
-                (Renderer_Matrix4 *)ListArray_Get(&batch->objectMatrices, j),
-                component->positionReference,
-                component->rotationReference,
-                component->scaleReference);
+                &rmsGetObjectMatrix(batch, component),
+                &rmsGetPositionReference(batch, component),
+                &rmsGetRotationReference(batch, component),
+                &rmsGetScaleReference(batch, component));
         }
     }
 }
 
-#pragma endregion Renderer Scene
+void Renderer_Render()
+{
+    if (glfwWindowShouldClose(RMS.window->handle))
+    {
+        RJGlobal_DebugInfo("Main window close input received");
+        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
+    }
 
-#pragma region Renderer Batch
+    glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(RMS.shader.programHandle);
 
-RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference)
+    glBindVertexArray(RMS.shader.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, RMS.shader.vboModelVertices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RMS.shader.iboModelIndices);
+    glBindBuffer(GL_UNIFORM_BUFFER, RMS.shader.uboObjectMatrices);
+
+    glUniformMatrix4fv(RMS.shader.camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&RMS.camera.projectionMatrix);
+    glUniformMatrix4fv(RMS.shader.camViewMatrix, 1, GL_FALSE, (GLfloat *)&RMS.camera.viewMatrix);
+    glUniform3fv(RMS.shader.camPosition, 1, (GLfloat *)RMS.camera.positionReference);
+    glUniform3fv(RMS.shader.camRotation, 1, (GLfloat *)RMS.camera.rotationReference);
+    glUniform1f(RMS.shader.camSize, *RMS.camera.sizeReference);
+    glUniform1i(RMS.shader.camIsPerspective, *RMS.camera.isPerspectiveReference);
+
+    for (RJGlobal_Size batch = 0; batch < RMS.batches.count; batch++)
+    {
+        RendererMaterial *previousMaterial = NULL;
+
+        glBufferData(GL_UNIFORM_BUFFER,
+                     (long long)(sizeof(Vector3) * rmsGetBatch(batch).data.count),
+                     rmsGetBatch(batch).components.positionReferences,
+                     RENDERER_OPENGL_DRAW_TYPE);
+
+        glBufferData(GL_UNIFORM_BUFFER,
+                     (long long)(sizeof(Vector3) * rmsGetBatch(batch).data.count),
+                     rmsGetBatch(batch).components.rotationReferences,
+                     RENDERER_OPENGL_DRAW_TYPE);
+        glBufferData(GL_UNIFORM_BUFFER,
+                     (long long)(sizeof(Vector3) * rmsGetBatch(batch).data.count),
+                     rmsGetBatch(batch).components.scaleReferences,
+                     RENDERER_OPENGL_DRAW_TYPE);
+
+        glBufferData(GL_ARRAY_BUFFER,
+                     (long long)(rmsGetBatch(batch).model->vertices.sizeOfItem * rmsGetBatch(batch).model->vertices.count),
+                     rmsGetBatch(batch).model->vertices.data,
+                     RENDERER_OPENGL_DRAW_TYPE);
+
+        for (RJGlobal_Size j = 0; j < rmsGetBatch(batch).model->meshes.count; j++)
+        {
+            RendererMesh *mesh = (RendererMesh *)ListArray_Get(&rmsGetBatch(batch).model->meshes, j);
+
+            if (mesh->material != previousMaterial)
+            {
+                glUniform3fv(RMS.shader.matAmbientColor, 1, (GLfloat *)&mesh->material->ambientColor);
+                glUniform3fv(RMS.shader.matDiffuseColor, 1, (GLfloat *)&mesh->material->diffuseColor);
+                glUniform3fv(RMS.shader.matSpecularColor, 1, (GLfloat *)&mesh->material->specularColor);
+                glUniform3fv(RMS.shader.matEmissiveColor, 1, (GLfloat *)&mesh->material->emissiveColor);
+                glUniform1f(RMS.shader.matSpecularExponent, mesh->material->specularExponent);
+                glUniform1f(RMS.shader.matDissolve, mesh->material->dissolve);
+
+                // Texture binding
+                if (mesh->material->diffuseMap != NULL)
+                {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap->handle);
+                    glUniform1i(RMS.shader.matDiffuseMap, 0);
+                    glUniform1i(RMS.shader.matHasDiffuseMap, 1);
+                }
+                else
+                {
+                    glUniform1i(RMS.shader.matHasDiffuseMap, 0);
+                }
+
+                previousMaterial = mesh->material;
+            }
+
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                         (long long)(mesh->indices.sizeOfItem * mesh->indices.count),
+                         mesh->indices.data,
+                         RENDERER_OPENGL_DRAW_TYPE);
+
+            glDrawElementsInstanced(GL_TRIANGLES,
+                                    (GLsizei)mesh->indices.count,
+                                    GL_UNSIGNED_INT,
+                                    0,
+                                    (GLsizei)rmsGetBatch(batch).data.count);
+        }
+    }
+
+    // RendererDebug_CheckError();
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glfwSwapBuffers(RMS.window->handle);
+
+    // RJGlobal_DebugInfo("Scene '%s' rendered", scene.name.characters);
+}
+
+RendererBatch Renderer_BatchCreate(StringView mdlFile, RJGlobal_Size initialCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
+{
+    RendererBatch newBatch = RJGLOBAL_INDEX_INVALID;
+
+    newBatch = RMS.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&RMS.freeIndices)) : RMS.batches.count;
+
+    RENDERER_BATCH *createdBatch = (RENDERER_BATCH *)ListArray_Add(&RMS.batches, NULL);
+
+    createdBatch->model = NULL; // todo
+
+    createdBatch->data.capacity = initialCapacity;
+    createdBatch->data.count = 0;
+    createdBatch->data.freeIndices = ListArray_Create("RJGlobal_Index", sizeof(RJGlobal_Index), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
+
+    createdBatch->components.entities = (RJGlobal_Index *)malloc(sizeof(RJGlobal_Index) * initialCapacity);
+
+    createdBatch->components.objectMatrices = (Renderer_Matrix4 *)malloc(sizeof(Renderer_Matrix4) * initialCapacity);
+
+    createdBatch->components.positionReferences = positionReferences;
+    createdBatch->components.rotationReferences = rotationReferences;
+    createdBatch->components.scaleReferences = scaleReferences;
+
+    createdBatch->components.flags = (uint8_t *)malloc(sizeof(uint8_t) * initialCapacity);
+
+    RJGlobal_MemorySet(createdBatch->components.entities, sizeof(RJGlobal_Index) * createdBatch->data.capacity, 0);
+    RJGlobal_MemorySet(createdBatch->components.flags, sizeof(uint8_t) * createdBatch->data.capacity, 0);
+
+    return newBatch;
+}
+
+void Renderer_BatchDestroy(RendererBatch batch)
+{
+    // todo
+}
+
+RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference)
 {
     RJGlobal_DebugAssertNullPointerCheck(batch);
     RJGlobal_DebugAssertNullPointerCheck(positionReference);
@@ -1747,7 +1708,7 @@ RendererComponent *RendererBatch_CreateComponent(RendererBatch *batch, Vector3 *
     return (RendererComponent *)ListArray_Add(&component.batch->components, &component);
 }
 
-void RendererBatch_DestroyComponent(RendererComponent *component)
+void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component)
 {
     RJGlobal_DebugAssertNullPointerCheck(component);
 
@@ -1762,37 +1723,179 @@ void RendererBatch_DestroyComponent(RendererComponent *component)
     ListArray_RemoveAtIndex(&component->batch->components, component->componentOffsetInBatch);
 }
 
-#pragma endregion Renderer Batch
+#pragma endregion Renderer
 
-#pragma region Renderer Camera
+#pragma region Renderer Debug
 
-RendererCameraComponent *RendererCameraComponent_Create(Vector3 *positionReference, Vector3 *rotationReference)
+void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJGlobal_Size initialVertexCapacity)
 {
-    RendererCameraComponent *camera = malloc(sizeof(RendererCameraComponent));
-    RJGlobal_DebugAssertNullPointerCheck(camera);
+    RMS.debugShader.vertices = ListArray_Create("Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
 
-    camera->scene = NULL;
+    glGenVertexArrays(1, &RMS.debugShader.vao);
+    glGenBuffers(1, &RMS.debugShader.vbo);
 
-    camera->positionReference = positionReference;
-    camera->rotationReference = rotationReference;
+    GLint glslHasCompiled = 0;
+    char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
 
-    camera->isPerspective = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE;
-    camera->size = RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE ? RENDERER_CAMERA_DEFAULT_FOV : RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE;
+    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderFile);
+    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderFile);
 
-    camera->nearClipPlane = RENDERER_CAMERA_DEFAULT_NEAR_CLIP_PLANE;
-    camera->farClipPlane = RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE;
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
+    glCompileShader(vertexShader);
 
-    return camera;
+    ResourceText_Destroy(rscVertexShader);
+
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(vertexShader, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Vertex shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Debug Vertex shader compiled successfully.");
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, (const GLchar *const *)&rscFragmentShader->data.characters, NULL);
+    glCompileShader(fragmentShader);
+
+    ResourceText_Destroy(rscFragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &glslHasCompiled);
+    glGetShaderInfoLog(fragmentShader, sizeof(glslInfoLog), NULL, glslInfoLog);
+
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Fragment shader compilation failed. Logs:\n%s", glslInfoLog);
+    RJGlobal_DebugInfo("Debug Fragment shader compiled successfully.");
+
+    RMS.debugShader.programHandle = glCreateProgram();
+    glAttachShader(RMS.debugShader.programHandle, vertexShader);
+    glAttachShader(RMS.debugShader.programHandle, fragmentShader);
+    glLinkProgram(RMS.debugShader.programHandle);
+
+    glGetProgramiv(RMS.debugShader.programHandle, GL_LINK_STATUS, &glslHasCompiled);
+    glGetProgramInfoLog(RMS.debugShader.programHandle, RENDERER_OPENGL_INFO_LOG_BUFFER, NULL, glslInfoLog);
+
+    RJGlobal_DebugAssert(glslHasCompiled != GL_FALSE, "Debug Shader program linking failed. Logs:\n%s", glslInfoLog);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    RMS.debugShader.camProjectionMatrix = glGetUniformLocation(RMS.debugShader.programHandle, "camProjectionMatrix");
+    RMS.debugShader.camViewMatrix = glGetUniformLocation(RMS.debugShader.programHandle, "camViewMatrix");
+
+    glBindVertexArray(RMS.debugShader.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, RMS.debugShader.vbo);
+
+    size_t offset = 0;
+
+    glVertexAttribPointer(RENDERER_DEBUG_VBO_POSITION_BINDING, 3, GL_FLOAT, GL_FALSE, sizeof(RendererDebugVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_DEBUG_VBO_POSITION_BINDING);
+    offset += sizeof(Vector3);
+
+    glVertexAttribPointer(RENDERER_DEBUG_VBO_COLOR_BINDING, 4, GL_FLOAT, GL_FALSE, sizeof(RendererDebugVertex), (void *)offset);
+    glEnableVertexAttribArray(RENDERER_DEBUG_VBO_COLOR_BINDING);
+    offset += sizeof(Color);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    RJGlobal_DebugInfo("Debug Renderer initialized successfully.");
 }
 
-void RendererCameraComponent_Destroy(RendererCameraComponent *camera)
+void RendererDebug_Terminate()
 {
-    RJGlobal_DebugAssertNullPointerCheck(camera);
+    if (RMS.debugShader.vbo != 0)
+    {
+        glDeleteBuffers(1, &RMS.debugShader.vbo);
+    }
 
-    camera->size = -1.0f;
+    if (RMS.debugShader.vao != 0)
+    {
+        glDeleteVertexArrays(1, &RMS.debugShader.vao);
+    }
 
-    free(camera);
-    camera = NULL;
+    if (RMS.debugShader.programHandle != 0)
+    {
+        glDeleteProgram(RMS.debugShader.programHandle);
+    }
+
+    ListArray_Destroy(&RMS.debugShader.vertices);
+
+    RMS.debugShader.vao = 0;
+    RMS.debugShader.vbo = 0;
+    RMS.debugShader.programHandle = 0;
+    RMS.debugShader.camProjectionMatrix = 0;
+    RMS.debugShader.camViewMatrix = 0;
+
+    RJGlobal_DebugInfo("Debug Renderer terminated successfully.");
 }
 
-#pragma endregion Renderer Camera
+void RendererDebug_StartRendering()
+{
+    glUseProgram(RMS.debugShader.programHandle);
+}
+
+void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, const Renderer_Matrix4 *camViewMatrix)
+{
+    if (RMS.debugShader.vertices.count == 0)
+    {
+        return;
+    }
+
+    glUseProgram(RMS.debugShader.programHandle);
+    glUniformMatrix4fv(RMS.debugShader.camProjectionMatrix, 1, GL_FALSE, (GLfloat *)camProjectionMatrix);
+    glUniformMatrix4fv(RMS.debugShader.camViewMatrix, 1, GL_FALSE, (GLfloat *)camViewMatrix);
+
+    glBindVertexArray(RMS.debugShader.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, RMS.debugShader.vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(RMS.debugShader.vertices.sizeOfItem * RMS.debugShader.vertices.count), RMS.debugShader.vertices.data, RENDERER_OPENGL_DRAW_TYPE);
+    glDrawArrays(GL_LINES, 0, (GLsizei)RMS.debugShader.vertices.count);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    ListArray_Clear(&RMS.debugShader.vertices);
+}
+
+void RendererDebug_DrawLine(Vector3 start, Vector3 end, Color color)
+{
+    RendererDebugVertex startVertex = (RendererDebugVertex){.vertexColor = color, .vertexPosition = start};
+    RendererDebugVertex endVertex = (RendererDebugVertex){.vertexColor = color, .vertexPosition = end};
+
+    ListArray_Add(&RMS.debugShader.vertices, &startVertex);
+    ListArray_Add(&RMS.debugShader.vertices, &endVertex);
+}
+
+void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
+{
+    Vector3 halfSize = Vector3_Scale(size, 0.5f);
+    Vector3 min = Vector3_Add(position, Vector3_Scale(halfSize, -1.0f));
+    Vector3 max = Vector3_Add(position, halfSize);
+
+    Vector3 corners[8] = {
+        {min.x, min.y, min.z},
+        {max.x, min.y, min.z},
+        {max.x, max.y, min.z},
+        {min.x, max.y, min.z},
+        {min.x, min.y, max.z},
+        {max.x, min.y, max.z},
+        {max.x, max.y, max.z},
+        {min.x, max.y, max.z}};
+
+    // Bottom face
+    RendererDebug_DrawLine(corners[0], corners[1], color);
+    RendererDebug_DrawLine(corners[1], corners[2], color);
+    RendererDebug_DrawLine(corners[2], corners[3], color);
+    RendererDebug_DrawLine(corners[3], corners[0], color);
+
+    // Top face
+    RendererDebug_DrawLine(corners[4], corners[5], color);
+    RendererDebug_DrawLine(corners[5], corners[6], color);
+    RendererDebug_DrawLine(corners[6], corners[7], color);
+    RendererDebug_DrawLine(corners[7], corners[4], color);
+
+    // Connecting edges
+    RendererDebug_DrawLine(corners[0], corners[4], color);
+    RendererDebug_DrawLine(corners[1], corners[5], color);
+    RendererDebug_DrawLine(corners[2], corners[6], color);
+    RendererDebug_DrawLine(corners[3], corners[7], color);
+}
+
+#pragma endregion Renderer Debug

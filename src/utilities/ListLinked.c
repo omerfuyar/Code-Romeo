@@ -193,12 +193,14 @@ void ListLinked_Add(ListLinked *list, const void *item)
 void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index)
 {
     RJGlobal_DebugAssertNullPointerCheck(list);
+    RJGlobal_DebugAssertNullPointerCheck(list->head);
     RJGlobal_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
     if (index == 0)
     {
-        list->head = list->head->next;
-        ListLinkedNode_Destroy(list->head);
+        ListLinkedNode *oldHead = list->head;
+        list->head = oldHead->next;
+        ListLinkedNode_Destroy(oldHead);
     }
     else
     {
@@ -213,6 +215,7 @@ void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index)
 void ListLinked_RemoveItem(ListLinked *list, const void *item)
 {
     RJGlobal_DebugAssertNullPointerCheck(list);
+    RJGlobal_DebugAssertNullPointerCheck(list->head);
 
     ListLinked_RemoveAtIndex(list, (RJGlobal_Size)ListLinked_IndexOf(list, item));
 }
@@ -233,6 +236,7 @@ void ListLinked_Clear(ListLinked *list)
 long long ListLinked_IndexOf(const ListLinked *list, const void *item)
 {
     RJGlobal_DebugAssertNullPointerCheck(list);
+    RJGlobal_DebugAssertNullPointerCheck(list->head);
 
     return ListLinkedNode_GetIndexIfMatch(list->head, list->sizeOfItem, item, 0);
 }

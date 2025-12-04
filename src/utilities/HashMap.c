@@ -5,11 +5,11 @@
 
 #pragma region Source Only
 
-/// @brief
-/// @param key
-/// @param capacity
-/// @return
-RJGlobal_Size HashMap_Hash(const char *key, RJGlobal_Size capacity)
+/// @brief Hash function for HashMap.
+/// @param map The HashMap to hash for.
+/// @param key The key to hash.
+/// @return The hash value.
+RJGlobal_Size HashMap_Hash(const HashMap *map, const char *key)
 {
     RJGlobal_Size strLength = RJGlobal_StringLength(key);
 
@@ -22,7 +22,7 @@ RJGlobal_Size HashMap_Hash(const char *key, RJGlobal_Size capacity)
         sum += (RJGlobal_Size)key[i] * mul;
     }
 
-    return sum % capacity;
+    return sum % map->capacity;
 }
 
 #pragma endregion Source Only
