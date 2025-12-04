@@ -134,7 +134,7 @@
 /// @brief Size of the temporary buffer used in various operations.
 #define RJGLOBAL_TEMP_BUFFER_SIZE (RJGlobal_Size)128
 
-#define RJGLOBAL_INVALID_INDEX ((RJGlobal_Index)UINT32_MAX)
+#define RJGLOBAL_INDEX_INVALID ((RJGlobal_Index)UINT32_MAX)
 
 /// @brief Macro wrapper for file opening to use it in if statements.
 #define RJGlobal_FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
