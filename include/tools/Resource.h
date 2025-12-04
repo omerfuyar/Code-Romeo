@@ -17,7 +17,7 @@ typedef struct ResourceText
 {
     String file;
     String data;
-    size_t lineCount;
+    RJGlobal_Size lineCount;
 } ResourceText;
 
 /// @brief Resource representation for image files.

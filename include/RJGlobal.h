@@ -132,7 +132,9 @@
 #endif
 
 /// @brief Size of the temporary buffer used in various operations.
-#define RJGLOBAL_TEMP_BUFFER_SIZE (size_t)128
+#define RJGLOBAL_TEMP_BUFFER_SIZE (RJGlobal_Size)128
+
+#define RJGLOBAL_INVALID_INDEX ((RJGlobal_Index)UINT32_MAX)
 
 /// @brief Macro wrapper for file opening to use it in if statements.
 #define RJGlobal_FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
@@ -142,6 +144,8 @@
 #define RJGlobal_MemorySet(destination, size, value) memset(destination, value, size)
 /// @brief Macro wrapper for memory move operation.
 #define RJGlobal_MemoryMove(destination, size, source) memmove(destination, source, size)
+/// @brief Macro wrapper for string length operation.
+#define RJGlobal_StringLength(string) (RJGlobal_Size) strlen(string)
 
 #pragma region Typedefs
 
@@ -153,6 +157,12 @@ typedef void (*RJGlobal_VoidFunFloat)(float);
 
 /// @brief Function pointer type used in terminate callback function.
 typedef void (*RJGlobal_VoidFunIntCharptr)(int, char *);
+
+/// @brief Index type to use for entire project
+typedef uint32_t RJGlobal_Index;
+
+/// @brief Size type to use for entire project
+typedef uint32_t RJGlobal_Size;
 
 #pragma endregion Typedefs
 

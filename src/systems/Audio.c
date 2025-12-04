@@ -51,7 +51,7 @@ void Audio_Terminate()
 
 #pragma region AudioScene
 
-AudioScene *AudioScene_Create(StringView name, size_t initialComponentCapacity)
+AudioScene *AudioScene_Create(StringView name, RJGlobal_Size initialComponentCapacity)
 {
     AudioScene *scene = (AudioScene *)malloc(sizeof(AudioScene));
     scene->name = scc(name);

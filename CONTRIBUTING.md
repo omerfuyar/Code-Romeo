@@ -96,7 +96,7 @@ int String_Compare(StringView string, StringView other);
 /// @brief Create view from string literal.
 /// @param stringLiteral The literal string to create a view of.
 #define scl(stringLiteral) \
-    (StringView) { .characters = stringLiteral, .length = strlen(stringLiteral) }
+    (StringView) { .characters = stringLiteral, .length = RJGlobal_Size(stringLiteral) }
 ```
 
 `@note` tag is not mandatory but if the developer thinks there is something extra to say about the function, it can be added. Other than that, every parameter must be documented with `@param` tag and the return value must be documented with `@return` tag. Because macro functions do not have return types, they do not need `@return` tag.
@@ -113,7 +113,7 @@ Other elements like types, enums and macros (if not explicit like `Vector3_One`)
 typedef struct StringView
 {
     const char *characters;
-    size_t length;
+    RJGlobal_Size length;
 } StringView;
 
 /// @brief The debug log file pointer for the application.

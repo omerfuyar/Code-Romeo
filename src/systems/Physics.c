@@ -2,206 +2,265 @@
 
 #include "utilities/Maths.h"
 
+#define PHYSICS_FLAG_STATIC (1 << 0)
+
 #pragma region Source Only
 
+struct PHYSICS_SCENE
+{
+    bool initialized;
+
+    float drag;
+    float gravity;
+    float elasticity;
+
+    RJGlobal_Size capacity;
+    RJGlobal_Size count;
+    RJGlobal_Size firstFree;
+
+    Vector3 *velocities;
+    Vector3 *colliderSizes;
+    float *masses;
+    RJGlobal_Index *positionIndices;
+    uint8_t *flags;
+
+    Vector3 *positionReferences;
+} PHYSICS_MAIN_SCENE = {0};
+
+#define pmsGetVelocity(component) (PHYSICS_MAIN_SCENE.velocities[component])
+#define pmsGetColliderSize(component) (PHYSICS_MAIN_SCENE.colliderSizes[component])
+#define pmsGetMass(component) (PHYSICS_MAIN_SCENE.masses[component])
+#define pmsGetPositionIndex(component) (PHYSICS_MAIN_SCENE.positionIndices[component])
+#define pmsGetPositionReference(component) (PHYSICS_MAIN_SCENE.positionReferences[pmsGetPositionIndex(component)])
+#define pmsGetFlag(component) (PHYSICS_MAIN_SCENE.flags[component])
+#define pmsIsStatic(component) (PHYSICS_MAIN_SCENE.flags[component] & PHYSICS_FLAG_STATIC)
+
 /// @brief
-/// @param scene
 /// @param staticComponent
 /// @param dynamicComponent
 /// @param overlap
-void PhysicsScene_ResolveStaticVsDynamic(const PhysicsScene *scene, PhysicsComponent *staticComponent, PhysicsComponent *dynamicComponent, Vector3 overlap)
+void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, PhysicsComponent dynamicComponent, Vector3 overlap)
 {
-    float move = 0.0f;
+    Vector3 dynamicComponentPosition = pmsGetPositionReference(dynamicComponent);
+    Vector3 staticComponentPosition = pmsGetPositionReference(staticComponent);
 
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
-        move = overlap.x;
+        pmsGetPositionReference(dynamicComponent).x += dynamicComponentPosition.x < staticComponentPosition.x ? overlap.x : -overlap.x;
 
-        if (dynamicComponent->positionReference->x < staticComponent->positionReference->x)
-        {
-            dynamicComponent->positionReference->x -= move;
-        }
-        else
-        {
-            dynamicComponent->positionReference->x += move;
-        }
-
-        dynamicComponent->velocity.x = -dynamicComponent->velocity.x * scene->elasticity;
+        pmsGetVelocity(dynamicComponent).x = -pmsGetVelocity(dynamicComponent).x * PHYSICS_MAIN_SCENE.elasticity;
     }
     else if (overlap.y < overlap.z)
     {
-        move = overlap.y;
 
-        if (dynamicComponent->positionReference->y < staticComponent->positionReference->y)
-        {
-            dynamicComponent->positionReference->y -= move;
-        }
-        else
-        {
-            dynamicComponent->positionReference->y += move;
-        }
+        pmsGetPositionReference(dynamicComponent).y += dynamicComponentPosition.y < staticComponentPosition.y ? overlap.y : -overlap.y;
 
-        dynamicComponent->velocity.y = -dynamicComponent->velocity.y * scene->elasticity;
+        pmsGetVelocity(dynamicComponent).y = -pmsGetVelocity(dynamicComponent).y * PHYSICS_MAIN_SCENE.elasticity;
     }
     else
     {
-        move = overlap.z;
+        pmsGetPositionReference(dynamicComponent).z += dynamicComponentPosition.z < staticComponentPosition.z ? overlap.z : -overlap.z;
 
-        if (dynamicComponent->positionReference->z < staticComponent->positionReference->z)
-        {
-            dynamicComponent->positionReference->z -= move;
-        }
-        else
-        {
-            dynamicComponent->positionReference->z += move;
-        }
-
-        dynamicComponent->velocity.z = -dynamicComponent->velocity.z * scene->elasticity;
+        pmsGetVelocity(dynamicComponent).z = -pmsGetVelocity(dynamicComponent).z * PHYSICS_MAIN_SCENE.elasticity;
     }
 }
 
 /// @brief
-/// @param scene
 /// @param firstComponent
 /// @param secondComponent
 /// @param overlap
-void PhysicsScene_ResolveDynamicVsDynamic(const PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent, Vector3 overlap)
+void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent, PhysicsComponent secondComponent, Vector3 overlap)
 {
-    float totalInvMass = 1.0f / firstComponent->mass + 1.0f / secondComponent->mass;
+    float totalInvMass = 1.0f / pmsGetMass(firstComponent) + 1.0f / pmsGetMass(secondComponent);
     float move1 = 0.0f;
     float move2 = 0.0f;
 
+    Vector3 firstComponentPosition = pmsGetPositionReference(firstComponent);
+    Vector3 secondComponentPosition = pmsGetPositionReference(secondComponent);
+
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
-        move1 = (1.0f / firstComponent->mass) / totalInvMass * overlap.x;
-        move2 = (1.0f / secondComponent->mass) / totalInvMass * overlap.x;
+        move1 = (1.0f / pmsGetMass(firstComponent)) / totalInvMass * overlap.x;
+        move2 = (1.0f / pmsGetMass(secondComponent)) / totalInvMass * overlap.x;
 
-        if (firstComponent->positionReference->x < secondComponent->positionReference->x)
+        if (firstComponentPosition.x < secondComponentPosition.x)
         {
-            firstComponent->positionReference->x -= move1;
-            secondComponent->positionReference->x += move2;
+            pmsGetPositionReference(firstComponent).x -= move1;
+            pmsGetPositionReference(secondComponent).x += move2;
         }
         else
         {
-            firstComponent->positionReference->x += move1;
-            secondComponent->positionReference->x -= move2;
+            pmsGetPositionReference(firstComponent).x += move1;
+            pmsGetPositionReference(secondComponent).x -= move2;
         }
     }
     else if (overlap.y < overlap.z)
     {
-        move1 = (1.0f / firstComponent->mass) / totalInvMass * overlap.y;
-        move2 = (1.0f / secondComponent->mass) / totalInvMass * overlap.y;
+        move1 = (1.0f / pmsGetMass(firstComponent)) / totalInvMass * overlap.y;
+        move2 = (1.0f / pmsGetMass(secondComponent)) / totalInvMass * overlap.y;
 
-        if (firstComponent->positionReference->y < secondComponent->positionReference->y)
+        if (firstComponentPosition.y < secondComponentPosition.y)
         {
-            firstComponent->positionReference->y -= move1;
-            secondComponent->positionReference->y += move2;
+            pmsGetPositionReference(firstComponent).y -= move1;
+            pmsGetPositionReference(secondComponent).y += move2;
         }
         else
         {
-            firstComponent->positionReference->y += move1;
-            secondComponent->positionReference->y -= move2;
+            pmsGetPositionReference(firstComponent).y += move1;
+            pmsGetPositionReference(secondComponent).y -= move2;
         }
     }
     else
     {
-        move1 = (1.0f / firstComponent->mass) / totalInvMass * overlap.z;
-        move2 = (1.0f / secondComponent->mass) / totalInvMass * overlap.z;
+        move1 = (1.0f / pmsGetMass(firstComponent)) / totalInvMass * overlap.z;
+        move2 = (1.0f / pmsGetMass(secondComponent)) / totalInvMass * overlap.z;
 
-        if (firstComponent->positionReference->z < secondComponent->positionReference->z)
+        if (firstComponentPosition.z < secondComponentPosition.z)
         {
-            firstComponent->positionReference->z -= move1;
-            secondComponent->positionReference->z += move2;
+            pmsGetPositionReference(firstComponent).z -= move1;
+            pmsGetPositionReference(secondComponent).z += move2;
         }
         else
         {
-            firstComponent->positionReference->z += move1;
-            secondComponent->positionReference->z -= move2;
+            pmsGetPositionReference(firstComponent).z += move1;
+            pmsGetPositionReference(secondComponent).z -= move2;
         }
     }
 
     // v1' = ( (m1 - e*m2)*v1 + (1+e)*m2*v2 ) / (m1+m2)
     // v2' = ( (m2 - e*m1)*v2 + (1+e)*m1*v1 ) / (m1+m2)
 
-    Vector3 tempVelocity1 = firstComponent->velocity;
-    float oneOverMassSum = 1.0f / (firstComponent->mass + secondComponent->mass);
-    float onePlusElasticity = 1.0f + scene->elasticity;
+    Vector3 tempVelocity1 = pmsGetVelocity(firstComponent);
+    float oneOverMassSum = 1.0f / (pmsGetMass(firstComponent) + pmsGetMass(secondComponent));
+    float onePlusElasticity = 1.0f + PHYSICS_MAIN_SCENE.elasticity;
 
-    firstComponent->velocity =
+    pmsGetVelocity(firstComponent) =
         Vector3_Scale(
             Vector3_Add(
-                Vector3_Scale(firstComponent->velocity,
-                              firstComponent->mass - scene->elasticity * secondComponent->mass),
+                Vector3_Scale(pmsGetVelocity(firstComponent),
+                              pmsGetMass(firstComponent) - PHYSICS_MAIN_SCENE.elasticity * pmsGetMass(secondComponent)),
                 Vector3_Scale(
-                    secondComponent->velocity,
-                    onePlusElasticity * secondComponent->mass)),
+                    pmsGetVelocity(secondComponent),
+                    onePlusElasticity * pmsGetMass(secondComponent))),
             oneOverMassSum);
 
-    secondComponent->velocity =
+    pmsGetVelocity(secondComponent) =
         Vector3_Scale(
             Vector3_Add(
-                Vector3_Scale(secondComponent->velocity,
-                              secondComponent->mass - scene->elasticity * firstComponent->mass),
+                Vector3_Scale(pmsGetVelocity(secondComponent),
+                              pmsGetMass(secondComponent) - PHYSICS_MAIN_SCENE.elasticity * pmsGetMass(firstComponent)),
                 Vector3_Scale(
                     tempVelocity1,
-                    onePlusElasticity * firstComponent->mass)),
+                    onePlusElasticity * pmsGetMass(firstComponent))),
             oneOverMassSum);
 }
 
 /// @brief
-/// @param scene
 /// @param firstComponent
 /// @param secondComponent
-void PhysicsScene_ResolveCollision(const PhysicsScene *scene, PhysicsComponent *firstComponent, PhysicsComponent *secondComponent)
+void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, PhysicsComponent secondComponent)
 {
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-
     Vector3 overlap;
+
     if (!Physics_IsColliding(firstComponent, secondComponent, &overlap))
     {
         return;
     }
 
-    if (firstComponent->isStatic)
+    if (pmsIsStatic(firstComponent))
     {
-        PhysicsScene_ResolveStaticVsDynamic(scene, firstComponent, secondComponent, overlap);
+        PhysicsScene_ResolveStaticVsDynamic(firstComponent, secondComponent, overlap);
     }
-    else if (secondComponent->isStatic)
+    else if (pmsIsStatic(secondComponent))
     {
-        PhysicsScene_ResolveStaticVsDynamic(scene, secondComponent, firstComponent, overlap);
+        PhysicsScene_ResolveStaticVsDynamic(secondComponent, firstComponent, overlap);
     }
     else
     {
-        PhysicsScene_ResolveDynamicVsDynamic(scene, firstComponent, secondComponent, overlap);
+        PhysicsScene_ResolveDynamicVsDynamic(firstComponent, secondComponent, overlap);
     }
 }
 
 #pragma endregion Source Only
 
-#pragma region Physics
-
-bool Physics_IsColliding(const PhysicsComponent *component1, const PhysicsComponent *component2, Vector3 *overlapRet)
+void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component1);
-    RJGlobal_DebugAssertNullPointerCheck(component2);
+    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
 
-    Vector3 position1 = *component1->positionReference;
-    Vector3 position2 = *component2->positionReference;
+    PHYSICS_MAIN_SCENE.drag = drag;
+    PHYSICS_MAIN_SCENE.gravity = gravity;
+    PHYSICS_MAIN_SCENE.elasticity = elasticity;
 
-    float overlapX = Maths_Min(position1.x + component1->colliderSize.x / 2.0f,
-                               position2.x + component2->colliderSize.x / 2.0f) -
-                     Maths_Max(position1.x - component1->colliderSize.x / 2.0f,
-                               position2.x - component2->colliderSize.x / 2.0f);
+    PHYSICS_MAIN_SCENE.capacity = componentCapacity;
+    PHYSICS_MAIN_SCENE.count = 0;
+    PHYSICS_MAIN_SCENE.firstFree = RJGLOBAL_INVALID_INDEX;
 
-    float overlapY = Maths_Min(position1.y + component1->colliderSize.y / 2.0f,
-                               position2.y + component2->colliderSize.y / 2.0f) -
-                     Maths_Max(position1.y - component1->colliderSize.y / 2.0f,
-                               position2.y - component2->colliderSize.y / 2.0f);
+    PHYSICS_MAIN_SCENE.velocities = (Vector3 *)malloc(sizeof(Vector3) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.colliderSizes = (Vector3 *)malloc(sizeof(Vector3) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.masses = (float *)malloc(sizeof(float) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.positionIndices = (RJGlobal_Index *)malloc(sizeof(RJGlobal_Index) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.flags = (uint8_t *)malloc(sizeof(uint8_t) * PHYSICS_MAIN_SCENE.capacity / 8);
+    PHYSICS_MAIN_SCENE.positionReferences = positionReferences;
 
-    float overlapZ = Maths_Min(position1.z + component1->colliderSize.z / 2.0f,
-                               position2.z + component2->colliderSize.z / 2.0f) -
-                     Maths_Max(position1.z - component1->colliderSize.z / 2.0f,
-                               position2.z - component2->colliderSize.z / 2.0f);
+    RJGlobal_MemorySet(PHYSICS_MAIN_SCENE.velocities, sizeof(Vector3) * PHYSICS_MAIN_SCENE.capacity, 0);
+    RJGlobal_MemorySet(PHYSICS_MAIN_SCENE.colliderSizes, sizeof(Vector3) * PHYSICS_MAIN_SCENE.capacity, 0);
+    RJGlobal_MemorySet(PHYSICS_MAIN_SCENE.masses, sizeof(float) * PHYSICS_MAIN_SCENE.capacity, 0);
+    RJGlobal_MemorySet(PHYSICS_MAIN_SCENE.positionIndices, sizeof(RJGlobal_Index) * PHYSICS_MAIN_SCENE.capacity, 0);
+    RJGlobal_MemorySet(PHYSICS_MAIN_SCENE.flags, sizeof(uint8_t) * PHYSICS_MAIN_SCENE.capacity / 8, 0);
+
+    RJGlobal_DebugInfo("Physics initialized with capacity %u.", PHYSICS_MAIN_SCENE.capacity);
+}
+
+void Physics_Terminate()
+{
+    free(PHYSICS_MAIN_SCENE.velocities);
+    free(PHYSICS_MAIN_SCENE.colliderSizes);
+    free(PHYSICS_MAIN_SCENE.masses);
+    free(PHYSICS_MAIN_SCENE.positionIndices);
+    free(PHYSICS_MAIN_SCENE.flags);
+
+    RJGlobal_DebugInfo("Physics terminated.");
+}
+
+void Physics_ConfigurePositionReferences(Vector3 *positionReferences, RJGlobal_Size limiting)
+{
+    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
+    RJGlobal_DebugAssert(limiting > PHYSICS_MAIN_SCENE.count, "Limiting must be greater than current physics component count.");
+
+    PHYSICS_MAIN_SCENE.positionReferences = positionReferences;
+    PHYSICS_MAIN_SCENE.capacity = limiting;
+
+    PHYSICS_MAIN_SCENE.velocities = (Vector3 *)realloc(PHYSICS_MAIN_SCENE.velocities, sizeof(Vector3) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.colliderSizes = (Vector3 *)realloc(PHYSICS_MAIN_SCENE.colliderSizes, sizeof(Vector3) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.masses = (float *)realloc(PHYSICS_MAIN_SCENE.masses, sizeof(float) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.positionIndices = (RJGlobal_Index *)realloc(PHYSICS_MAIN_SCENE.positionIndices, sizeof(RJGlobal_Index) * PHYSICS_MAIN_SCENE.capacity);
+    PHYSICS_MAIN_SCENE.flags = (uint8_t *)realloc(PHYSICS_MAIN_SCENE.flags, sizeof(uint8_t) * PHYSICS_MAIN_SCENE.capacity / 8);
+
+    RJGlobal_DebugInfo("Physics position references reconfigured with new limiting %u.", PHYSICS_MAIN_SCENE.capacity);
+}
+
+bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component2, Vector3 *overlapRet)
+{
+    Vector3 position1 = pmsGetPositionReference(component1);
+    Vector3 position2 = pmsGetPositionReference(component2);
+
+    Vector3 colliderSize1 = pmsGetColliderSize(component1);
+    Vector3 colliderSize2 = pmsGetColliderSize(component2);
+
+    float overlapX = Maths_Min(position1.x + colliderSize1.x / 2.0f,
+                               position2.x + colliderSize2.x / 2.0f) -
+                     Maths_Max(position1.x - colliderSize1.x / 2.0f,
+                               position2.x - colliderSize2.x / 2.0f);
+
+    float overlapY = Maths_Min(position1.y + colliderSize1.y / 2.0f,
+                               position2.y + colliderSize2.y / 2.0f) -
+                     Maths_Max(position1.y - colliderSize1.y / 2.0f,
+                               position2.y - colliderSize2.y / 2.0f);
+
+    float overlapZ = Maths_Min(position1.z + colliderSize1.z / 2.0f,
+                               position2.z + colliderSize2.z / 2.0f) -
+                     Maths_Max(position1.z - colliderSize1.z / 2.0f,
+                               position2.z - colliderSize2.z / 2.0f);
 
     if (overlapRet != NULL)
     {
@@ -211,134 +270,101 @@ bool Physics_IsColliding(const PhysicsComponent *component1, const PhysicsCompon
     return overlapX > 0.0f && overlapY > 0.0f && overlapZ > 0.0f;
 }
 
-#pragma endregion Physics
-
-#pragma region Physics Scene
-
-PhysicsScene *PhysicsScene_Create(StringView name, size_t initialColliderCapacity, float drag, float gravity, float elasticity)
+void Physics_UpdateComponents(float deltaTime)
 {
-    PhysicsScene *scene = (PhysicsScene *)malloc(sizeof(PhysicsScene));
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-
-    scene->name = scc(name);
-    scene->components = ListArray_Create("Physics Object", sizeof(PhysicsComponent), initialColliderCapacity);
-    scene->drag = Maths_Clamp(drag, 0.0f, 1.0f);
-    scene->elasticity = Maths_Clamp(elasticity, 0.0f, 1.0f);
-    scene->gravity = gravity;
-
-    RJGlobal_DebugInfo("Physics Scene '%s' created.", scene->name.characters);
-    return scene;
-}
-
-void PhysicsScene_Destroy(PhysicsScene *scene)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(scene->name, tempTitle);
-
-    for (size_t i = scene->components.count - 1; i < scene->components.count; i--)
+    for (RJGlobal_Size component = 0; component < PHYSICS_MAIN_SCENE.count; component++)
     {
-        PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(&scene->components, i);
-        PhysicsScene_DestroyComponent(component);
-    }
-
-    ListArray_Destroy(&scene->components);
-    String_Destroy(&scene->name);
-
-    RJGlobal_DebugInfo("Physics Scene '%s' destroyed.", tempTitle);
-}
-
-void PhysicsScene_UpdateComponents(const PhysicsScene *scene, float deltaTime)
-{
-    for (size_t i = 0; i < scene->components.count; i++)
-    {
-        PhysicsComponent *component = (PhysicsComponent *)ListArray_Get(&scene->components, i);
-        PhysicsComponent_Update(component, deltaTime);
+        Physics_ComponentUpdate(component, deltaTime);
     }
 }
 
-void PhysicsScene_ResolveCollisions(const PhysicsScene *scene)
+void Physics_ResolveCollisions()
 {
-    for (size_t iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
+    for (RJGlobal_Size iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
     {
-        for (size_t i = 0; i < scene->components.count - 1; i++)
+        for (RJGlobal_Size firstComponent = 0; firstComponent < PHYSICS_MAIN_SCENE.count; firstComponent++)
         {
-            PhysicsComponent *firstComponent = (PhysicsComponent *)ListArray_Get(&scene->components, i);
-
-            // if (firstComponent->isStatic)
-            //{
-            //     continue;
-            // }
-
-            for (size_t j = i + 1; j < scene->components.count; j++)
+            for (RJGlobal_Size secondComponent = firstComponent + 1; secondComponent < PHYSICS_MAIN_SCENE.count; secondComponent++)
             {
-                PhysicsComponent *secondComponent = (PhysicsComponent *)ListArray_Get(&scene->components, j);
-
-                // if (secondComponent->isStatic)
-                //{
-                //     continue;
-                // }
-
-                PhysicsScene_ResolveCollision(scene, firstComponent, secondComponent);
+                PhysicsScene_ResolveCollision(firstComponent, secondComponent);
             }
         }
     }
 }
 
-PhysicsComponent *PhysicsScene_CreateComponent(PhysicsScene *scene, Vector3 *positionReference, Vector3 colliderSize, float mass, bool isStatic)
+PhysicsComponent Physics_ComponentCreate(RJGlobal_Size positionIndex, Vector3 colliderSize, float mass, bool isStatic)
 {
-    PhysicsComponent component = {0};
+    RJGlobal_DebugAssert(positionIndex < PHYSICS_MAIN_SCENE.capacity, "Position index %u exceeds physics capacity %u.", positionIndex, PHYSICS_MAIN_SCENE.capacity);
 
-    component.scene = scene;
-    component.colliderSize = colliderSize;
-    component.isStatic = isStatic;
-    component.mass = mass;
-    component.positionReference = positionReference;
-    component.componentOffsetInScene = scene->components.count;
+    PhysicsComponent newComponent = PHYSICS_MAIN_SCENE.count;
 
-    // RJGlobal_DebugInfo("Physics Component created in Scene '%s'.", scene->name.characters);
+    pmsGetPositionIndex(newComponent) = positionIndex;
+    pmsGetColliderSize(newComponent) = colliderSize;
+    pmsGetMass(newComponent) = mass;
+    pmsGetFlag(newComponent) = isStatic ? (pmsGetFlag(newComponent) | PHYSICS_FLAG_STATIC) : (pmsGetFlag(newComponent) & ~PHYSICS_FLAG_STATIC);
 
-    return (PhysicsComponent *)ListArray_Add(&scene->components, &component);
+    PHYSICS_MAIN_SCENE.count++;
+
+    return newComponent;
 }
 
-void PhysicsScene_DestroyComponent(PhysicsComponent *component)
+void Physics_ComponentDestroy(PhysicsComponent component)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
-
-    // todo ! be may be wrong
-    for (size_t i = component->componentOffsetInScene + 1; i < component->scene->components.count - component->componentOffsetInScene; i++)
-    {
-        PhysicsComponent *nextComponent = (PhysicsComponent *)ListArray_Get(&component->scene->components, i);
-        nextComponent->componentOffsetInScene--;
-    }
-
-    ListArray_RemoveAtIndex(&component->scene->components, component->componentOffsetInScene);
+    (void)component;
 }
 
-#pragma endregion Physics Scene
-
-#pragma region Physics Component
-
-void PhysicsComponent_Update(PhysicsComponent *component, float deltaTime)
+void Physics_ComponentUpdate(PhysicsComponent component, float deltaTime)
 {
-    if (component->isStatic)
+    if (pmsIsStatic(component))
     {
         return;
     }
 
-    component->velocity = Vector3_Add(component->velocity, Vector3_New(0.0f, component->scene->gravity * deltaTime, 0.0f));
-    component->velocity = Vector3_Scale(component->velocity, 1.0f - component->scene->drag);
-    *component->positionReference = Vector3_Add(*component->positionReference, Vector3_Scale(component->velocity, deltaTime));
+    pmsGetVelocity(component) = Vector3_Add(pmsGetVelocity(component), Vector3_New(0.0f, PHYSICS_MAIN_SCENE.gravity * deltaTime, 0.0f));
+    pmsGetVelocity(component) = Vector3_Scale(pmsGetVelocity(component), 1.0f - PHYSICS_MAIN_SCENE.drag);
+    pmsGetPositionReference(component) = Vector3_Add(pmsGetPositionReference(component), Vector3_Scale(pmsGetVelocity(component), deltaTime));
 }
 
-void PhysicsComponent_Configure(PhysicsComponent *component, Vector3 newColliderSize, float newMass, bool newIsStatic)
-{
-    RJGlobal_DebugAssertNullPointerCheck(component);
+// todo add border checks
 
-    component->colliderSize = newColliderSize;
-    component->mass = newMass;
-    component->isStatic = newIsStatic;
+Vector3 Physics_ComponentGetVelocity(PhysicsComponent component)
+{
+    return pmsGetVelocity(component);
+}
+
+void Physics_ComponentSetVelocity(PhysicsComponent component, Vector3 newVelocity)
+{
+    pmsGetVelocity(component) = newVelocity;
+}
+
+Vector3 Physics_ComponentGetColliderSize(PhysicsComponent component)
+{
+    return pmsGetColliderSize(component);
+}
+
+void Physics_ComponentSetColliderSize(PhysicsComponent component, Vector3 newColliderSize)
+{
+    pmsGetColliderSize(component) = newColliderSize;
+}
+
+float Physics_ComponentGetMass(PhysicsComponent component)
+{
+    return pmsGetMass(component);
+}
+
+void Physics_ComponentSetMass(PhysicsComponent component, float newMass)
+{
+    pmsGetMass(component) = newMass;
+}
+
+bool Physics_ComponentIsStatic(PhysicsComponent component)
+{
+    return pmsIsStatic(component);
+}
+
+void Physics_ComponentSetStatic(PhysicsComponent component, bool newIsStatic)
+{
+    pmsGetFlag(component) = newIsStatic ? (pmsGetFlag(component) | PHYSICS_FLAG_STATIC) : (pmsGetFlag(component) & ~PHYSICS_FLAG_STATIC);
 }
 
 #pragma endregion Physics Component

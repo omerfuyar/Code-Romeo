@@ -235,7 +235,7 @@ void Input_Update()
         break;
     }
 
-    for (size_t i = 0; i < INPUT_KEY_NUMBERS_COUNT; i++)
+    for (RJGlobal_Size i = 0; i < INPUT_KEY_NUMBERS_COUNT; i++)
     {
         switch (INPUT_KEY_NUMBERS[i])
         {
@@ -250,7 +250,7 @@ void Input_Update()
         }
     }
 
-    for (size_t i = 0; i < INPUT_KEY_ALPHABETS_COUNT; i++)
+    for (RJGlobal_Size i = 0; i < INPUT_KEY_ALPHABETS_COUNT; i++)
     {
         switch (INPUT_KEY_ALPHABETS[i])
         {
@@ -265,7 +265,7 @@ void Input_Update()
         }
     }
 
-    for (size_t i = 0; i < INPUT_KEY_SPECIALS_COUNT; i++)
+    for (RJGlobal_Size i = 0; i < INPUT_KEY_SPECIALS_COUNT; i++)
     {
         switch (INPUT_KEY_SPECIALS[i])
         {
@@ -280,7 +280,7 @@ void Input_Update()
         }
     }
 
-    for (size_t i = 0; i < INPUT_KEY_FUNCTIONS_COUNT; i++)
+    for (RJGlobal_Size i = 0; i < INPUT_KEY_FUNCTIONS_COUNT; i++)
     {
         switch (INPUT_KEY_FUNCTIONS[i])
         {
@@ -295,7 +295,7 @@ void Input_Update()
         }
     }
 
-    for (size_t i = 0; i < INPUT_KEY_CONTROLS_COUNT; i++)
+    for (RJGlobal_Size i = 0; i < INPUT_KEY_CONTROLS_COUNT; i++)
     {
         switch (INPUT_KEY_CONTROLS[i])
         {
@@ -310,7 +310,7 @@ void Input_Update()
         }
     }
 
-    for (size_t i = 0; i < INPUT_KEY_MOUSE_BUTTONS_COUNT; i++)
+    for (RJGlobal_Size i = 0; i < INPUT_KEY_MOUSE_BUTTONS_COUNT; i++)
     {
         switch (INPUT_KEY_MOUSE_BUTTONS[i])
         {

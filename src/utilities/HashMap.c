@@ -9,17 +9,17 @@
 /// @param key
 /// @param capacity
 /// @return
-size_t HashMap_Hash(const char *key, size_t capacity)
+RJGlobal_Size HashMap_Hash(const char *key, RJGlobal_Size capacity)
 {
-    size_t strLength = strlen(key);
+    RJGlobal_Size strLength = RJGlobal_StringLength(key);
 
-    size_t sum = 0;
-    size_t mul = 1;
+    RJGlobal_Size sum = 0;
+    RJGlobal_Size mul = 1;
 
-    for (size_t i = 0; i < strLength; i++)
+    for (RJGlobal_Size i = 0; i < strLength; i++)
     {
         mul = (i % 4 == 0) ? 1 : mul * 256;
-        sum += (size_t)key[i] * mul;
+        sum += (RJGlobal_Size)key[i] * mul;
     }
 
     return sum % capacity;
@@ -27,13 +27,13 @@ size_t HashMap_Hash(const char *key, size_t capacity)
 
 #pragma endregion Source Only
 
-HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacity)
+HashMap HashMap_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJGlobal_Size capacity)
 {
     HashMap map;
     map.capacity = capacity;
     map.sizeOfItem = sizeOfItem;
 
-    size_t nameOfTypeLength = strlen(nameOfType);
+    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
 
     map.nameOfType = (char *)malloc(nameOfTypeLength + 1);
     RJGlobal_DebugAssertNullPointerCheck(map.nameOfType);
@@ -46,7 +46,7 @@ HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacit
 
     RJGlobal_MemorySet(map.data, map.sizeOfItem * map.capacity, 0);
 
-    RJGlobal_DebugInfo("HashMap '%s' created with initial capacity: %zu, size of item: %zu", nameOfType, capacity, sizeOfItem);
+    RJGlobal_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", nameOfType, capacity, sizeOfItem);
 
     return map;
 }
@@ -56,7 +56,7 @@ void HashMap_Destroy(HashMap *map)
     RJGlobal_DebugAssertNullPointerCheck(map);
     RJGlobal_DebugAssertNullPointerCheck(map->data);
 
-    size_t nameOfTypeLength = strlen(map->nameOfType);
+    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(map->nameOfType);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
     RJGlobal_MemoryCopy(tempTitle, HashMap_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);

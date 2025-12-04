@@ -25,7 +25,7 @@ Timer Timer_Create(const char *title)
 {
     Timer timer;
 
-    size_t titleLength = strlen(title);
+    RJGlobal_Size titleLength = RJGlobal_StringLength(title);
 
     timer.title = (char *)malloc(titleLength + 1);
     RJGlobal_DebugAssertNullPointerCheck(timer.title);
@@ -44,7 +44,7 @@ void Timer_Destroy(Timer *timer)
 {
     RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
 
-    size_t titleLength = strlen(timer->title);
+    RJGlobal_Size titleLength = RJGlobal_StringLength(timer->title);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
     RJGlobal_MemoryCopy(tempTitle, Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
