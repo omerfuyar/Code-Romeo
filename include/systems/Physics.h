@@ -11,87 +11,95 @@
 
 #pragma region Typedefs
 
-/// @brief Represents a physics scene containing components and global physics properties.
-typedef struct PhysicsScene
-{
-    String name;
-    ListArray components; // PhysicsComponent
-
-    float drag;
-    float gravity;
-    float elasticity;
-} PhysicsScene;
-
 /// @brief Represents a component that can interact with the physics scene.
-typedef struct PhysicsComponent
-{
-    Vector3 velocity;
-    Vector3 colliderSize;
-    Vector3 *positionReference;
-
-    PhysicsScene *scene;
-    size_t componentOffsetInScene;
-
-    float mass;
-    bool isStatic;
-} PhysicsComponent;
+typedef RJGlobal_Index PhysicsComponent;
 
 #pragma endregion Typedefs
 
-#pragma region Physics
+/// @brief Creates a new physics scene.
+/// @param componentCapacity The initial capacity for physics components.
+/// @param positionReferences A pointer to the start of position vector references for all objects.
+/// @param drag The drag to be applied to components (0-1).
+/// @param gravity The gravity to be applied to components.
+/// @param elasticity The elasticity to be applied to components (0-1).
+/// @return A pointer to the newly created physics scene.
+void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity);
+
+/// @brief Destroys a physics scene and all its components.
+void Physics_Terminate();
+
+/// @brief Changes the position references for all physics components in the scene.
+/// @param positionReferences A pointer to the start of the new position vector references.
+/// @param limiting The maximum number of position vectors available.
+void Physics_ConfigurePositionReferences(Vector3 *positionReferences, RJGlobal_Size limiting);
 
 /// @brief Checks for collision between two AABB colliders.
 /// @param component1 The first component.
 /// @param component2 The second component.
 /// @param overlapRet If not NULL, will be filled with the overlap vector on each axis.
 /// @return True if the components are colliding, false otherwise.
-bool Physics_IsColliding(const PhysicsComponent *component1, const PhysicsComponent *component2, Vector3 *overlapRet);
-
-#pragma endregion Physics
-
-#pragma region Physics Scene
-
-/// @brief Creates a new physics scene.
-/// @param name The name of the scene.
-/// @param initialColliderCapacity The initial capacity for physics components.
-/// @param drag The drag to be applied to components (0-1).
-/// @param gravity The gravity to be applied to components.
-/// @param elasticity The elasticity to be applied to components (0-1).
-/// @return A pointer to the newly created physics scene.
-PhysicsScene *PhysicsScene_Create(StringView name, size_t initialColliderCapacity, float drag, float gravity, float elasticity);
-
-/// @brief Destroys a physics scene and all its components.
-/// @param scene The scene to destroy.
-void PhysicsScene_Destroy(PhysicsScene *scene);
+bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component2, Vector3 *overlapRet);
 
 /// @brief Updates the positions of all non-static components in the scene based on their velocity, gravity, and drag.
-/// @param scene The scene to update.
 /// @param deltaTime The time elapsed since the last frame.
-void PhysicsScene_UpdateComponents(const PhysicsScene *scene, float deltaTime);
+void Physics_UpdateComponents(float deltaTime);
 
 /// @brief Detects and resolves collisions between components in the scene.
-/// @param scene The scene to process.
-void PhysicsScene_ResolveCollisions(const PhysicsScene *scene);
+void Physics_ResolveCollisions();
 
 /// @brief Creates a new physics component and adds it to the scene.
-/// @param scene The scene to add the component to.
 /// @param positionReference A pointer to the position vector of the object.
 /// @param colliderSize The size of the AABB collider.
 /// @param mass The mass of the object.
 /// @param isStatic Whether the object is static (unmovable).
 /// @return A pointer to the newly created physics component.
-PhysicsComponent *PhysicsScene_CreateComponent(PhysicsScene *scene, Vector3 *positionReference, Vector3 colliderSize, float mass, bool isStatic);
+PhysicsComponent Physics_ComponentCreate(RJGlobal_Size positionIndex, Vector3 colliderSize, float mass, bool isStatic);
 
 /// @brief Destroys a physics component and removes it from its scene.
 /// @param component The component to destroy.
-void PhysicsScene_DestroyComponent(PhysicsComponent *component);
+void Physics_ComponentDestroy(PhysicsComponent component);
 
-#pragma endregion Physics Scene
+/// @brief Updates the physics component to current frame.
+/// @param component The component to update.
+/// @param deltaTime The time elapsed since the last frame.
+void Physics_ComponentUpdate(PhysicsComponent component, float deltaTime);
 
-#pragma region Physics Component
+/// @brief Gets the velocity of a physics component.
+/// @param component The component to query.
+/// @return The velocity of the component.
+Vector3 Physics_ComponentGetVelocity(PhysicsComponent component);
 
-void PhysicsComponent_Update(PhysicsComponent *component, float deltaTime);
+/// @brief Sets the velocity of a physics component.
+/// @param component The component to update.
+/// @param newVelocity The new velocity to set.
+void Physics_ComponentSetVelocity(PhysicsComponent component, Vector3 newVelocity);
 
-void PhysicsComponent_Configure(PhysicsComponent *component, Vector3 newColliderSize, float newMass, bool newIsStatic);
+/// @brief Gets the collider size of a physics component.
+/// @param component The component to query.
+/// @return The collider size of the component.
+Vector3 Physics_ComponentGetColliderSize(PhysicsComponent component);
 
-#pragma endregion Physics Component
+/// @brief Sets the collider size of a physics component.
+/// @param component The component to update.
+/// @param newColliderSize The new collider size to set.
+void Physics_ComponentSetColliderSize(PhysicsComponent component, Vector3 newColliderSize);
+
+/// @brief Gets the mass of a physics component.
+/// @param component The component to query.
+/// @return The mass of the component.
+float Physics_ComponentGetMass(PhysicsComponent component);
+
+/// @brief Sets the mass of a physics component.
+/// @param component The component to update.
+/// @param newMass The new mass to set.
+void Physics_ComponentSetMass(PhysicsComponent component, float newMass);
+
+/// @brief Checks if a physics component is static.
+/// @param component The component to query.
+/// @return True if the component is static, false otherwise.
+bool Physics_ComponentIsStatic(PhysicsComponent component);
+
+/// @brief Sets whether a physics component is static.
+/// @param component The component to update.
+/// @param newIsStatic The new static state to set.
+void Physics_ComponentSetStatic(PhysicsComponent component, bool newIsStatic);

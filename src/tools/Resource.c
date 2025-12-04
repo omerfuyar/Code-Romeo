@@ -32,11 +32,11 @@ ResourceText *ResourceText_Create(StringView file)
 
     resource->file = scc(file);
 
-    // size_t pathCount = 0;
+    // RJGlobal_Size pathCount = 0;
     // String pathBuffer[RJGLOBAL_TEMP_BUFFER_SIZE / 32];
     // String_Tokenize(relativePath, scl(RJGLOBAL_PATH_DELIMETER_STR), &pathCount, pathBuffer, RJGLOBAL_TEMP_BUFFER_SIZE / 32);
     //
-    // for (size_t i = 0; i < pathCount - 1; i++)
+    // for (RJGlobal_Size i = 0; i < pathCount - 1; i++)
     //{
     //    String_ConcatEnd(&resource->path, pathBuffer[i]);
     //}
@@ -45,7 +45,7 @@ ResourceText *ResourceText_Create(StringView file)
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
 
-    size_t lineCount = 0;
+    RJGlobal_Size lineCount = 0;
     int character = 0;
 
     FILE *fileHandle = NULL;
@@ -69,12 +69,12 @@ ResourceText *ResourceText_Create(StringView file)
 
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
-    size_t dataIndex = 0;
+    RJGlobal_Size dataIndex = 0;
 
     RJGlobal_DebugAssertFileOpenCheck(fileHandle, fullPath.characters, "r");
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, fileHandle))
     {
-        size_t lineLength = strlen(lineBuffer);
+        RJGlobal_Size lineLength = RJGlobal_StringLength(lineBuffer);
         RJGlobal_MemoryCopy(dataBuffer + dataIndex, lineLength, lineBuffer);
         dataIndex += lineLength;
     }

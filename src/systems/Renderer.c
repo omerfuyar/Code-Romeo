@@ -58,7 +58,7 @@ typedef struct RendererDebugVertex
 typedef struct RendererTexture
 {
     String name;
-    size_t index;
+    RJGlobal_Size index;
     void *data;
     Vector2Int size;
     int channels;
@@ -146,7 +146,7 @@ void TRANSFORM_TO_MODEL_MATRIX(Renderer_Matrix4 *matrix, const Vector3 *position
 
 RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, Vector2Int size, int channels)
 {
-    for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
+    for (RJGlobal_Size i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
         RendererTexture *currentTexture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
 
@@ -165,7 +165,7 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
     texture->channels = channels;
     texture->name = scc(name);
 
-    size_t dataSize = (size_t)(size.x * size.y * channels);
+    RJGlobal_Size dataSize = (RJGlobal_Size)(size.x * size.y * channels);
 
     texture->data = malloc(dataSize);
     RJGlobal_DebugAssertNullPointerCheck(texture->data);
@@ -233,7 +233,7 @@ void RendererTexture_Destroy(RendererTexture *texture)
 
 #pragma region Renderer Mesh
 
-RendererMesh *RendererMesh_CreateEmpty(size_t initialIndexCapacity, RendererMaterial *material)
+RendererMesh *RendererMesh_CreateEmpty(RJGlobal_Size initialIndexCapacity, RendererMaterial *material)
 {
     RendererMesh *mesh = malloc(sizeof(RendererMesh));
     RJGlobal_DebugAssertNullPointerCheck(mesh);
@@ -262,7 +262,7 @@ void RendererMesh_Destroy(RendererMesh *mesh)
 
 #pragma region Renderer
 
-void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
+void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialTextureCapacity)
 {
     RJGlobal_DebugAssertNullPointerCheck(window);
 
@@ -284,7 +284,7 @@ void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity)
 
 void Renderer_Terminate()
 {
-    for (size_t i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
+    for (RJGlobal_Size i = 0; i < RENDERER_MAIN_TEXTURES.count; i++)
     {
         RendererTexture *texture = (RendererTexture *)ListArray_Get(&RENDERER_MAIN_TEXTURES, i);
 
@@ -391,7 +391,7 @@ void Renderer_RenderScene(RendererScene *scene)
     glUniform3fv(scene->camera->scene->camPosition, 1, (GLfloat *)scene->camera->positionReference);
     glUniform3fv(scene->camera->scene->camRotation, 1, (GLfloat *)scene->camera->rotationReference);
 
-    for (size_t i = 0; i < scene->batches.count; i++)
+    for (RJGlobal_Size i = 0; i < scene->batches.count; i++)
     {
         RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
         RendererMaterial *previousMaterial = NULL;
@@ -406,7 +406,7 @@ void Renderer_RenderScene(RendererScene *scene)
                      batch->model->vertices.data,
                      RENDERER_OPENGL_DRAW_TYPE);
 
-        for (size_t j = 0; j < batch->model->meshes.count; j++)
+        for (RJGlobal_Size j = 0; j < batch->model->meshes.count; j++)
         {
             RendererMesh *mesh = *(RendererMesh **)ListArray_Get(&batch->model->meshes, j);
 
@@ -462,7 +462,7 @@ void Renderer_RenderScene(RendererScene *scene)
 
 #pragma region Renderer Debug
 
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, size_t initialVertexCapacity)
+void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJGlobal_Size initialVertexCapacity)
 {
     RENDERER_DEBUG_VERTICES = ListArray_Create("Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
 
@@ -642,14 +642,14 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile)
 {
     ResourceText *rscMaterial = ResourceText_Create(matFile);
 
-    size_t materialCount = 0;
+    RJGlobal_Size materialCount = 0;
 
-    size_t mtlLineCount = 0;
+    RJGlobal_Size mtlLineCount = 0;
     StringView *mtlLines = (StringView *)malloc(rscMaterial->lineCount * sizeof(StringView));
     RJGlobal_DebugAssertNullPointerCheck(mtlLines);
     RJGlobal_MemorySet(mtlLines, rscMaterial->lineCount * sizeof(StringView), 0);
 
-    size_t mtlLineTokenCount = 0;
+    RJGlobal_Size mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
@@ -666,7 +666,7 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile)
 
     String_Tokenize(scv(rscMaterial->data), strNewline, &mtlLineCount, mtlLines, rscMaterial->lineCount);
 
-    for (size_t j = 0; j < mtlLineCount; j++) // count
+    for (RJGlobal_Size j = 0; j < mtlLineCount; j++) // count
     {
         String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -681,7 +681,7 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile)
     ListArray materials = ListArray_Create("Renderer Material Pointer", sizeof(RendererMaterial *), materialCount);
     RendererMaterial *currentMaterial = NULL;
 
-    for (size_t j = 0; j < mtlLineCount; j++)
+    for (RJGlobal_Size j = 0; j < mtlLineCount; j++)
     {
         String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -749,16 +749,16 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile)
     return materials;
 }
 
-ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels)
+ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, RJGlobal_Size matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels)
 {
-    size_t materialCount = 0;
+    RJGlobal_Size materialCount = 0;
 
-    size_t mtlLineCount = 0;
+    RJGlobal_Size mtlLineCount = 0;
     StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
     RJGlobal_DebugAssertNullPointerCheck(mtlLines);
     RJGlobal_MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
 
-    size_t mtlLineTokenCount = 0;
+    RJGlobal_Size mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
@@ -774,7 +774,7 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t
     StringView strILLNUM = scl("illum");
 
     String_Tokenize(matFileData, strNewline, &mtlLineCount, mtlLines, matFileLineCount);
-    for (size_t j = 0; j < mtlLineCount; j++)
+    for (RJGlobal_Size j = 0; j < mtlLineCount; j++)
     {
         String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -789,7 +789,7 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t
     ListArray materials = ListArray_Create("Renderer Material Pointer", sizeof(RendererMaterial *), materialCount);
     RendererMaterial *currentMaterial = NULL;
 
-    for (size_t j = 0; j < mtlLineCount; j++)
+    for (RJGlobal_Size j = 0; j < mtlLineCount; j++)
     {
         String_Tokenize(scv(mtlLines[j]), strSpace, &mtlLineTokenCount, mtlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -879,32 +879,32 @@ void RendererMaterial_Destroy(RendererMaterial *material)
 void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
 {
     StringView faceData[4]; // v/vt/vn/w
-    size_t faceDataCount;
+    RJGlobal_Size faceDataCount;
     String_Tokenize(faceComponent, scl("/"), &faceDataCount, faceData, 4);
 
     int createdVertexIndex = String_ToInt(faceData[0]);
     unsigned int vertexIndex = createdVertexIndex < 0 ? (unsigned int)model->vertices.count + (unsigned int)createdVertexIndex : (unsigned int)createdVertexIndex - 1;
 
-    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(&model->vertices, (size_t)vertexIndex);
+    RendererMeshVertex *vertex = (RendererMeshVertex *)ListArray_Get(&model->vertices, (RJGlobal_Size)vertexIndex);
 
     if (faceDataCount > 1 && faceData[1].length != 0)
     {
         int createdUIndex = String_ToInt(faceData[1]);
         unsigned int uvIndex = createdUIndex < 0 ? (unsigned int)globalVertexUvPool->count + (unsigned int)createdUIndex : (unsigned int)createdUIndex - 1;
-        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (size_t)uvIndex);
+        vertex->vertexUV = *(Vector2 *)ListArray_Get(globalVertexUvPool, (RJGlobal_Size)uvIndex);
     }
 
     if (faceDataCount > 2 && faceData[2].length != 0)
     {
         int createdNormalIndex = String_ToInt(faceData[2]);
         unsigned int normalIndex = createdNormalIndex < 0 ? (unsigned int)globalVertexNormalPool->count + (unsigned int)createdNormalIndex : (unsigned int)createdNormalIndex - 1;
-        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (size_t)normalIndex);
+        vertex->vertexNormal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (RJGlobal_Size)normalIndex);
     }
 
     ListArray_Add(&currentMesh->indices, &vertexIndex);
 }
 
-RendererModel *RendererModel_CreateEmpty(StringView name, size_t initialMeshCapacity, size_t initialVertexCapacity)
+RendererModel *RendererModel_CreateEmpty(StringView name, RJGlobal_Size initialMeshCapacity, RJGlobal_Size initialVertexCapacity)
 {
     RendererModel *model = malloc(sizeof(RendererModel));
     RJGlobal_DebugAssertNullPointerCheck(model);
@@ -921,21 +921,21 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
     Renderer_Matrix4 offsetMatrix = {0};
     TRANSFORM_TO_MODEL_MATRIX(&offsetMatrix, &positionOffset, &rotationOffset, &scaleOffset);
 
-    size_t meshCount = 0;
+    RJGlobal_Size meshCount = 0;
     String modelName = {0};
 
-    size_t totalVertexPositionCount = 0;
-    size_t totalVertexNormalCount = 0;
-    size_t totalVertexUvCount = 0;
+    RJGlobal_Size totalVertexPositionCount = 0;
+    RJGlobal_Size totalVertexNormalCount = 0;
+    RJGlobal_Size totalVertexUvCount = 0;
 
     ResourceText *rscModel = ResourceText_Create(mdlFile);
 
-    size_t mdlLineCount = 0;
+    RJGlobal_Size mdlLineCount = 0;
     StringView *mdlLines = (StringView *)malloc(rscModel->lineCount * sizeof(StringView));
     RJGlobal_DebugAssertNullPointerCheck(mdlLines);
     RJGlobal_MemorySet(mdlLines, rscModel->lineCount * sizeof(StringView), 0);
 
-    size_t mdlLineTokenCount = 0;
+    RJGlobal_Size mdlLineTokenCount = 0;
     StringView mdlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
@@ -950,7 +950,7 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
 
     String_Tokenize(scv(rscModel->data), strNewline, &mdlLineCount, mdlLines, rscModel->lineCount);
 
-    for (size_t i = 0; i < mdlLineCount; i++) // count and create materials
+    for (RJGlobal_Size i = 0; i < mdlLineCount; i++) // count and create materials
     {
         String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -978,13 +978,13 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
         }
     }
 
-    size_t *faceCounts = (size_t *)malloc(meshCount * sizeof(size_t));
+    RJGlobal_Size *faceCounts = (RJGlobal_Size *)malloc(meshCount * sizeof(RJGlobal_Size));
     RJGlobal_DebugAssertNullPointerCheck(faceCounts);
-    RJGlobal_MemorySet(faceCounts, meshCount * sizeof(size_t), 0);
+    RJGlobal_MemorySet(faceCounts, meshCount * sizeof(RJGlobal_Size), 0);
 
     {
-        size_t tempMeshIndex = 0;
-        for (size_t i = 0; i < mdlLineCount && tempMeshIndex <= meshCount; i++) // count faces
+        RJGlobal_Size tempMeshIndex = 0;
+        for (RJGlobal_Size i = 0; i < mdlLineCount && tempMeshIndex <= meshCount; i++) // count faces
         {
             String_Tokenize(scv(mdlLines[i]), strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1018,7 +1018,7 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
         globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);
     }
 
-    for (size_t i = 0; i < mdlLineCount; i++) // create global pools
+    for (RJGlobal_Size i = 0; i < mdlLineCount; i++) // create global pools
     {
         String_Tokenize(scv(mdlLines[i]), strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1066,7 +1066,7 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
     RendererMesh *currentMesh = NULL;
     RendererMaterial *currentMaterial = NULL;
 
-    for (size_t i = 0; i < mdlLineCount; i++) // add data to model
+    for (RJGlobal_Size i = 0; i < mdlLineCount; i++) // add data to model
     {
         String_Tokenize(scv(mdlLines[i]), scl(" "), &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1097,7 +1097,7 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
         {
             bool materialFound = false;
 
-            for (size_t j = 0; j < materialPool->count; j++)
+            for (RJGlobal_Size j = 0; j < materialPool->count; j++)
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
 
@@ -1134,23 +1134,23 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
     free(faceCounts);
     ResourceText_Destroy(rscModel);
 
-    RJGlobal_DebugInfo("Renderer Model '%s' imported successfully with %zu child meshes.", model->name.characters, model->meshes.count);
+    RJGlobal_DebugInfo("Renderer Model '%s' imported successfully with %u child meshes.", model->name.characters, model->meshes.count);
 
     return model;
 }
 
 ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *materialPool)
 {
-    size_t modelCount = 0;
+    RJGlobal_Size modelCount = 0;
 
     ResourceText *rscModel = ResourceText_Create(mdlFile);
 
-    size_t mdlLineCount = 0;
+    RJGlobal_Size mdlLineCount = 0;
     StringView *mdlLines = (StringView *)malloc(rscModel->lineCount * sizeof(StringView));
     RJGlobal_DebugAssertNullPointerCheck(mdlLines);
     RJGlobal_MemorySet(mdlLines, rscModel->lineCount * sizeof(StringView), 0);
 
-    size_t mdlLineTokenCount = 0;
+    RJGlobal_Size mdlLineTokenCount = 0;
     StringView mdlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
@@ -1164,7 +1164,7 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
     StringView strUSEMTL = scl("usemtl");
 
     String_Tokenize(scv(rscModel->data), strNewline, &mdlLineCount, mdlLines, rscModel->lineCount);
-    for (size_t j = 0; j < mdlLineCount; j++) // count models
+    for (RJGlobal_Size j = 0; j < mdlLineCount; j++) // count models
     {
         String_Tokenize(scv(mdlLines[j]), strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1179,29 +1179,29 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
     ListArray models = ListArray_Create("Renderer Model Pointer", sizeof(RendererModel *), modelCount);
     RendererModel *currentModel = NULL;
 
-    size_t *vertexPositionCounts = (size_t *)malloc(modelCount * sizeof(size_t));
+    RJGlobal_Size *vertexPositionCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
     RJGlobal_DebugAssertNullPointerCheck(vertexPositionCounts);
-    RJGlobal_MemorySet(vertexPositionCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_MemorySet(vertexPositionCounts, modelCount * sizeof(RJGlobal_Size), 0);
 
-    size_t *vertexUvCounts = (size_t *)malloc(modelCount * sizeof(size_t));
+    RJGlobal_Size *vertexUvCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
     RJGlobal_DebugAssertNullPointerCheck(vertexUvCounts);
-    RJGlobal_MemorySet(vertexUvCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_MemorySet(vertexUvCounts, modelCount * sizeof(RJGlobal_Size), 0);
 
-    size_t *vertexNormalCounts = (size_t *)malloc(modelCount * sizeof(size_t));
+    RJGlobal_Size *vertexNormalCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
     RJGlobal_DebugAssertNullPointerCheck(vertexNormalCounts);
-    RJGlobal_MemorySet(vertexNormalCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_MemorySet(vertexNormalCounts, modelCount * sizeof(RJGlobal_Size), 0);
 
-    size_t *meshCounts = (size_t *)malloc(modelCount * sizeof(size_t));
+    RJGlobal_Size *meshCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
     RJGlobal_DebugAssertNullPointerCheck(meshCounts);
-    RJGlobal_MemorySet(meshCounts, modelCount * sizeof(size_t), 0);
+    RJGlobal_MemorySet(meshCounts, modelCount * sizeof(RJGlobal_Size), 0);
 
     String *modelNames = (String *)malloc(modelCount * sizeof(String));
     RJGlobal_DebugAssertNullPointerCheck(modelNames);
     RJGlobal_MemorySet(modelNames, modelCount * sizeof(String), 0);
 
     {
-        size_t tempModelIndex = 0;
-        for (size_t i = 0; i < mdlLineCount; i++)
+        RJGlobal_Size tempModelIndex = 0;
+        for (RJGlobal_Size i = 0; i < mdlLineCount; i++)
         {
             String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1231,15 +1231,15 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
         }
     }
 
-    size_t **faceCounts = (size_t **)malloc(modelCount * sizeof(size_t *));
+    RJGlobal_Size **faceCounts = (RJGlobal_Size **)malloc(modelCount * sizeof(RJGlobal_Size *));
     RJGlobal_DebugAssertNullPointerCheck(faceCounts);
-    RJGlobal_MemorySet(faceCounts, modelCount * sizeof(size_t *), 0);
+    RJGlobal_MemorySet(faceCounts, modelCount * sizeof(RJGlobal_Size *), 0);
 
     {
-        size_t tempModelIndex = 0;
-        size_t tempMeshIndex = 0;
+        RJGlobal_Size tempModelIndex = 0;
+        RJGlobal_Size tempMeshIndex = 0;
 
-        for (size_t i = 0; i < mdlLineCount; i++)
+        for (RJGlobal_Size i = 0; i < mdlLineCount; i++)
         {
             String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1257,21 +1257,21 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
             {
                 tempModelIndex++;
                 tempMeshIndex = 0;
-                faceCounts[tempModelIndex - 1] = (size_t *)malloc(meshCounts[tempModelIndex - 1] * sizeof(size_t));
+                faceCounts[tempModelIndex - 1] = (RJGlobal_Size *)malloc(meshCounts[tempModelIndex - 1] * sizeof(RJGlobal_Size));
                 RJGlobal_DebugAssertNullPointerCheck(faceCounts[tempModelIndex - 1]);
-                RJGlobal_MemorySet(faceCounts[tempModelIndex - 1], meshCounts[tempModelIndex - 1] * sizeof(size_t), 0);
+                RJGlobal_MemorySet(faceCounts[tempModelIndex - 1], meshCounts[tempModelIndex - 1] * sizeof(RJGlobal_Size), 0);
             }
         }
     }
 
     RendererMaterial *currentMaterial = NULL;
     RendererMesh *currentMesh = NULL;
-    size_t currentModelIndex = 0;
-    size_t currentMeshIndex = 0;
+    RJGlobal_Size currentModelIndex = 0;
+    RJGlobal_Size currentMeshIndex = 0;
     ListArray currentVertexUvPool = {0};
     ListArray currentVertexNormalPool = {0};
 
-    for (size_t i = 0; i < mdlLineCount; i++)
+    for (RJGlobal_Size i = 0; i < mdlLineCount; i++)
     {
         String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1323,7 +1323,7 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
         {
             bool materialFound = false;
 
-            for (size_t j = 0; j < materialPool->count; j++)
+            for (RJGlobal_Size j = 0; j < materialPool->count; j++)
             {
                 RendererMaterial *material = *(RendererMaterial **)ListArray_Get(materialPool, j);
 
@@ -1391,7 +1391,7 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
     free(modelNames);
     free(mdlLines);
 
-    for (size_t i = 0; i < modelCount; i++)
+    for (RJGlobal_Size i = 0; i < modelCount; i++)
     {
         free(faceCounts[i]);
     }
@@ -1413,7 +1413,7 @@ void RendererModel_Destroy(RendererModel *model)
 
     ListArray_Destroy(&model->vertices);
 
-    for (size_t i = model->meshes.count - 1; i < model->meshes.count; i--)
+    for (RJGlobal_Size i = model->meshes.count - 1; i < model->meshes.count; i--)
     {
         RendererMesh_Destroy(*(RendererMesh **)ListArray_Get(&model->meshes, i));
     }
@@ -1430,7 +1430,7 @@ void RendererModel_Destroy(RendererModel *model)
 
 #pragma region Renderer Scene
 
-RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCapacity)
+RendererScene *RendererScene_CreateEmpty(StringView name, RJGlobal_Size initialBatchCapacity)
 {
     RendererScene *scene = malloc(sizeof(RendererScene));
     RJGlobal_DebugAssertNullPointerCheck(scene);
@@ -1494,7 +1494,7 @@ RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCap
     return scene;
 }
 
-RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount)
+RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, RJGlobal_Size transformOffsetInObject, RJGlobal_Size totalObjectSize, RJGlobal_Size objectCount)
 {
     RJGlobal_DebugAssertNullPointerCheck(modelPool);
     RJGlobal_DebugAssertNullPointerCheck(objectReferences);
@@ -1502,16 +1502,16 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
     RendererScene *scene = NULL;
     RendererBatch *currentBatch = NULL;
     RendererComponent *currentComponent = NULL;
-    size_t totalObjectIndex = 0;
+    RJGlobal_Size totalObjectIndex = 0;
 
     ResourceText *rscScene = ResourceText_Create(scnFile);
 
-    size_t scnLineCount = 0;
+    RJGlobal_Size scnLineCount = 0;
     StringView *scnLines = (StringView *)malloc(rscScene->lineCount * sizeof(StringView));
     RJGlobal_DebugAssertNullPointerCheck(scnLines);
     RJGlobal_MemorySet(scnLines, rscScene->lineCount * sizeof(StringView), 0);
 
-    size_t scnLineTokenCount = 0;
+    RJGlobal_Size scnLineTokenCount = 0;
     StringView scnLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
@@ -1523,7 +1523,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
     StringView strUSEMDL = scl("usemdl");
 
     String_Tokenize(scv(rscScene->data), strNewline, &scnLineCount, scnLines, rscScene->lineCount);
-    for (size_t i = 0; i < scnLineCount; i++)
+    for (RJGlobal_Size i = 0; i < scnLineCount; i++)
     {
         String_Tokenize(scnLines[i], strSpace, &scnLineTokenCount, scnLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
 
@@ -1531,7 +1531,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
 
         if (String_Compare(firstToken, strP) == 0)
         {
-            RJGlobal_DebugAssert(totalObjectIndex < objectCount, "Object reference count %zu is not enough for the imported scene file", objectCount);
+            RJGlobal_DebugAssert(totalObjectIndex < objectCount, "Object reference count %u is not enough for the imported scene file", objectCount);
             currentComponent = RendererBatch_CreateComponent(currentBatch,
                                                              (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 0 * sizeof(Vector3)),
                                                              (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 1 * sizeof(Vector3)),
@@ -1556,7 +1556,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
         {
             bool modelFound = false;
 
-            for (size_t j = 0; j < modelPool->count; j++)
+            for (RJGlobal_Size j = 0; j < modelPool->count; j++)
             {
                 RendererModel *model = *(RendererModel **)ListArray_Get(modelPool, j);
 
@@ -1565,7 +1565,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
                 if (String_Compare(scv(model->name), scv(scnLineTokens[1])) == 0)
                 {
                     modelFound = true;
-                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (size_t)String_ToInt(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY);
+                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (RJGlobal_Size)String_ToInt(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY);
                     break;
                 }
             }
@@ -1592,7 +1592,7 @@ void RendererScene_Destroy(RendererScene *scene)
     String_Destroy(&scene->name);
     scene->camera = NULL;
 
-    for (size_t i = scene->batches.count - 1; i < scene->batches.count; i--)
+    for (RJGlobal_Size i = scene->batches.count - 1; i < scene->batches.count; i--)
     {
         RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
         RendererScene_DestroyBatch(batch);
@@ -1633,7 +1633,7 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *
     camera->scene = scene;
 }
 
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, size_t initialObjectCapacity)
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, RJGlobal_Size initialObjectCapacity)
 {
     RJGlobal_DebugAssertNullPointerCheck(scene);
     RJGlobal_DebugAssertNullPointerCheck(model);
@@ -1654,7 +1654,7 @@ void RendererScene_DestroyBatch(RendererBatch *batch)
     RJGlobal_DebugAssertNullPointerCheck(batch);
 
     // todo ! be may be wrong
-    for (size_t i = batch->batchOffsetInScene + 1; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
+    for (RJGlobal_Size i = batch->batchOffsetInScene + 1; i < batch->scene->batches.count - batch->batchOffsetInScene; i++)
     {
         RendererBatch *nextBatch = (RendererBatch *)ListArray_Get(&batch->scene->batches, i);
         nextBatch->batchOffsetInScene--;
@@ -1704,10 +1704,10 @@ void RendererScene_Update(RendererScene *scene)
                   (vec4 *)&scene->camera->projectionMatrix);
     }
 
-    for (size_t i = 0; i < scene->batches.count; i++)
+    for (RJGlobal_Size i = 0; i < scene->batches.count; i++)
     {
         RendererBatch *batch = (RendererBatch *)ListArray_Get(&scene->batches, i);
-        for (size_t j = 0; j < batch->objectMatrices.count; j++)
+        for (RJGlobal_Size j = 0; j < batch->objectMatrices.count; j++)
         {
             RendererComponent *component = (RendererComponent *)ListArray_Get(&batch->components, j);
             TRANSFORM_TO_MODEL_MATRIX(
@@ -1752,7 +1752,7 @@ void RendererBatch_DestroyComponent(RendererComponent *component)
     RJGlobal_DebugAssertNullPointerCheck(component);
 
     // todo ! be may be wrong
-    for (size_t i = component->componentOffsetInBatch + 1; i < component->batch->components.count - component->componentOffsetInBatch; i++)
+    for (RJGlobal_Size i = component->componentOffsetInBatch + 1; i < component->batch->components.count - component->componentOffsetInBatch; i++)
     {
         RendererComponent *nextComponent = (RendererComponent *)ListArray_Get(&component->batch->components, i);
         nextComponent->componentOffsetInBatch--;

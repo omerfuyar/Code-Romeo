@@ -6,6 +6,8 @@
 #include "utilities/Vector.h"
 #include "utilities/ListArray.h"
 
+// typedef uint32_t AudioComponent;
+
 /// @brief Scene to build a audio functionality.
 typedef struct AudioScene AudioScene;
 
@@ -33,7 +35,7 @@ typedef struct AudioComponent
 
     Vector3 *positionReference;
 
-    size_t componentOffsetInScene;
+    RJGlobal_Size componentOffsetInScene;
     void *data;
 } AudioComponent;
 
@@ -49,7 +51,7 @@ void Audio_Terminate();
 
 #pragma region AudioScene
 
-AudioScene *AudioScene_Create(StringView name, size_t initialComponentCapacity);
+AudioScene *AudioScene_Create(StringView name, RJGlobal_Size initialComponentCapacity);
 
 void AudioScene_Destroy(AudioScene *scene);
 

@@ -15,9 +15,9 @@
 typedef struct ListArray
 {
     void *data;
-    size_t capacity;
-    size_t count;
-    size_t sizeOfItem;
+    RJGlobal_Size capacity;
+    RJGlobal_Size count;
+    RJGlobal_Size sizeOfItem;
     char *nameOfType;
 } ListArray;
 
@@ -28,7 +28,7 @@ typedef struct ListArray
 /// @param sizeOfItem Size of the item type to store in.
 /// @param initialCapacity How many items can hold in this ListArray. Can be resized later on.
 /// @return The created ListArray struct
-ListArray ListArray_Create(const char *nameOfType, size_t sizeOfItem, size_t initialCapacity);
+ListArray ListArray_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJGlobal_Size initialCapacity);
 
 /// @brief Destroyer function for ListArray.
 /// @param list ListArray to destroy.
@@ -42,19 +42,19 @@ ListArray ListArray_Copy(const ListArray *list);
 /// @brief Resize function for ListArray. Can enlarge or trunc the ListArray.
 /// @param list ListArray to resize.
 /// @param newCapacity Capacity to increase or decrease.
-void ListArray_Resize(ListArray *list, size_t newCapacity);
+void ListArray_Resize(ListArray *list, RJGlobal_Size newCapacity);
 
 /// @brief Getter function for ListArray. Should be cast before using. ['(<TYPE>*)Getter(...)' will give you the pointer of the stored data. You can dereference it as you want]
 /// @param list Pointer to the ListArray to get item from.
 /// @param index Index to get item.
 /// @return Pointer to the item at the given index.
-void *ListArray_Get(const ListArray *list, size_t index);
+void *ListArray_Get(const ListArray *list, RJGlobal_Size index);
 
 /// @brief Item setter function for ListArray. Works only in range of size. Uses memcpy to copy the item to the given index.
 /// @param list Pointer to the ListArray to change item in.
 /// @param index Index to replace item at.
 /// @param item Pointer to the new item at index.
-void ListArray_Set(ListArray *list, size_t index, const void *item);
+void ListArray_Set(ListArray *list, RJGlobal_Size index, const void *item);
 
 /// @brief Adder function for ListArray. Copies {sizeOfItem} amount of data from parameter {item} to the end of the array. Uses memcpy.
 /// @param list ListArray to add item.
@@ -67,25 +67,25 @@ void *ListArray_Add(ListArray *list, const void *item);
 /// @param item Pointer to the first item to add.
 /// @param itemCount Number of items to add.
 /// @return The address of the first added item.
-void *ListArray_AddRange(ListArray *list, const void *item, size_t itemCount);
+void *ListArray_AddRange(ListArray *list, const void *item, RJGlobal_Size itemCount);
 
 /// @brief Adds an item at a specific index in the ListArray.
 /// @param list Pointer to the ListArray to add item to.
 /// @param index Index to add item at.
 /// @param item Pointer to the item to add.
 /// @return The address of the added item.
-void *ListArray_AddToIndex(ListArray *list, size_t index, const void *item);
+void *ListArray_AddToIndex(ListArray *list, RJGlobal_Size index, const void *item);
 
 /// @brief Remover function using index for ListArray. Removes the item at the given index. Uses memmove to shift all indices of items by -1 after the removed index.
 /// @param list ListArray to remove item from.
 /// @param index Index to remove item at.
-void ListArray_RemoveAtIndex(ListArray *list, size_t index);
+void ListArray_RemoveAtIndex(ListArray *list, RJGlobal_Size index);
 
 /// @brief Remover function using range for ListArray. Removes items from starting index. Uses memmove to shift all indices of items by item count after the removed index.
 /// @param list ListArray to remove item from.
 /// @param index Index to start remove item at.
 /// @param itemCount Item count to remove.
-void ListArray_RemoveRange(ListArray *list, size_t index, size_t itemCount);
+void ListArray_RemoveRange(ListArray *list, RJGlobal_Size index, RJGlobal_Size itemCount);
 
 /// @brief Remover function using item pointer for ListArray. Removes the first appearance of the given item. Uses ListArray_RemoveAtIndex and ListArray_IndexOf.
 /// @param list ListArray to remove item from.

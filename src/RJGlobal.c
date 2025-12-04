@@ -37,12 +37,12 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
 
     if (RJGLOBAL_DEBUG_FILE == NULL)
     {
-        RJGLOBAL_DEBUG_FILE_NAME_STR = (char *)malloc(strlen(RJGlobal_GetExecutablePath()) + strlen(RJGLOBAL_DEBUG_FILE_NAME) + 1);
+        RJGLOBAL_DEBUG_FILE_NAME_STR = (char *)malloc(RJGlobal_StringLength(RJGlobal_GetExecutablePath()) + RJGlobal_StringLength(RJGLOBAL_DEBUG_FILE_NAME) + 1);
 
-        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR, strlen(RJGlobal_GetExecutablePath()), RJGlobal_GetExecutablePath());
-        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR + strlen(RJGlobal_GetExecutablePath()), strlen(RJGLOBAL_DEBUG_FILE_NAME), RJGLOBAL_DEBUG_FILE_NAME);
+        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR, RJGlobal_StringLength(RJGlobal_GetExecutablePath()), RJGlobal_GetExecutablePath());
+        RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR + RJGlobal_StringLength(RJGlobal_GetExecutablePath()), RJGlobal_StringLength(RJGLOBAL_DEBUG_FILE_NAME), RJGLOBAL_DEBUG_FILE_NAME);
 
-        RJGLOBAL_DEBUG_FILE_NAME_STR[strlen(RJGlobal_GetExecutablePath()) + strlen(RJGLOBAL_DEBUG_FILE_NAME)] = '\0';
+        RJGLOBAL_DEBUG_FILE_NAME_STR[RJGlobal_StringLength(RJGlobal_GetExecutablePath()) + RJGlobal_StringLength(RJGLOBAL_DEBUG_FILE_NAME)] = '\0';
 
         remove(RJGLOBAL_DEBUG_FILE_NAME_STR);
 
@@ -101,7 +101,7 @@ const char *RJGlobal_GetExecutablePath()
         char buffer[RJGLOBAL_TEMP_BUFFER_SIZE];
         RJGlobal_GetExePath(buffer, sizeof(buffer));
 
-        size_t currentIndex = strlen(buffer);
+        RJGlobal_Size currentIndex = (RJGlobal_Size)RJGlobal_StringLength(buffer);
 
         while (buffer[--currentIndex] != RJGLOBAL_PATH_DELIMETER_CHAR)
         {
@@ -154,6 +154,8 @@ void RJGlobal_Run(int argc, char **argv)
 
         lastTime = currentTime;
     }
+
+    RJGlobal_Terminate(EXIT_SUCCESS, "Main loop has ended normally.");
 }
 
 void RJGlobal_Terminate(int exitCode, char *message)

@@ -3,7 +3,7 @@
 #define String_Min(a, b) ((a) < (b) ? (a) : (b))
 #define String_Max(a, b) ((a) > (b) ? (a) : (b))
 
-String String_CreateCopySafe(const char *string, size_t length)
+String String_CreateCopySafe(const char *string, RJGlobal_Size length)
 {
     RJGlobal_DebugAssertNullPointerCheck(string);
 
@@ -86,14 +86,14 @@ int String_Compare(StringView string, StringView other)
     return result;
 }
 
-void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t String_MaxTokenCount)
+void String_Tokenize(StringView string, StringView delimeter, RJGlobal_Size *tokenCountRet, StringView *tokenBufferRet, RJGlobal_Size String_MaxTokenCount)
 {
     RJGlobal_DebugAssertNullPointerCheck(tokenBufferRet);
 
-    size_t tokenCount = 0;
-    size_t lastTokenIndex = 0;
+    RJGlobal_Size tokenCount = 0;
+    RJGlobal_Size lastTokenIndex = 0;
 
-    size_t index = 0;
+    RJGlobal_Size index = 0;
     while (index < string.length && tokenCount < String_MaxTokenCount)
     {
         if (String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
@@ -133,7 +133,7 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
     }
 }
 
-char String_GetChar(StringView string, size_t index)
+char String_GetChar(StringView string, RJGlobal_Size index)
 {
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
@@ -147,7 +147,7 @@ float String_ToFloat(StringView string)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_NUMERIC_CHAR_BUFFER];
-    size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
+    RJGlobal_Size copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     float result = (float)atof(buffer);
@@ -160,7 +160,7 @@ int String_ToInt(StringView string)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_NUMERIC_CHAR_BUFFER];
-    size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
+    RJGlobal_Size copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     int result = atoi(buffer);

@@ -8,7 +8,7 @@
 
 #include "tools/Context.h"
 
-#define RENDERER_OPENGL_CLEAR_COLOR 0.0f, 0.0f, 0.0f, 0.0f
+#define RENDERER_OPENGL_CLEAR_COLOR 0.3f, 0.3f, 0.3f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
 #define RENDERER_VBO_POSITION_BINDING 0
@@ -154,7 +154,7 @@ typedef struct RendererBatch
     ListArray objectMatrices; // Renderer_Matrix4, data must be continuous and only matrices because it's directly sent to UBO
 
     RendererScene *scene;
-    size_t batchOffsetInScene;
+    RJGlobal_Size batchOffsetInScene;
 } RendererBatch;
 
 /// @brief A render object that shares its vertex array object (VAO) and vertex buffer object (VBO) with other objects in the scene. Must be used with RendererScene. Not updatable on it's own.
@@ -165,7 +165,7 @@ typedef struct RendererComponent
     Vector3 *scaleReference;
 
     RendererBatch *batch;
-    size_t componentOffsetInBatch;
+    RJGlobal_Size componentOffsetInBatch;
 } RendererComponent;
 
 #pragma endregion typedefs
@@ -176,7 +176,7 @@ typedef struct RendererComponent
 /// @param window Pointer to the context window to use as the main window.
 /// @param initialTextureCapacity Initial capacity for the texture array.
 /// @return A pointer to the created context / window.
-void Renderer_Initialize(ContextWindow *window, size_t initialTextureCapacity);
+void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialTextureCapacity);
 
 /// @brief Terminator for renderer.
 void Renderer_Terminate();
@@ -204,7 +204,7 @@ void Renderer_RenderScene(RendererScene *scene);
 /// @param vertexShaderFile The source file for debug vertex shader.
 /// @param fragmentShaderFile The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, size_t initialVertexCapacity);
+void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJGlobal_Size initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate();
@@ -246,7 +246,7 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile);
 /// @param textureSize Size of the texture.
 /// @param textureChannels Number of channels in the texture.
 /// @return Created material list type of the list is RendererMaterial*.
-ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, size_t matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels);
+ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, RJGlobal_Size matFileLineCount, StringView textureName, const void *textureData, Vector2Int textureSize, int textureChannels);
 
 /// @brief Destroyer function for renderer material.
 /// @param material Material to destroy.
@@ -284,7 +284,7 @@ void RendererModel_Destroy(RendererModel *model);
 /// @param name Name of the scene.
 /// @param initialBatchCapacity The initial capacity of the batch list in scene.
 /// @return Created scene of render objects.
-RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCapacity);
+RendererScene *RendererScene_CreateEmpty(StringView name, RJGlobal_Size initialBatchCapacity);
 
 // todo fix docs
 /// @brief
@@ -295,7 +295,7 @@ RendererScene *RendererScene_CreateEmpty(StringView name, size_t initialBatchCap
 /// @param totalObjectSize
 /// @param objectCount
 /// @return
-RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, size_t transformOffsetInObject, size_t totalObjectSize, size_t objectCount);
+RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, RJGlobal_Size transformOffsetInObject, RJGlobal_Size totalObjectSize, RJGlobal_Size objectCount);
 
 /// @brief Destroyer function for object scene
 /// @param scene Scene to destroy
@@ -311,7 +311,7 @@ void RendererScene_SetMainCamera(RendererScene *scene, RendererCameraComponent *
 /// @param model Pointer to the model that the components in the batch will use.
 /// @param initialComponentCapacity The initial capacity for components inside the batch.
 /// @return The created batch.
-RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, size_t initialComponentCapacity);
+RendererBatch *RendererScene_CreateBatch(RendererScene *scene, RendererModel *model, RJGlobal_Size initialComponentCapacity);
 
 /// @brief Destroys the renderer batch and frees its resources.
 /// @param batch Batch to destroy.

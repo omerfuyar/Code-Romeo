@@ -28,7 +28,9 @@
 /// @brief Converts radians to degrees.
 #define Maths_RadToDeg(rad) (rad * 180.0f / MATHS_PI)
 /// @brief Generates a random integer between min and max (inclusive).
-#define Maths_RandomRange(min, max) (rand() % ((max) - (min) + 1) + (min))
+#define Maths_RandomRangeI(min, max) (rand() % ((max) - (min) + 1) + (min))
+/// @brief Generates a random float between min and max.
+#define Maths_RandomRangeF(min, max) (((float)rand() / (float)RAND_MAX) * ((max) - (min)) + (min))
 
 #pragma endregion Macros
 

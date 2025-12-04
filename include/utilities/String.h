@@ -14,14 +14,14 @@
 typedef struct String
 {
     char *characters;
-    size_t length;
+    RJGlobal_Size length;
 } String;
 
 /// @brief Standard view string for entire project. Used in parameters to indicate the function is not changing the string data and for other reasons. Does not owns the memory, just points it.
 typedef struct StringView
 {
     const char *characters;
-    size_t length;
+    RJGlobal_Size length;
 } StringView;
 
 #pragma endregion Typedefs
@@ -30,7 +30,7 @@ typedef struct StringView
 /// @param string Any char pointer.
 /// @param length Length of the given string.
 /// @return Newly created null terminated String object holding a pointer to copy of the original string.
-String String_CreateCopySafe(const char *string, size_t length);
+String String_CreateCopySafe(const char *string, RJGlobal_Size length);
 
 /// @brief Create a owner copy of the given string it can be a view or owner.
 /// @param stringToCopy String to copy. Not a pointer.
@@ -40,7 +40,7 @@ String String_CreateCopySafe(const char *string, size_t length);
 /// @brief Create view from string literal.
 /// @param stringLiteral The literal string to create a view of.
 #define scl(stringLiteral) \
-    (StringView) { .characters = stringLiteral, .length = strlen(stringLiteral) }
+    (StringView) { .characters = stringLiteral, .length = RJGlobal_StringLength(stringLiteral) }
 
 /// @brief Create a view of given string object.
 /// @param stringToCreateView String object to create a view of. Not a pointer.
@@ -90,16 +90,16 @@ int String_Compare(StringView string, StringView other);
 /// @brief Tokenizes a string into an array of string views. Returned buffer uses the memory of the first string parameter.
 /// @param string The string to tokenize.
 /// @param delimeter The delimiter to use for tokenization.
-/// @param tokenCountRet A pointer to a size_t variable to store the number of tokens. Leave NULL if not needed.
+/// @param tokenCountRet A pointer to a RJGlobal_Size variable to store the number of tokens. Leave NULL if not needed.
 /// @param tokenBufferRet A pointer to a StringView buffer to store the tokenized string views.
 /// @param maxTokenCount Maths_Max number of tokens to return. The size of the tokenCounts buffer.
-void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t maxTokenCount);
+void String_Tokenize(StringView string, StringView delimeter, RJGlobal_Size *tokenCountRet, StringView *tokenBufferRet, RJGlobal_Size maxTokenCount);
 
 /// @brief Gets a character from a String object.
 /// @param string Pointer to the String object to get the character from.
 /// @param index Index of the character to get.
 /// @return Character at the specified index.
-char String_GetChar(StringView string, size_t index);
+char String_GetChar(StringView string, RJGlobal_Size index);
 
 /// @brief Converts a String object to a float.
 /// @param string Pointer to the String object to convert.
