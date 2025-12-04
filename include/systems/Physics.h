@@ -12,7 +12,7 @@
 
 #pragma region Typedefs
 
-/// @brief Represents a component that can interact with the physics scene.
+/// @brief Represents a component that can interact with the physics system.
 typedef RJGlobal_Index PhysicsComponent;
 
 #pragma endregion Typedefs
@@ -54,7 +54,7 @@ void Physics_ResolveCollisions();
 /// @param mass The mass of the object.
 /// @param isStatic Whether the object is static (unmovable).
 /// @return A pointer to the newly created physics component.
-PhysicsComponent Physics_ComponentCreate(RJGlobal_Size entity, Vector3 colliderSize, float mass, bool isStatic);
+PhysicsComponent Physics_ComponentCreate(RJGlobal_Index entity, Vector3 colliderSize, float mass, bool isStatic);
 
 /// @brief Destroys a physics component and removes it from its scene.
 /// @param component The component to destroy.
