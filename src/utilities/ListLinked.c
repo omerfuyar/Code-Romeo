@@ -5,18 +5,30 @@
 
 #pragma region Source Only
 
+/// @brief A node in the linked list.
+typedef struct ListLinkedNode
+{
+    struct ListLinkedNode *next;
+    void *data;
+} ListLinkedNode;
+
 /// @brief Creator function for ListLinkedNode. Uses memcpy to copy the data.
 /// @param sizeOfData Size of the data to be stored in the node.
 /// @param data Pointer to the data to store inside the node.
 /// @return The created ListLinkedNode struct.
 ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data)
 {
-    ListLinkedNode *node = NULL;
-    RJGlobal_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
+    ListLinkedNode *node = (ListLinkedNode *)malloc(sizeof(ListLinkedNode *) + sizeOfData);
+    RJGlobal_DebugAssertNullPointerCheck(node);
 
-    RJGlobal_DebugAssertAllocationCheck(char, node->data, sizeOfData);
-
-    memcpy(node->data, data, sizeOfData);
+    if (data != NULL)
+    {
+        RJGlobal_MemoryCopy(node->data, sizeOfData, data);
+    }
+    else
+    {
+        RJGlobal_MemorySet(node->data, sizeOfData, 0);
+    }
 
     node->next = NULL;
 
@@ -29,10 +41,6 @@ void ListLinkedNode_Destroy(ListLinkedNode *node)
 {
     RJGlobal_DebugAssertNullPointerCheck(node);
 
-    if (node->data != NULL)
-    {
-        free(node->data);
-    }
     node->data = NULL;
     node->next = NULL;
 
@@ -85,7 +93,7 @@ void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode)
 /// @return The index which is incremented from previous calls. Returns -1 if item is not found in the sequence.
 long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJGlobal_Size sizeOfItem, const void *data, long long startIndex)
 {
-    if (memcmp(node->data, data, sizeOfItem) == 0)
+    if (RJGlobal_MemoryCompare(node->data, sizeOfItem, data) == 0)
     {
         return startIndex;
     }
@@ -166,10 +174,10 @@ void ListLinked_Set(ListLinked *list, RJGlobal_Size index, const void *item)
     RJGlobal_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
     ListLinkedNode *nodeToSet = ListLinked_Get(list, index);
-    memcpy(nodeToSet->data, item, list->sizeOfItem);
+    RJGlobal_MemoryCopy(nodeToSet->data, list->sizeOfItem, item);
 }
 
-void ListLinked_Add(ListLinked *list, const void *item)
+void *ListLinked_Add(ListLinked *list, const void *item)
 {
     RJGlobal_DebugAssertNullPointerCheck(list);
     RJGlobal_DebugAssertNullPointerCheck(item);
@@ -186,6 +194,8 @@ void ListLinked_Add(ListLinked *list, const void *item)
     }
 
     list->count++;
+
+    return newNode->data;
 }
 
 void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index)

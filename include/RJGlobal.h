@@ -144,6 +144,8 @@
 #define RJGlobal_MemorySet(destination, size, value) memset(destination, value, size)
 /// @brief Macro wrapper for memory move operation.
 #define RJGlobal_MemoryMove(destination, size, source) memmove(destination, source, size)
+/// @brief Macro wrapper for memory compare operation.
+#define RJGlobal_MemoryCompare(ptr1, size, ptr2) memcmp(ptr1, ptr2, size)
 /// @brief Macro wrapper for string length operation.
 #define RJGlobal_StringLength(string) (RJGlobal_Size) strlen(string)
 /// @brief Macro wrapper for memory allocation operation. Pass char if the pointer type os void.

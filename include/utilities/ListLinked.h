@@ -4,17 +4,10 @@
 
 #pragma region Typedefs
 
-/// @brief A node in the linked list.
-typedef struct ListLinkedNode
-{
-    void *data;
-    struct ListLinkedNode *next;
-} ListLinkedNode;
-
 /// @brief A dynamic linked list implementation. Can store any type of data. Copies passed items to its own property. Shouldn't be used without helper functions.
 typedef struct ListLinked
 {
-    ListLinkedNode *head;
+    void *head;
     RJGlobal_Size count;
     RJGlobal_Size sizeOfItem;
     char *nameOfType;
@@ -47,7 +40,8 @@ void ListLinked_Set(ListLinked *list, RJGlobal_Size index, const void *item);
 /// @brief Adder function for ListLinked. Appends the item to the end of the list.
 /// @param list ListLinked to add the item to.
 /// @param item Pointer to the item to add.
-void ListLinked_Add(ListLinked *list, const void *item);
+/// @return Pointer to the added item in the list. Should be cast before dereferencing.
+void *ListLinked_Add(ListLinked *list, const void *item);
 
 /// @brief Remover function using index for ListLinked. Removes the item at the specified index.
 /// @param list ListLinked to remove the item from.
