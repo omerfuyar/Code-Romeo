@@ -27,8 +27,9 @@
 
 ResourceText *ResourceText_Create(StringView file)
 {
-    ResourceText *resource = (ResourceText *)malloc(sizeof(ResourceText));
-    RJGlobal_DebugAssertNullPointerCheck(resource);
+
+    ResourceText *resource = NULL;
+    RJGlobal_DebugAssertAllocationCheck(ResourceText, resource, 1);
 
     resource->file = scc(file);
 
@@ -61,11 +62,11 @@ ResourceText *ResourceText_Create(StringView file)
 
     resource->lineCount = lineCount;
 
-    // malloc because the buffer is too large for stack
-    char *dataBuffer = (char *)malloc(resource->lineCount * RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
-    RJGlobal_DebugAssertNullPointerCheck(dataBuffer);
-    char *lineBuffer = (char *)malloc(RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
-    RJGlobal_DebugAssertNullPointerCheck(lineBuffer);
+    // on heap because the buffer is too large for stack
+    char *dataBuffer = NULL;
+    RJGlobal_DebugAssertAllocationCheck(char, dataBuffer, resource->lineCount *RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
+    char *lineBuffer = NULL;
+    RJGlobal_DebugAssertAllocationCheck(char, lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
 
     dataBuffer[0] = '\0';
     lineBuffer[0] = '\0';
@@ -121,8 +122,8 @@ void ResourceText_Destroy(ResourceText *resource)
 
 ResourceImage *ResourceImage_Create(StringView file)
 {
-    ResourceImage *resourceImage = (ResourceImage *)malloc(sizeof(ResourceImage));
-    RJGlobal_DebugAssertNullPointerCheck(resourceImage);
+    ResourceImage *resourceImage = NULL;
+    RJGlobal_DebugAssertAllocationCheck(ResourceImage, resourceImage, 1);
 
     resourceImage->file = scc(file);
 

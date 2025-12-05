@@ -35,16 +35,12 @@ HashMap HashMap_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJGloba
 
     RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
 
-    map.nameOfType = (char *)malloc(nameOfTypeLength + 1);
-    RJGlobal_DebugAssertNullPointerCheck(map.nameOfType);
+    RJGlobal_DebugAssertAllocationCheck(char, map.nameOfType, nameOfTypeLength + 1);
     RJGlobal_MemoryCopy(map.nameOfType, nameOfTypeLength + 1, nameOfType);
     map.nameOfType[nameOfTypeLength] = '\0';
 
     map.count = 0;
-    map.data = (void *)malloc(capacity * sizeOfItem);
-    RJGlobal_DebugAssertNullPointerCheck(map.data);
-
-    RJGlobal_MemorySet(map.data, map.sizeOfItem * map.capacity, 0);
+    RJGlobal_DebugAssertAllocationCheck(char, map.data, capacity *sizeOfItem);
 
     RJGlobal_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", nameOfType, capacity, sizeOfItem);
 

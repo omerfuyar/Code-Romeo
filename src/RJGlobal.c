@@ -21,7 +21,7 @@ bool RJGLOBAL_TERMINATE_BYPASS_CLEANUP = false;
 
 RJGlobal_VoidFunIntCharPtrPtr RJGLOBAL_SETUP_CALLBACK = NULL;
 RJGlobal_VoidFunFloat RJGLOBAL_LOOP_CALLBACK = NULL;
-RJGlobal_VoidFunIntCharptr RJGLOBAL_TERMINATE_CALLBACK = NULL;
+RJGlobal_VoidFunIntCharPtr RJGLOBAL_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
@@ -37,7 +37,7 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
 
     if (RJGLOBAL_DEBUG_FILE == NULL)
     {
-        RJGLOBAL_DEBUG_FILE_NAME_STR = (char *)malloc(RJGlobal_StringLength(RJGlobal_GetExecutablePath()) + RJGlobal_StringLength(RJGLOBAL_DEBUG_FILE_NAME) + 1);
+        RJGlobal_DebugAssertAllocationCheck(char, RJGLOBAL_DEBUG_FILE_NAME_STR, RJGlobal_StringLength(RJGlobal_GetExecutablePath()) + RJGlobal_StringLength(RJGLOBAL_DEBUG_FILE_NAME) + 1);
 
         RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR, RJGlobal_StringLength(RJGlobal_GetExecutablePath()), RJGlobal_GetExecutablePath());
         RJGlobal_MemoryCopy(RJGLOBAL_DEBUG_FILE_NAME_STR + RJGlobal_StringLength(RJGlobal_GetExecutablePath()), RJGlobal_StringLength(RJGLOBAL_DEBUG_FILE_NAME), RJGLOBAL_DEBUG_FILE_NAME);
@@ -109,8 +109,7 @@ const char *RJGlobal_GetExecutablePath()
         }
         currentIndex++;
 
-        RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH = (char *)malloc(currentIndex + 1);
-        RJGlobal_DebugAssertNullPointerCheck(RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
+        RJGlobal_DebugAssertAllocationCheck(char, RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex + 1);
 
         RJGlobal_MemoryCopy(RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex, buffer);
         RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
@@ -206,7 +205,7 @@ void RJGlobal_SetLoopCallback(RJGlobal_VoidFunFloat loopCallback)
     RJGLOBAL_LOOP_CALLBACK = loopCallback;
 }
 
-void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
+void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback)
 {
     RJGLOBAL_TERMINATE_CALLBACK = terminateCallback;
 }

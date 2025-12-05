@@ -27,8 +27,7 @@ Timer Timer_Create(const char *title)
 
     RJGlobal_Size titleLength = RJGlobal_StringLength(title);
 
-    timer.title = (char *)malloc(titleLength + 1);
-    RJGlobal_DebugAssertNullPointerCheck(timer.title);
+    RJGlobal_DebugAssertAllocationCheck(char, timer.title, titleLength + 1);
     RJGlobal_MemoryCopy(timer.title, titleLength + 1, title);
     timer.title[titleLength] = '\0';
 

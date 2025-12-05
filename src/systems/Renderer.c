@@ -158,8 +158,15 @@ typedef struct RENDERER_BATCH
 struct RENDERER_MAIN_SCENE
 {
     ContextWindow *window;
-    ListArray batches;     // RENDERER_BATCH
-    ListArray freeIndices; // RJGlobal_Index
+
+    struct RENDERER_DATA
+    {
+        RJGlobal_Size capacity;
+        RJGlobal_Size count;
+        ListArray freeIndices; // RJGlobal_Index
+
+        RENDERER_BATCH *batches; // RENDERER_BATCH
+    } data;
 
     struct RENDERER_CAMERA
     {
@@ -220,21 +227,22 @@ struct RENDERER_MAIN_SCENE
     } debugShader;
 } RMS = {0};
 
-#define rmsGetBatch(batch) (((RENDERER_BATCH *)RMS.batches.data)[batch])
-#define rmsGetEntity(batch, component) (rmsGetBatch(batch).components.entities[component])
+#define rmsBatch(batch) (RMS.data.batches[batch])
+#define rmsEntity(batch, component) (rmsBatch(batch).components.entities[component])
 
-#define rmsGetObjectMatrix(batch, component) (rmsGetBatch(batch).components.objectMatrices[component])
+#define rmsObjectMatrix(batch, component) (rmsBatch(batch).components.objectMatrices[component])
 
-#define rmsGetPositionReference(batch, component) (rmsGetBatch(batch).components.positionReferences[component])
-#define rmsGetRotationReference(batch, component) (rmsGetBatch(batch).components.rotationReferences[component])
-#define rmsGetScaleReference(batch, component) (rmsGetBatch(batch).components.scaleReferences[component])
+#define rmsPositionReference(batch, component) (rmsBatch(batch).components.positionReferences[component])
+#define rmsRotationReference(batch, component) (rmsBatch(batch).components.rotationReferences[component])
+#define rmsScaleReference(batch, component) (rmsBatch(batch).components.scaleReferences[component])
 
-#define rmsGetFlag(batch, component) (rmsGetBatch(batch).components.flags[component])
+#define rmsFlag(batch, component) (rmsBatch(batch).components.flags[component])
 
-#define rmsIsActive(batch, component) (rmsGetFlag(batch, component) & RENDERER_FLAG_ACTIVE)
-#define rmsSetActive(batch, component, isActive) (rmsGetFlag(batch, component) = isActive ? (rmsGetFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsGetFlag(batch, component) & ~RENDERER_FLAG_ACTIVE))
+#define rmsIsActive(batch, component) (rmsFlag(batch, component) & RENDERER_FLAG_ACTIVE)
+#define rmsSetActive(batch, component, isActive) (rmsFlag(batch, component) = isActive ? (rmsFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsFlag(batch, component) & ~RENDERER_FLAG_ACTIVE))
 
-#define rmsAssertComponent(batch, component) RJGlobal_DebugAssert(component < rmsGetBatch(batch).data.count + rmsGetBatch(batch).data.freeIndices.count && rmsGetEntity(batch, component) != RJGLOBAL_INDEX_INVALID && rmsIsActive(component), "Renderer component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
+#define rmsAssertBatch(batch) RJGlobal_DebugAssert(batch < RMS.data.count + RMS.data.freeIndices.count, "Renderer batch %u exceeds maximum batch count %u.", batch, RMS.data.count)
+#define rmsAssertComponent(batch, component) RJGlobal_DebugAssert(component < rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count && rmsEntity(batch, component) != RJGLOBAL_INDEX_INVALID && rmsIsActive(batch, component), "Renderer component %u either exceeds maximum possible index %u, invalid or inactive.", component, rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count)
 
 /// @brief
 /// @param window
@@ -327,8 +335,7 @@ RendererTexture *RendererTexture_CreateOrGet(StringView name, const void *data, 
 
     RJGlobal_Size dataSize = (RJGlobal_Size)(size.x * size.y * channels);
 
-    texture->data = malloc(dataSize);
-    RJGlobal_DebugAssertNullPointerCheck(texture->data);
+    RJGlobal_DebugAssertAllocationCheck(char, texture->data, dataSize);
     RJGlobal_MemoryCopy(texture->data, dataSize, data);
 
     glGenTextures(1, &texture->handle);
@@ -395,8 +402,8 @@ void RendererTexture_Destroy(RendererTexture *texture)
 
 RendererMesh *RendererMesh_CreateEmpty(RJGlobal_Size initialIndexCapacity, RendererMaterial *material)
 {
-    RendererMesh *mesh = malloc(sizeof(RendererMesh));
-    RJGlobal_DebugAssertNullPointerCheck(mesh);
+    RendererMesh *mesh = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RendererMesh, mesh, 1);
 
     mesh->indices = ListArray_Create("Renderer Mesh Indices", sizeof(RendererMeshIndex), initialIndexCapacity);
     mesh->material = material;
@@ -427,9 +434,9 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile)
     RJGlobal_Size materialCount = 0;
 
     RJGlobal_Size mtlLineCount = 0;
-    StringView *mtlLines = (StringView *)malloc(rscMaterial->lineCount * sizeof(StringView));
-    RJGlobal_DebugAssertNullPointerCheck(mtlLines);
-    RJGlobal_MemorySet(mtlLines, rscMaterial->lineCount * sizeof(StringView), 0);
+    StringView *mtlLines = NULL;
+
+    RJGlobal_DebugAssertAllocationCheck(StringView, mtlLines, rscMaterial->lineCount);
 
     RJGlobal_Size mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -471,8 +478,7 @@ ListArray RendererMaterial_CreateFromFile(StringView matFile)
 
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
-            currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-            RJGlobal_DebugAssertNullPointerCheck(currentMaterial);
+            RJGlobal_DebugAssertAllocationCheck(RendererMaterial, currentMaterial, 1);
 
             ListArray_Add(&materials, &currentMaterial);
 
@@ -536,9 +542,9 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, RJGlob
     RJGlobal_Size materialCount = 0;
 
     RJGlobal_Size mtlLineCount = 0;
-    StringView *mtlLines = (StringView *)malloc(matFileLineCount * sizeof(StringView));
-    RJGlobal_DebugAssertNullPointerCheck(mtlLines);
-    RJGlobal_MemorySet(mtlLines, matFileLineCount * sizeof(StringView), 0);
+
+    StringView *mtlLines = NULL;
+    RJGlobal_DebugAssertAllocationCheck(StringView, mtlLines, matFileLineCount);
 
     RJGlobal_Size mtlLineTokenCount = 0;
     StringView mtlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -579,8 +585,7 @@ ListArray RendererMaterial_CreateFromFileTextured(StringView matFileData, RJGlob
 
         if (String_Compare(mtlFirstToken, strNEWMTL) == 0)
         {
-            currentMaterial = (RendererMaterial *)malloc(sizeof(RendererMaterial));
-            RJGlobal_DebugAssertNullPointerCheck(currentMaterial);
+            RJGlobal_DebugAssertAllocationCheck(RendererMaterial, currentMaterial, 1);
 
             ListArray_Add(&materials, &currentMaterial);
 
@@ -688,8 +693,8 @@ void ProcessFaceVertex(StringView faceComponent, RendererModel *model, RendererM
 
 RendererModel *RendererModel_CreateEmpty(StringView name, RJGlobal_Size initialMeshCapacity, RJGlobal_Size initialVertexCapacity)
 {
-    RendererModel *model = malloc(sizeof(RendererModel));
-    RJGlobal_DebugAssertNullPointerCheck(model);
+    RendererModel *model = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RendererModel, model, 1);
 
     model->name = scc(name);
     model->vertices = ListArray_Create("Renderer Mesh Vertex", sizeof(RendererMeshVertex), initialVertexCapacity);
@@ -713,9 +718,8 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
     ResourceText *rscModel = ResourceText_Create(mdlFile);
 
     RJGlobal_Size mdlLineCount = 0;
-    StringView *mdlLines = (StringView *)malloc(rscModel->lineCount * sizeof(StringView));
-    RJGlobal_DebugAssertNullPointerCheck(mdlLines);
-    RJGlobal_MemorySet(mdlLines, rscModel->lineCount * sizeof(StringView), 0);
+    StringView *mdlLines = NULL;
+    RJGlobal_DebugAssertAllocationCheck(StringView, mdlLines, rscModel->lineCount);
 
     RJGlobal_Size mdlLineTokenCount = 0;
     StringView mdlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -760,9 +764,8 @@ RendererModel *RendererModel_Create(StringView mdlFile, const ListArray *materia
         }
     }
 
-    RJGlobal_Size *faceCounts = (RJGlobal_Size *)malloc(meshCount * sizeof(RJGlobal_Size));
-    RJGlobal_DebugAssertNullPointerCheck(faceCounts);
-    RJGlobal_MemorySet(faceCounts, meshCount * sizeof(RJGlobal_Size), 0);
+    RJGlobal_Size *faceCounts = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, faceCounts, meshCount);
 
     {
         RJGlobal_Size tempMeshIndex = 0;
@@ -928,9 +931,8 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
     ResourceText *rscModel = ResourceText_Create(mdlFile);
 
     RJGlobal_Size mdlLineCount = 0;
-    StringView *mdlLines = (StringView *)malloc(rscModel->lineCount * sizeof(StringView));
-    RJGlobal_DebugAssertNullPointerCheck(mdlLines);
-    RJGlobal_MemorySet(mdlLines, rscModel->lineCount * sizeof(StringView), 0);
+    StringView *mdlLines = NULL;
+    RJGlobal_DebugAssertAllocationCheck(StringView, mdlLines, rscModel->lineCount);
 
     RJGlobal_Size mdlLineTokenCount = 0;
     StringView mdlLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
@@ -961,25 +963,20 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
     ListArray models = ListArray_Create("Renderer Model Pointer", sizeof(RendererModel *), modelCount);
     RendererModel *currentModel = NULL;
 
-    RJGlobal_Size *vertexPositionCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
-    RJGlobal_DebugAssertNullPointerCheck(vertexPositionCounts);
-    RJGlobal_MemorySet(vertexPositionCounts, modelCount * sizeof(RJGlobal_Size), 0);
+    RJGlobal_Size *vertexPositionCounts = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, vertexPositionCounts, modelCount);
 
-    RJGlobal_Size *vertexUvCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
-    RJGlobal_DebugAssertNullPointerCheck(vertexUvCounts);
-    RJGlobal_MemorySet(vertexUvCounts, modelCount * sizeof(RJGlobal_Size), 0);
+    RJGlobal_Size *vertexUvCounts = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, vertexUvCounts, modelCount);
 
-    RJGlobal_Size *vertexNormalCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
-    RJGlobal_DebugAssertNullPointerCheck(vertexNormalCounts);
-    RJGlobal_MemorySet(vertexNormalCounts, modelCount * sizeof(RJGlobal_Size), 0);
+    RJGlobal_Size *vertexNormalCounts = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, vertexNormalCounts, modelCount);
 
-    RJGlobal_Size *meshCounts = (RJGlobal_Size *)malloc(modelCount * sizeof(RJGlobal_Size));
-    RJGlobal_DebugAssertNullPointerCheck(meshCounts);
-    RJGlobal_MemorySet(meshCounts, modelCount * sizeof(RJGlobal_Size), 0);
+    RJGlobal_Size *meshCounts = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, meshCounts, modelCount);
 
-    String *modelNames = (String *)malloc(modelCount * sizeof(String));
-    RJGlobal_DebugAssertNullPointerCheck(modelNames);
-    RJGlobal_MemorySet(modelNames, modelCount * sizeof(String), 0);
+    String *modelNames = NULL;
+    RJGlobal_DebugAssertAllocationCheck(String, modelNames, modelCount);
 
     {
         RJGlobal_Size tempModelIndex = 0;
@@ -1013,9 +1010,8 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
         }
     }
 
-    RJGlobal_Size **faceCounts = (RJGlobal_Size **)malloc(modelCount * sizeof(RJGlobal_Size *));
-    RJGlobal_DebugAssertNullPointerCheck(faceCounts);
-    RJGlobal_MemorySet(faceCounts, modelCount * sizeof(RJGlobal_Size *), 0);
+    RJGlobal_Size **faceCounts = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size *, faceCounts, modelCount);
 
     {
         RJGlobal_Size tempModelIndex = 0;
@@ -1039,9 +1035,8 @@ ListArray RendererModel_CreateFromFile(StringView mdlFile, const ListArray *mate
             {
                 tempModelIndex++;
                 tempMeshIndex = 0;
-                faceCounts[tempModelIndex - 1] = (RJGlobal_Size *)malloc(meshCounts[tempModelIndex - 1] * sizeof(RJGlobal_Size));
-                RJGlobal_DebugAssertNullPointerCheck(faceCounts[tempModelIndex - 1]);
-                RJGlobal_MemorySet(faceCounts[tempModelIndex - 1], meshCounts[tempModelIndex - 1] * sizeof(RJGlobal_Size), 0);
+
+                RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, faceCounts[tempModelIndex - 1], meshCounts[tempModelIndex - 1]);
             }
         }
     }
@@ -1219,7 +1214,11 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
     RJGlobal_DebugAssertNullPointerCheck(window);
 
     RMS.window = window;
-    RMS.batches = ListArray_Create("Renderer Batches", sizeof(RENDERER_BATCH), initialBatchCapacity);
+    RJGlobal_DebugAssertAllocationCheck(RENDERER_BATCH, RMS.data.batches, initialBatchCapacity);
+
+    RMS.data.capacity = initialBatchCapacity;
+    RMS.data.count = 0;
+    RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJGlobal_Index), initialBatchCapacity);
 
     RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
@@ -1289,12 +1288,16 @@ void Renderer_Terminate()
 {
     RMS.window = NULL;
 
-    for (RJGlobal_Size batch = RMS.batches.count - 1; batch > 0; batch--)
+    for (RJGlobal_Size batch = 0; batch < RMS.data.count; batch++)
     {
         Renderer_BatchDestroy(batch);
     }
 
-    ListArray_Destroy(&RMS.batches);
+    free(RMS.data.batches);
+
+    RMS.data.capacity = 0;
+    RMS.data.count = 0;
+    ListArray_Destroy(&RMS.data.freeIndices);
 
     RMS.camera.positionReference = NULL;
     RMS.camera.rotationReference = NULL;
@@ -1530,9 +1533,9 @@ void Renderer_Update()
                   (vec4 *)&RMS.camera.projectionMatrix);
     }
 
-    for (RJGlobal_Size batch = 0; batch < RMS.batches.count; batch++)
+    for (RJGlobal_Size batch = 0; batch < RMS.data.count; batch++)
     {
-        for (RJGlobal_Size component = 0; component < rmsGetBatch(batch).data.count; component++)
+        for (RJGlobal_Size component = 0; component < rmsBatch(batch).data.count; component++)
         {
             if (!rmsIsActive(batch, component))
             {
@@ -1540,12 +1543,32 @@ void Renderer_Update()
             }
 
             TRANSFORM_TO_MODEL_MATRIX(
-                &rmsGetObjectMatrix(batch, component),
-                &rmsGetPositionReference(batch, component),
-                &rmsGetRotationReference(batch, component),
-                &rmsGetScaleReference(batch, component));
+                &rmsObjectMatrix(batch, component),
+                &rmsPositionReference(batch, component),
+                &rmsRotationReference(batch, component),
+                &rmsScaleReference(batch, component));
         }
     }
+}
+
+void Renderer_Resize(RJGlobal_Size newBatchCapacity)
+{
+    RJGlobal_DebugAssert(newBatchCapacity > RMS.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RMS.data.count);
+
+    RENDERER_BATCH *newBatches = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RENDERER_BATCH, newBatches, newBatchCapacity);
+
+    for (RJGlobal_Size i = 0; i < RMS.data.count; i++)
+    {
+        newBatches[i] = rmsBatch(i);
+    }
+
+    free(RMS.data.batches);
+    RMS.data.batches = newBatches;
+
+    RMS.data.capacity = newBatchCapacity;
+
+    RJGlobal_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
 }
 
 void Renderer_Render()
@@ -1572,32 +1595,32 @@ void Renderer_Render()
     glUniform1f(RMS.shader.camSize, *RMS.camera.sizeReference);
     glUniform1i(RMS.shader.camIsPerspective, *RMS.camera.isPerspectiveReference);
 
-    for (RJGlobal_Size batch = 0; batch < RMS.batches.count; batch++)
+    for (RJGlobal_Size batch = 0; batch < RMS.data.count; batch++)
     {
         RendererMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Vector3) * rmsGetBatch(batch).data.count),
-                     rmsGetBatch(batch).components.positionReferences,
+                     (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
+                     rmsBatch(batch).components.positionReferences,
                      RENDERER_OPENGL_DRAW_TYPE);
 
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Vector3) * rmsGetBatch(batch).data.count),
-                     rmsGetBatch(batch).components.rotationReferences,
+                     (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
+                     rmsBatch(batch).components.rotationReferences,
                      RENDERER_OPENGL_DRAW_TYPE);
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Vector3) * rmsGetBatch(batch).data.count),
-                     rmsGetBatch(batch).components.scaleReferences,
+                     (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
+                     rmsBatch(batch).components.scaleReferences,
                      RENDERER_OPENGL_DRAW_TYPE);
 
         glBufferData(GL_ARRAY_BUFFER,
-                     (long long)(rmsGetBatch(batch).model->vertices.sizeOfItem * rmsGetBatch(batch).model->vertices.count),
-                     rmsGetBatch(batch).model->vertices.data,
+                     (long long)(rmsBatch(batch).model->vertices.sizeOfItem * rmsBatch(batch).model->vertices.count),
+                     rmsBatch(batch).model->vertices.data,
                      RENDERER_OPENGL_DRAW_TYPE);
 
-        for (RJGlobal_Size j = 0; j < rmsGetBatch(batch).model->meshes.count; j++)
+        for (RJGlobal_Size j = 0; j < rmsBatch(batch).model->meshes.count; j++)
         {
-            RendererMesh *mesh = (RendererMesh *)ListArray_Get(&rmsGetBatch(batch).model->meshes, j);
+            RendererMesh *mesh = (RendererMesh *)ListArray_Get(&rmsBatch(batch).model->meshes, j);
 
             if (mesh->material != previousMaterial)
             {
@@ -1633,7 +1656,7 @@ void Renderer_Render()
                                     (GLsizei)mesh->indices.count,
                                     GL_UNSIGNED_INT,
                                     0,
-                                    (GLsizei)rmsGetBatch(batch).data.count);
+                                    (GLsizei)rmsBatch(batch).data.count);
         }
     }
 
@@ -1651,76 +1674,106 @@ void Renderer_Render()
 
 RendererBatch Renderer_BatchCreate(StringView mdlFile, RJGlobal_Size initialCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
 {
+    RJGlobal_DebugAssert(RMS.data.count + RMS.data.freeIndices.count < RMS.data.capacity, "Maximum renderer batch capacity of %u reached.", RMS.data.capacity); // todo expand capacity
+
     RendererBatch newBatch = RJGLOBAL_INDEX_INVALID;
 
-    newBatch = RMS.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&RMS.freeIndices)) : RMS.batches.count;
+    newBatch = RMS.data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&RMS.data.freeIndices)) : RMS.data.count;
 
-    RENDERER_BATCH *createdBatch = (RENDERER_BATCH *)ListArray_Add(&RMS.batches, NULL);
+    rmsBatch(newBatch).model = NULL; // todo
 
-    createdBatch->model = NULL; // todo
+    rmsBatch(newBatch).data.capacity = initialCapacity;
+    rmsBatch(newBatch).data.count = 0;
+    rmsBatch(newBatch).data.freeIndices = ListArray_Create("RJGlobal_Index", sizeof(RJGlobal_Index), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
-    createdBatch->data.capacity = initialCapacity;
-    createdBatch->data.count = 0;
-    createdBatch->data.freeIndices = ListArray_Create("RJGlobal_Index", sizeof(RJGlobal_Index), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Index, rmsBatch(newBatch).components.entities, initialCapacity);
 
-    createdBatch->components.entities = (RJGlobal_Index *)malloc(sizeof(RJGlobal_Index) * initialCapacity);
+    RJGlobal_DebugAssertAllocationCheck(Renderer_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialCapacity);
 
-    createdBatch->components.objectMatrices = (Renderer_Matrix4 *)malloc(sizeof(Renderer_Matrix4) * initialCapacity);
+    rmsBatch(newBatch).components.positionReferences = positionReferences;
+    rmsBatch(newBatch).components.rotationReferences = rotationReferences;
+    rmsBatch(newBatch).components.scaleReferences = scaleReferences;
 
-    createdBatch->components.positionReferences = positionReferences;
-    createdBatch->components.rotationReferences = rotationReferences;
-    createdBatch->components.scaleReferences = scaleReferences;
+    RJGlobal_DebugAssertAllocationCheck(uint8_t, rmsBatch(newBatch).components.flags, initialCapacity);
 
-    createdBatch->components.flags = (uint8_t *)malloc(sizeof(uint8_t) * initialCapacity);
-
-    RJGlobal_MemorySet(createdBatch->components.entities, sizeof(RJGlobal_Index) * createdBatch->data.capacity, 0);
-    RJGlobal_MemorySet(createdBatch->components.flags, sizeof(uint8_t) * createdBatch->data.capacity, 0);
+    RMS.data.count++;
 
     return newBatch;
 }
 
 void Renderer_BatchDestroy(RendererBatch batch)
 {
-    // todo
+    rmsAssertBatch(batch);
+
+    rmsBatch(batch).model = NULL;
+
+    rmsBatch(batch).data.capacity = 0;
+    rmsBatch(batch).data.count = 0;
+    ListArray_Destroy(&rmsBatch(batch).data.freeIndices);
+
+    free(rmsBatch(batch).components.entities);
+    free(rmsBatch(batch).components.objectMatrices);
+    free(rmsBatch(batch).components.flags);
+
+    rmsBatch(batch).components.entities = NULL;
+    rmsBatch(batch).components.objectMatrices = NULL;
+    rmsBatch(batch).components.flags = NULL;
+
+    RMS.data.count--;
 }
 
-RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference)
+void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJGlobal_Size newComponentCapacity)
 {
-    RJGlobal_DebugAssertNullPointerCheck(batch);
-    RJGlobal_DebugAssertNullPointerCheck(positionReference);
-    RJGlobal_DebugAssertNullPointerCheck(rotationReference);
-    RJGlobal_DebugAssertNullPointerCheck(scaleReference);
+    rmsAssertBatch(batch);
+    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
+    RJGlobal_DebugAssertNullPointerCheck(rotationReferences);
+    RJGlobal_DebugAssertNullPointerCheck(scaleReferences);
+    RJGlobal_DebugAssert(newComponentCapacity > rmsBatch(batch).data.count, "New component capacity %u must be greater than current physics component count %u.", newComponentCapacity, rmsBatch(batch).data.count);
+
+    rmsBatch(batch).data.capacity = newComponentCapacity;
+
+    rmsBatch(batch).components.positionReferences = positionReferences;
+    rmsBatch(batch).components.rotationReferences = rotationReferences;
+    rmsBatch(batch).components.scaleReferences = scaleReferences;
+
+    RJGlobal_DebugAssertReallocationCheck(RJGlobal_Index, rmsBatch(batch).components.entities, newComponentCapacity);
+
+    RJGlobal_DebugAssertReallocationCheck(Renderer_Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
+
+    rmsBatch(batch).components.positionReferences = positionReferences;
+    rmsBatch(batch).components.rotationReferences = rotationReferences;
+    rmsBatch(batch).components.scaleReferences = scaleReferences;
+
+    RJGlobal_DebugAssertReallocationCheck(uint8_t, rmsBatch(batch).components.flags, newComponentCapacity);
+}
+
+RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch)
+{
+    rmsAssertBatch(batch);
+    RJGlobal_DebugAssert(rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count < rmsBatch(batch).data.capacity, "Maximum renderer batch %u component capacity of %u reached.", batch, rmsBatch(batch).data.capacity); // todo expand capacity
     //    RJGlobal_DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
 
-    RendererComponent component = {0};
+    RendererComponent newComponent = rmsBatch(batch).data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&rmsBatch(batch).data.freeIndices)) : rmsBatch(batch).data.count;
 
-    component.positionReference = positionReference;
-    component.rotationReference = rotationReference;
-    component.scaleReference = scaleReference;
-    component.batch = batch;
-    component.componentOffsetInBatch = batch->objectMatrices.count;
+    rmsEntity(batch, newComponent) = entity;
+    rmsSetActive(batch, newComponent, true);
 
-    Renderer_Matrix4 temp; // dummy, just to allocate the space in list
-    ListArray_Add(&batch->objectMatrices, &temp);
+    rmsBatch(batch).data.count++;
 
-    // RJGlobal_DebugInfo("Renderer Component created.");
-
-    return (RendererComponent *)ListArray_Add(&component.batch->components, &component);
+    return newComponent;
 }
 
 void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
+    rmsAssertBatch(batch);
+    rmsAssertComponent(batch, component);
 
-    // todo ! be may be wrong
-    for (RJGlobal_Size i = component->componentOffsetInBatch + 1; i < component->batch->components.count - component->componentOffsetInBatch; i++)
-    {
-        RendererComponent *nextComponent = (RendererComponent *)ListArray_Get(&component->batch->components, i);
-        nextComponent->componentOffsetInBatch--;
-    }
+    rmsEntity(batch, component) = RJGLOBAL_INDEX_INVALID;
+    rmsFlag(batch, component) = false;
 
-    ListArray_RemoveAtIndex(&component->batch->objectMatrices, component->componentOffsetInBatch);
-    ListArray_RemoveAtIndex(&component->batch->components, component->componentOffsetInBatch);
+    ListArray_Add(&rmsBatch(batch).data.freeIndices, &component);
+
+    rmsBatch(batch).data.count--;
 }
 
 #pragma endregion Renderer
