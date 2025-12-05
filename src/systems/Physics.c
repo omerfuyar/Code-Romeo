@@ -10,13 +10,6 @@
 
 struct PHYSICS_MAIN_SCENE
 {
-    struct PHYSICS_DATA
-    {
-        RJGlobal_Size capacity;
-        RJGlobal_Size count;
-        ListArray freeIndices; // RJGlobal_Index
-    } data;
-
     struct PHYSICS_PROPERTIES
     {
         float drag;
@@ -24,8 +17,12 @@ struct PHYSICS_MAIN_SCENE
         float elasticity;
     } properties;
 
-    struct PHYSICS_COMPONENTS
+    struct PHYSICS_DATA
     {
+        RJGlobal_Size capacity;
+        RJGlobal_Size count;
+        ListArray freeIndices; // RJGlobal_Index
+
         RJGlobal_Index *entities;
 
         Vector3 *velocities;
@@ -34,25 +31,25 @@ struct PHYSICS_MAIN_SCENE
         uint8_t *flags;
 
         Vector3 *positionReferences;
-    } components;
+    } data;
 } PMS = {0};
 
-#define pmsGetEntity(component) (PMS.components.entities[component])
+#define pmsEntity(component) (PMS.data.entities[component])
 
-#define pmsGetVelocity(component) (PMS.components.velocities[component])
-#define pmsGetColliderSize(component) (PMS.components.colliderSizes[component])
-#define pmsGetMass(component) (PMS.components.masses[component])
-#define pmsGetFlag(component) (PMS.components.flags[component])
+#define pmsVelocity(component) (PMS.data.velocities[component])
+#define pmsColliderSize(component) (PMS.data.colliderSizes[component])
+#define pmsMass(component) (PMS.data.masses[component])
+#define pmsFlag(component) (PMS.data.flags[component])
 
-#define pmsGetPositionReference(component) (PMS.components.positionReferences[pmsGetEntity(component)])
+#define pmsPositionReference(component) (PMS.data.positionReferences[pmsEntity(component)])
 
-#define pmsIsActive(component) (pmsGetFlag(component) & PHYSICS_FLAG_ACTIVE)
-#define pmsSetActive(component, isActive) (pmsGetFlag(component) = isActive ? (pmsGetFlag(component) | PHYSICS_FLAG_ACTIVE) : (pmsGetFlag(component) & ~PHYSICS_FLAG_ACTIVE))
+#define pmsIsActive(component) (pmsFlag(component) & PHYSICS_FLAG_ACTIVE)
+#define pmsSetActive(component, isActive) (pmsFlag(component) = isActive ? (pmsFlag(component) | PHYSICS_FLAG_ACTIVE) : (pmsFlag(component) & ~PHYSICS_FLAG_ACTIVE))
 
-#define pmsIsStatic(component) (pmsGetFlag(component) & PHYSICS_FLAG_STATIC)
-#define pmsSetStatic(component, isStatic) (pmsGetFlag(component) = isStatic ? (pmsGetFlag(component) | PHYSICS_FLAG_STATIC) : (pmsGetFlag(component) & ~PHYSICS_FLAG_STATIC))
+#define pmsIsStatic(component) (pmsFlag(component) & PHYSICS_FLAG_STATIC)
+#define pmsSetStatic(component, isStatic) (pmsFlag(component) = isStatic ? (pmsFlag(component) | PHYSICS_FLAG_STATIC) : (pmsFlag(component) & ~PHYSICS_FLAG_STATIC))
 
-#define pmsAssertComponent(component) RJGlobal_DebugAssert(component < PMS.data.count + PMS.data.freeIndices.count && pmsGetEntity(component) != RJGLOBAL_INDEX_INVALID && pmsIsActive(component), "Physics component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
+#define pmsAssertComponent(component) RJGlobal_DebugAssert(component < PMS.data.count + PMS.data.freeIndices.count && pmsEntity(component) != RJGLOBAL_INDEX_INVALID && pmsIsActive(component), "Physics component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
 
 /// @brief Resolve a collision between a static and dynamic physics component.
 /// @param staticComponent Static physics component.
@@ -62,30 +59,30 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, Physi
 {
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
-        pmsGetPositionReference(dynamicComponent).x +=
-            pmsGetPositionReference(dynamicComponent).x < pmsGetPositionReference(staticComponent).x
+        pmsPositionReference(dynamicComponent).x +=
+            pmsPositionReference(dynamicComponent).x < pmsPositionReference(staticComponent).x
                 ? -overlap.x
                 : overlap.x;
 
-        pmsGetVelocity(dynamicComponent).x *= -PMS.properties.elasticity;
+        pmsVelocity(dynamicComponent).x *= -PMS.properties.elasticity;
     }
     else if (overlap.y < overlap.z)
     {
-        pmsGetPositionReference(dynamicComponent).y +=
-            pmsGetPositionReference(dynamicComponent).y < pmsGetPositionReference(staticComponent).y
+        pmsPositionReference(dynamicComponent).y +=
+            pmsPositionReference(dynamicComponent).y < pmsPositionReference(staticComponent).y
                 ? -overlap.y
                 : overlap.y;
 
-        pmsGetVelocity(dynamicComponent).y *= -PMS.properties.elasticity;
+        pmsVelocity(dynamicComponent).y *= -PMS.properties.elasticity;
     }
     else
     {
-        pmsGetPositionReference(dynamicComponent).z +=
-            pmsGetPositionReference(dynamicComponent).z < pmsGetPositionReference(staticComponent).z
+        pmsPositionReference(dynamicComponent).z +=
+            pmsPositionReference(dynamicComponent).z < pmsPositionReference(staticComponent).z
                 ? -overlap.z
                 : overlap.z;
 
-        pmsGetVelocity(dynamicComponent).z *= -PMS.properties.elasticity;
+        pmsVelocity(dynamicComponent).z *= -PMS.properties.elasticity;
     }
 }
 
@@ -95,84 +92,84 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, Physi
 /// @param overlap Overlap vector indicating the penetration depth.
 void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent, PhysicsComponent secondComponent, Vector3 overlap)
 {
-    float totalInvMass = 1.0f / pmsGetMass(firstComponent) + 1.0f / pmsGetMass(secondComponent);
+    float totalInvMass = 1.0f / pmsMass(firstComponent) + 1.0f / pmsMass(secondComponent);
     float move1 = 0.0f;
     float move2 = 0.0f;
 
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
-        move1 = (1.0f / pmsGetMass(firstComponent)) / totalInvMass * overlap.x;
-        move2 = (1.0f / pmsGetMass(secondComponent)) / totalInvMass * overlap.x;
+        move1 = (1.0f / pmsMass(firstComponent)) / totalInvMass * overlap.x;
+        move2 = (1.0f / pmsMass(secondComponent)) / totalInvMass * overlap.x;
 
-        if (pmsGetPositionReference(firstComponent).x < pmsGetPositionReference(secondComponent).x)
+        if (pmsPositionReference(firstComponent).x < pmsPositionReference(secondComponent).x)
         {
-            pmsGetPositionReference(firstComponent).x -= move1;
-            pmsGetPositionReference(secondComponent).x += move2;
+            pmsPositionReference(firstComponent).x -= move1;
+            pmsPositionReference(secondComponent).x += move2;
         }
         else
         {
-            pmsGetPositionReference(firstComponent).x += move1;
-            pmsGetPositionReference(secondComponent).x -= move2;
+            pmsPositionReference(firstComponent).x += move1;
+            pmsPositionReference(secondComponent).x -= move2;
         }
     }
     else if (overlap.y < overlap.z)
     {
-        move1 = (1.0f / pmsGetMass(firstComponent)) / totalInvMass * overlap.y;
-        move2 = (1.0f / pmsGetMass(secondComponent)) / totalInvMass * overlap.y;
+        move1 = (1.0f / pmsMass(firstComponent)) / totalInvMass * overlap.y;
+        move2 = (1.0f / pmsMass(secondComponent)) / totalInvMass * overlap.y;
 
-        if (pmsGetPositionReference(firstComponent).y < pmsGetPositionReference(secondComponent).y)
+        if (pmsPositionReference(firstComponent).y < pmsPositionReference(secondComponent).y)
         {
-            pmsGetPositionReference(firstComponent).y -= move1;
-            pmsGetPositionReference(secondComponent).y += move2;
+            pmsPositionReference(firstComponent).y -= move1;
+            pmsPositionReference(secondComponent).y += move2;
         }
         else
         {
-            pmsGetPositionReference(firstComponent).y += move1;
-            pmsGetPositionReference(secondComponent).y -= move2;
+            pmsPositionReference(firstComponent).y += move1;
+            pmsPositionReference(secondComponent).y -= move2;
         }
     }
     else
     {
-        move1 = (1.0f / pmsGetMass(firstComponent)) / totalInvMass * overlap.z;
-        move2 = (1.0f / pmsGetMass(secondComponent)) / totalInvMass * overlap.z;
+        move1 = (1.0f / pmsMass(firstComponent)) / totalInvMass * overlap.z;
+        move2 = (1.0f / pmsMass(secondComponent)) / totalInvMass * overlap.z;
 
-        if (pmsGetPositionReference(firstComponent).z < pmsGetPositionReference(secondComponent).z)
+        if (pmsPositionReference(firstComponent).z < pmsPositionReference(secondComponent).z)
         {
-            pmsGetPositionReference(firstComponent).z -= move1;
-            pmsGetPositionReference(secondComponent).z += move2;
+            pmsPositionReference(firstComponent).z -= move1;
+            pmsPositionReference(secondComponent).z += move2;
         }
         else
         {
-            pmsGetPositionReference(firstComponent).z += move1;
-            pmsGetPositionReference(secondComponent).z -= move2;
+            pmsPositionReference(firstComponent).z += move1;
+            pmsPositionReference(secondComponent).z -= move2;
         }
     }
 
     // v1' = ( (m1 - e*m2)*v1 + (1+e)*m2*v2 ) / (m1+m2)
     // v2' = ( (m2 - e*m1)*v2 + (1+e)*m1*v1 ) / (m1+m2)
 
-    Vector3 tempVelocity1 = pmsGetVelocity(firstComponent);
-    float oneOverMassSum = 1.0f / (pmsGetMass(firstComponent) + pmsGetMass(secondComponent));
+    Vector3 tempVelocity1 = pmsVelocity(firstComponent);
+    float oneOverMassSum = 1.0f / (pmsMass(firstComponent) + pmsMass(secondComponent));
     float onePlusElasticity = 1.0f + PMS.properties.elasticity;
 
-    pmsGetVelocity(firstComponent) =
+    pmsVelocity(firstComponent) =
         Vector3_Scale(
             Vector3_Add(
-                Vector3_Scale(pmsGetVelocity(firstComponent),
-                              pmsGetMass(firstComponent) - PMS.properties.elasticity * pmsGetMass(secondComponent)),
+                Vector3_Scale(pmsVelocity(firstComponent),
+                              pmsMass(firstComponent) - PMS.properties.elasticity * pmsMass(secondComponent)),
                 Vector3_Scale(
-                    pmsGetVelocity(secondComponent),
-                    onePlusElasticity * pmsGetMass(secondComponent))),
+                    pmsVelocity(secondComponent),
+                    onePlusElasticity * pmsMass(secondComponent))),
             oneOverMassSum);
 
-    pmsGetVelocity(secondComponent) =
+    pmsVelocity(secondComponent) =
         Vector3_Scale(
             Vector3_Add(
-                Vector3_Scale(pmsGetVelocity(secondComponent),
-                              pmsGetMass(secondComponent) - PMS.properties.elasticity * pmsGetMass(firstComponent)),
+                Vector3_Scale(pmsVelocity(secondComponent),
+                              pmsMass(secondComponent) - PMS.properties.elasticity * pmsMass(firstComponent)),
                 Vector3_Scale(
                     tempVelocity1,
-                    onePlusElasticity * pmsGetMass(firstComponent))),
+                    onePlusElasticity * pmsMass(firstComponent))),
             oneOverMassSum);
 }
 
@@ -216,63 +213,68 @@ void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionRefere
     PMS.properties.gravity = gravity;
     PMS.properties.elasticity = elasticity;
 
-    PMS.components.entities = (RJGlobal_Index *)malloc(sizeof(RJGlobal_Index) * PMS.data.capacity);
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Index, PMS.data.entities, PMS.data.capacity);
 
-    PMS.components.velocities = (Vector3 *)malloc(sizeof(Vector3) * PMS.data.capacity);
-    PMS.components.colliderSizes = (Vector3 *)malloc(sizeof(Vector3) * PMS.data.capacity);
-    PMS.components.masses = (float *)malloc(sizeof(float) * PMS.data.capacity);
-    PMS.components.flags = (uint8_t *)malloc(sizeof(uint8_t) * PMS.data.capacity);
+    RJGlobal_DebugAssertAllocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
 
-    PMS.components.positionReferences = positionReferences;
+    RJGlobal_DebugAssertAllocationCheck(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
+    RJGlobal_DebugAssertAllocationCheck(float, PMS.data.masses, PMS.data.capacity);
+    RJGlobal_DebugAssertAllocationCheck(uint8_t, PMS.data.flags, PMS.data.capacity);
 
-    RJGlobal_MemorySet(PMS.components.entities, sizeof(RJGlobal_Index) * PMS.data.capacity, 0);
-    RJGlobal_MemorySet(PMS.components.velocities, sizeof(Vector3) * PMS.data.capacity, 0);
-    RJGlobal_MemorySet(PMS.components.colliderSizes, sizeof(Vector3) * PMS.data.capacity, 0);
-    RJGlobal_MemorySet(PMS.components.masses, sizeof(float) * PMS.data.capacity, 0);
-    RJGlobal_MemorySet(PMS.components.flags, sizeof(uint8_t) * PMS.data.capacity, 0);
+    PMS.data.positionReferences = positionReferences;
 
     RJGlobal_DebugInfo("Physics initialized with capacity %u.", PMS.data.capacity);
 }
 
 void Physics_Terminate()
 {
-    free(PMS.components.entities);
-    free(PMS.components.velocities);
-    free(PMS.components.colliderSizes);
-    free(PMS.components.masses);
-    free(PMS.components.flags);
-
+    PMS.data.capacity = 0;
+    PMS.data.count = 0;
     ListArray_Destroy(&PMS.data.freeIndices);
 
-    PMS = (struct PHYSICS_MAIN_SCENE){0};
+    PMS.properties.drag = 0.0f;
+    PMS.properties.gravity = 0.0f;
+    PMS.properties.elasticity = 0.0f;
+
+    free(PMS.data.entities);
+    free(PMS.data.velocities);
+    free(PMS.data.colliderSizes);
+    free(PMS.data.masses);
+    free(PMS.data.flags);
+
+    PMS.data.entities = NULL;
+    PMS.data.velocities = NULL;
+    PMS.data.colliderSizes = NULL;
+    PMS.data.masses = NULL;
+    PMS.data.flags = NULL;
 
     RJGlobal_DebugInfo("Physics terminated successfully.");
 }
 
-void Physics_ConfigurePositionReferences(Vector3 *positionReferences, RJGlobal_Size limiting)
+void Physics_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newCapacity)
 {
     RJGlobal_DebugAssertNullPointerCheck(positionReferences);
-    RJGlobal_DebugAssert(limiting > PMS.data.count, "Limiting must be greater than current physics component count.");
+    RJGlobal_DebugAssert(newCapacity > PMS.data.count, "Limiting must be greater than current physics component count.");
 
-    PMS.components.positionReferences = positionReferences;
-    PMS.data.capacity = limiting;
+    PMS.data.positionReferences = positionReferences;
+    PMS.data.capacity = newCapacity;
 
-    PMS.components.entities = (RJGlobal_Index *)realloc(PMS.components.entities, sizeof(RJGlobal_Index) * PMS.data.capacity);
-    PMS.components.velocities = (Vector3 *)realloc(PMS.components.velocities, sizeof(Vector3) * PMS.data.capacity);
-    PMS.components.colliderSizes = (Vector3 *)realloc(PMS.components.colliderSizes, sizeof(Vector3) * PMS.data.capacity);
-    PMS.components.masses = (float *)realloc(PMS.components.masses, sizeof(float) * PMS.data.capacity);
-    PMS.components.flags = (uint8_t *)realloc(PMS.components.flags, sizeof(uint8_t) * PMS.data.capacity);
+    PMS.data.entities = (RJGlobal_Index *)realloc(PMS.data.entities, sizeof(RJGlobal_Index) * PMS.data.capacity);
+    PMS.data.velocities = (Vector3 *)realloc(PMS.data.velocities, sizeof(Vector3) * PMS.data.capacity);
+    PMS.data.colliderSizes = (Vector3 *)realloc(PMS.data.colliderSizes, sizeof(Vector3) * PMS.data.capacity);
+    PMS.data.masses = (float *)realloc(PMS.data.masses, sizeof(float) * PMS.data.capacity);
+    PMS.data.flags = (uint8_t *)realloc(PMS.data.flags, sizeof(uint8_t) * PMS.data.capacity);
 
-    RJGlobal_DebugInfo("Physics position references reconfigured with new limiting %u.", PMS.data.capacity);
+    RJGlobal_DebugInfo("Physics position references reconfigured with new capacity %u.", PMS.data.capacity);
 }
 
 bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component2, Vector3 *overlapRet)
 {
-    Vector3 position1 = pmsGetPositionReference(component1);
-    Vector3 position2 = pmsGetPositionReference(component2);
+    Vector3 position1 = pmsPositionReference(component1);
+    Vector3 position2 = pmsPositionReference(component2);
 
-    Vector3 colliderSize1 = pmsGetColliderSize(component1);
-    Vector3 colliderSize2 = pmsGetColliderSize(component2);
+    Vector3 colliderSize1 = pmsColliderSize(component1);
+    Vector3 colliderSize2 = pmsColliderSize(component2);
 
     float overlapX = Maths_Min(position1.x + colliderSize1.x / 2.0f,
                                position2.x + colliderSize2.x / 2.0f) -
@@ -311,9 +313,9 @@ void Physics_UpdateComponents(float deltaTime)
             continue;
         }
 
-        pmsGetVelocity(component) = Vector3_Add(pmsGetVelocity(component), Vector3_New(0.0f, PMS.properties.gravity * deltaTime, 0.0f));
-        pmsGetVelocity(component) = Vector3_Scale(pmsGetVelocity(component), 1.0f - PMS.properties.drag);
-        pmsGetPositionReference(component) = Vector3_Add(pmsGetPositionReference(component), Vector3_Scale(pmsGetVelocity(component), deltaTime));
+        pmsVelocity(component) = Vector3_Add(pmsVelocity(component), Vector3_New(0.0f, PMS.properties.gravity * deltaTime, 0.0f));
+        pmsVelocity(component) = Vector3_Scale(pmsVelocity(component), 1.0f - PMS.properties.drag);
+        pmsPositionReference(component) = Vector3_Add(pmsPositionReference(component), Vector3_Scale(pmsVelocity(component), deltaTime));
     }
 }
 
@@ -343,13 +345,14 @@ void Physics_ResolveCollisions()
 
 PhysicsComponent Physics_ComponentCreate(RJGlobal_Index entity, Vector3 colliderSize, float mass, bool isStatic)
 {
-    PhysicsComponent newComponent = RJGLOBAL_INDEX_INVALID;
+    RJGlobal_DebugAssert(PMS.data.count + PMS.data.freeIndices.count < PMS.data.capacity, "Maximum physics component capacity of %u reached.", PMS.data.capacity);
 
-    newComponent = PMS.data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&PMS.data.freeIndices)) : PMS.data.count;
+    PhysicsComponent newComponent = PMS.data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&PMS.data.freeIndices)) : PMS.data.count;
 
-    pmsGetEntity(newComponent) = entity;
-    pmsGetColliderSize(newComponent) = colliderSize;
-    pmsGetMass(newComponent) = mass;
+    pmsEntity(newComponent) = entity;
+    pmsColliderSize(newComponent) = colliderSize;
+    pmsMass(newComponent) = mass;
+    pmsSetActive(newComponent, true);
     pmsSetStatic(newComponent, isStatic);
 
     PMS.data.count++;
@@ -361,12 +364,12 @@ void Physics_ComponentDestroy(PhysicsComponent component)
 {
     pmsAssertComponent(component);
 
-    pmsGetEntity(component) = RJGLOBAL_INDEX_INVALID;
+    pmsEntity(component) = RJGLOBAL_INDEX_INVALID;
 
-    pmsGetVelocity(component) = Vector3_Zero;
-    pmsGetColliderSize(component) = Vector3_Zero;
-    pmsGetMass(component) = 0.0f;
-    pmsGetFlag(component) = false;
+    pmsVelocity(component) = Vector3_Zero;
+    pmsColliderSize(component) = Vector3_Zero;
+    pmsMass(component) = 0.0f;
+    pmsFlag(component) = false;
 
     ListArray_Add(&PMS.data.freeIndices, &component);
 
@@ -376,37 +379,49 @@ void Physics_ComponentDestroy(PhysicsComponent component)
 Vector3 Physics_ComponentGetVelocity(PhysicsComponent component)
 {
     pmsAssertComponent(component);
-    return pmsGetVelocity(component);
+    return pmsVelocity(component);
 }
 
 void Physics_ComponentSetVelocity(PhysicsComponent component, Vector3 newVelocity)
 {
     pmsAssertComponent(component);
-    pmsGetVelocity(component) = newVelocity;
+    pmsVelocity(component) = newVelocity;
 }
 
 Vector3 Physics_ComponentGetColliderSize(PhysicsComponent component)
 {
     pmsAssertComponent(component);
-    return pmsGetColliderSize(component);
+    return pmsColliderSize(component);
 }
 
 void Physics_ComponentSetColliderSize(PhysicsComponent component, Vector3 newColliderSize)
 {
     pmsAssertComponent(component);
-    pmsGetColliderSize(component) = newColliderSize;
+    pmsColliderSize(component) = newColliderSize;
 }
 
 float Physics_ComponentGetMass(PhysicsComponent component)
 {
     pmsAssertComponent(component);
-    return pmsGetMass(component);
+    return pmsMass(component);
 }
 
 void Physics_ComponentSetMass(PhysicsComponent component, float newMass)
 {
     pmsAssertComponent(component);
-    pmsGetMass(component) = newMass;
+    pmsMass(component) = newMass;
+}
+
+bool Physics_ComponentIsActive(PhysicsComponent component)
+{
+    pmsAssertComponent(component);
+    return pmsIsActive(component);
+}
+
+void Physics_ComponentSetActive(PhysicsComponent component, bool newIsActive)
+{
+    pmsAssertComponent(component);
+    pmsSetActive(component, newIsActive);
 }
 
 bool Physics_ComponentIsStatic(PhysicsComponent component)

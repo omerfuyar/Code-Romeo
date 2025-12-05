@@ -11,11 +11,10 @@
 /// @return The created ListLinkedNode struct.
 ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data)
 {
-    ListLinkedNode *node = (ListLinkedNode *)malloc(sizeof(ListLinkedNode));
-    RJGlobal_DebugAssertNullPointerCheck(node);
+    ListLinkedNode *node = NULL;
+    RJGlobal_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
 
-    node->data = (void *)malloc(sizeOfData);
-    RJGlobal_DebugAssertNullPointerCheck(node->data);
+    RJGlobal_DebugAssertAllocationCheck(char, node->data, sizeOfData);
 
     memcpy(node->data, data, sizeOfData);
 
@@ -113,8 +112,7 @@ ListLinked ListLinked_Create(const char *nameOfType, RJGlobal_Size sizeOfItem)
 
     RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
 
-    list.nameOfType = (char *)malloc(nameOfTypeLength + 1);
-    RJGlobal_DebugAssertNullPointerCheck(list.nameOfType);
+    RJGlobal_DebugAssertAllocationCheck(char, list.nameOfType, nameOfTypeLength + 1);
     RJGlobal_MemoryCopy(list.nameOfType, nameOfTypeLength + 1, nameOfType);
     list.nameOfType[nameOfTypeLength] = '\0';
 

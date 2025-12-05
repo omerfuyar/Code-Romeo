@@ -13,16 +13,12 @@ ListArray ListArray_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJG
 
     RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
 
-    list.nameOfType = (char *)malloc(nameOfTypeLength + 1);
-    RJGlobal_DebugAssertNullPointerCheck(list.nameOfType);
+    RJGlobal_DebugAssertAllocationCheck(char, list.nameOfType, nameOfTypeLength + 1);
     RJGlobal_MemoryCopy(list.nameOfType, nameOfTypeLength + 1, nameOfType);
     list.nameOfType[nameOfTypeLength] = '\0';
 
     list.count = 0;
-    list.data = (void *)malloc(initialCapacity * sizeOfItem);
-    RJGlobal_DebugAssertNullPointerCheck(list.data);
-
-    RJGlobal_MemorySet(list.data, list.sizeOfItem * list.capacity, 0);
+    RJGlobal_DebugAssertAllocationCheck(char, list.data, initialCapacity *sizeOfItem);
 
     RJGlobal_DebugInfo("ListArray '%s' created with initial capacity: %u, size of item: %u", nameOfType, initialCapacity, sizeOfItem);
     return list;

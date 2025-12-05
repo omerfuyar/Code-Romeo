@@ -10,8 +10,7 @@ String String_CreateCopySafe(const char *string, RJGlobal_Size length)
     String createdString = {0};
 
     createdString.length = length;
-    createdString.characters = (char *)malloc((createdString.length + 1));
-    RJGlobal_DebugAssertNullPointerCheck(createdString.characters);
+    RJGlobal_DebugAssertAllocationCheck(char, createdString.characters, createdString.length + 1);
 
     RJGlobal_MemoryCopy(createdString.characters, createdString.length, string);
     createdString.characters[createdString.length] = '\0';

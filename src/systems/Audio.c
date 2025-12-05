@@ -53,7 +53,9 @@ void Audio_Terminate()
 
 AudioScene *AudioScene_Create(StringView name, RJGlobal_Size initialComponentCapacity)
 {
-    AudioScene *scene = (AudioScene *)malloc(sizeof(AudioScene));
+    AudioScene *scene = NULL;
+    RJGlobal_DebugAssertAllocationCheck(AudioScene, scene, 1);
+
     scene->name = scc(name);
     scene->listener = NULL;
     scene->components = ListArray_Create("AudioComponent", sizeof(AudioComponent), initialComponentCapacity);
@@ -93,7 +95,8 @@ AudioComponent *AudioScene_CreateComponent(AudioScene *scene, StringView file, V
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
 
-    component.data = malloc(sizeof(ma_sound));
+    RJGlobal_DebugAssertAllocationCheck(ma_sound, component.data, 1);
+
     ma_result result = ma_sound_init_from_file(
         &AUDIO_MAIN_ENGINE,
         fullPath.characters,
@@ -101,6 +104,7 @@ AudioComponent *AudioScene_CreateComponent(AudioScene *scene, StringView file, V
         NULL,
         NULL,
         (ma_sound *)component.data);
+
     RJGlobal_DebugAssert(result == MA_SUCCESS, "Failed to create AudioComponent for '%s' : %d", fullPath.characters, result);
 
     String_Destroy(&fullPath);
@@ -112,7 +116,9 @@ AudioListenerComponent *AudioScene_CreateListenerComponent(AudioScene *scene, Ve
 {
     RJGlobal_DebugAssertNullPointerCheck(scene);
 
-    AudioListenerComponent *listener = (AudioListenerComponent *)malloc(sizeof(AudioListenerComponent));
+    AudioListenerComponent *listener = NULL;
+    RJGlobal_DebugAssertAllocationCheck(AudioListenerComponent, listener, 1);
+
     listener->positionReference = positionReference;
     listener->rotationReference = rotationReference;
     listener->scene = scene;

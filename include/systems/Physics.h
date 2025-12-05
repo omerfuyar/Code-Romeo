@@ -31,8 +31,8 @@ void Physics_Terminate();
 
 /// @brief Changes the position references for all physics components in the scene.
 /// @param positionReferences A pointer to the start of the new position vector references.
-/// @param limiting The maximum number of position vectors available.
-void Physics_ConfigurePositionReferences(Vector3 *positionReferences, RJGlobal_Size limiting);
+/// @param newCapacity The maximum number of position vectors available.
+void Physics_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newCapacity);
 
 /// @brief Checks for collision between two AABB colliders.
 /// @param component1 The first component.
@@ -94,6 +94,16 @@ float Physics_ComponentGetMass(PhysicsComponent component);
 /// @param component The component to update.
 /// @param newMass The new mass to set.
 void Physics_ComponentSetMass(PhysicsComponent component, float newMass);
+
+/// @brief Checks if a physics component is active.
+/// @param component The component to query.
+/// @return True if the component is active, false otherwise.
+bool Physics_ComponentIsActive(PhysicsComponent component);
+
+/// @brief Sets whether a physics component is active.
+/// @param component The component to update.
+/// @param newIsActive The new active state to set.
+void Physics_ComponentSetActive(PhysicsComponent component, bool newIsActive);
 
 /// @brief Checks if a physics component is static.
 /// @param component The component to query.

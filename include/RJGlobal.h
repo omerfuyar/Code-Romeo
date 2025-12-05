@@ -146,6 +146,10 @@
 #define RJGlobal_MemoryMove(destination, size, source) memmove(destination, source, size)
 /// @brief Macro wrapper for string length operation.
 #define RJGlobal_StringLength(string) (RJGlobal_Size) strlen(string)
+/// @brief Macro wrapper for memory allocation operation. Pass char if the pointer type os void.
+#define RJGlobal_Allocate(type, pointer, count) ((pointer = (type *)calloc((count), sizeof(type))) != NULL)
+/// @brief Macro wrapper for memory reallocation operation. Pass char if the pointer type os void.
+#define RJGlobal_Reallocate(type, pointer, newCount) ((pointer = (type *)realloc(pointer, sizeof(type) * (newCount))) != NULL)
 
 #pragma region Typedefs
 
@@ -156,7 +160,7 @@ typedef void (*RJGlobal_VoidFunIntCharPtrPtr)(int, char **);
 typedef void (*RJGlobal_VoidFunFloat)(float);
 
 /// @brief Function pointer type used in terminate callback function.
-typedef void (*RJGlobal_VoidFunIntCharptr)(int, char *);
+typedef void (*RJGlobal_VoidFunIntCharPtr)(int, char *);
 
 /// @brief Index type to use for entire project
 typedef uint32_t RJGlobal_Index;
@@ -204,7 +208,7 @@ void RJGlobal_SetLoopCallback(RJGlobal_VoidFunFloat loopCallback);
 
 /// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
 /// @param terminateCallback Function to call when terminate is called. Should not exit the program. Receives exit code and exit message as parameters.
-void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback);
+void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback);
 
 #pragma endregion Functions and Macros
 
@@ -303,6 +307,8 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
 #define RJGlobal_DebugAssert(condition, format, ...) (void)(condition)
 #define RJGlobal_DebugAssertNullPointerCheck(ptr)
 #define RJGlobal_DebugAssertFileOpenCheck(filePtr, fileName, mode) RJGlobal_FileOpen(filePtr, fileName, mode)
+#define RJGlobal_DebugAssertAllocationCheck(type, ptr, count) RJGlobal_Allocate(type, ptr, count)
+#define RJGlobal_DebugAssertReallocationCheck(type, ptr, count) RJGlobal_Reallocate(type, ptr, count)
 
 #else
 
@@ -323,6 +329,12 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
 /// @brief Asserts that the file was opened successfully. Logs and terminates on failure if configured.
 #define RJGlobal_DebugAssertFileOpenCheck(filePtr, fileName, mode) \
     RJGlobal_DebugAssert(RJGlobal_FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
+
+#define RJGlobal_DebugAssertAllocationCheck(type, ptr, count) \
+    RJGlobal_DebugAssert(RJGlobal_Allocate(type, ptr, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
+
+#define RJGlobal_DebugAssertReallocationCheck(type, ptr, count) \
+    RJGlobal_DebugAssert(RJGlobal_Reallocate(type, ptr, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 
 #endif
 

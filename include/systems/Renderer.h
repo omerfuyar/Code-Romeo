@@ -59,6 +59,7 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
 
 void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference);
 
+void Renderer_Resize(RJGlobal_Size newBatchCapacity);
 // void Renderer_Update(){}
 
 void Renderer_Render();
@@ -67,7 +68,9 @@ RendererBatch Renderer_BatchCreate(StringView mdlFile, RJGlobal_Size initialCapa
 
 void Renderer_BatchDestroy(RendererBatch batch);
 
-RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch, Vector3 *positionReference, Vector3 *rotationReference, Vector3 *scaleReference);
+void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJGlobal_Size newComponentCapacity);
+
+RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch);
 
 void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component);
 
