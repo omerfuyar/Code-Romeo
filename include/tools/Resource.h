@@ -4,9 +4,13 @@
 
 #include "utilities/String.h"
 #include "utilities/Vector.h"
+#include "utilities/ListArray.h"
+#include "utilities/ListLinked.h"
 
 /// @brief Maximum character count for a single line in a resource file.
 #define RESOURCE_FILE_LINE_MAX_CHAR_COUNT 256
+/// @brief Maximum token count for a single line in a resource file.
+#define RESOURCE_FILE_LINE_MAX_TOKEN_COUNT 32
 /// @brief Path to the resources folder relative to the executable.
 #define RESOURCE_PATH "resources" RJGLOBAL_PATH_DELIMETER_STR
 
@@ -24,10 +28,60 @@ typedef struct ResourceText
 typedef struct ResourceImage
 {
     String file;
+
     void *data;
     Vector2Int size;
     int channels;
 } ResourceImage;
+
+typedef RJGlobal_Size ResourceTextureHandle;
+
+typedef struct ResourceTexture
+{
+    RJGlobal_Size index;
+    ResourceTextureHandle handle;
+    ResourceImage *data;
+} ResourceTexture;
+
+typedef struct ResourceMaterial
+{
+    String file;
+
+    Vector3 ambientColor;
+    Vector3 diffuseColor;
+    Vector3 specularColor;
+    Vector3 emissiveColor;
+    ResourceTexture *diffuseMap;
+    float specularExponent;
+    float refractionIndex;
+    float dissolve;
+    int illuminationModel;
+} ResourceMaterial;
+
+typedef RJGlobal_Size ResourceMeshIndex;
+
+typedef struct ResourceMeshVertex
+{
+    Vector3 position;
+    Vector3 normal;
+    Vector2 texUV;
+} ResourceMeshVertex;
+
+typedef struct ResourceMesh
+{
+    ResourceMaterial *material;
+    ListArray indices; // ResourceMeshIndex
+} ResourceMesh;
+
+typedef struct ResourceModel
+{
+    String file;
+
+    ListArray vertices;  // ResourceMeshVertex
+    ListArray meshes;    // ResourceMesh
+    ListArray materials; // ResourceMaterial
+    ListArray textures;  // ResourceTexture
+} ResourceModel;
 
 #pragma endregion Typedefs
 
@@ -56,3 +110,11 @@ ResourceImage *ResourceImage_Create(StringView file);
 void ResourceImage_Destroy(ResourceImage *resourceImage);
 
 #pragma endregion ResourceImage
+
+#pragma region ResourceModel
+
+ResourceModel *ResourceModel_Create(StringView fileName);
+
+void ResourceModel_Destroy(ResourceModel *model);
+
+#pragma endregion ResourceModel
