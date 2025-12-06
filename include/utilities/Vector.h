@@ -115,6 +115,11 @@ typedef struct Vector4Int
 #define Color_Gray Color_New(0.5f, 0.5f, 0.5f, 1.0f)
 #define Color_Clear Color_New(0.0f, 0.0f, 0.0f, 0.0f)
 
+#define Vector2_Compare(v1, v2) ((v1.x == v2.x) && (v1.y == v2.y))
+#define Vector3_Compare(v1, v2) ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z))
+#define Vector4_Compare(v1, v2) ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z) && (v1.w == v2.w))
+#define Color_Compare(c1, c2) Vector4_Compare(c1, c2)
+
 #pragma region Vector2
 
 /// @brief Adds two 2D vectors.

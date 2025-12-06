@@ -21,9 +21,9 @@ struct PHYSICS_MAIN_SCENE
     {
         RJGlobal_Size capacity;
         RJGlobal_Size count;
-        ListArray freeIndices; // RJGlobal_Index
+        ListArray freeIndices; // RJGlobal_Size
 
-        RJGlobal_Index *entities;
+        RJGlobal_Size *entities;
 
         Vector3 *velocities;
         Vector3 *colliderSizes;
@@ -207,13 +207,13 @@ void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionRefere
 
     PMS.data.capacity = componentCapacity;
     PMS.data.count = 0;
-    PMS.data.freeIndices = ListArray_Create("RJGlobal_Index", sizeof(RJGlobal_Index), PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    PMS.data.freeIndices = ListArray_Create("RJGlobal_Size", sizeof(RJGlobal_Size), PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     PMS.properties.drag = drag;
     PMS.properties.gravity = gravity;
     PMS.properties.elasticity = elasticity;
 
-    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Index, PMS.data.entities, PMS.data.capacity);
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, PMS.data.entities, PMS.data.capacity);
 
     RJGlobal_DebugAssertAllocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
 
@@ -259,7 +259,7 @@ void Physics_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newC
     PMS.data.positionReferences = positionReferences;
     PMS.data.capacity = newCapacity;
 
-    PMS.data.entities = (RJGlobal_Index *)realloc(PMS.data.entities, sizeof(RJGlobal_Index) * PMS.data.capacity);
+    PMS.data.entities = (RJGlobal_Size *)realloc(PMS.data.entities, sizeof(RJGlobal_Size) * PMS.data.capacity);
     PMS.data.velocities = (Vector3 *)realloc(PMS.data.velocities, sizeof(Vector3) * PMS.data.capacity);
     PMS.data.colliderSizes = (Vector3 *)realloc(PMS.data.colliderSizes, sizeof(Vector3) * PMS.data.capacity);
     PMS.data.masses = (float *)realloc(PMS.data.masses, sizeof(float) * PMS.data.capacity);
@@ -343,11 +343,11 @@ void Physics_ResolveCollisions()
     }
 }
 
-PhysicsComponent Physics_ComponentCreate(RJGlobal_Index entity, Vector3 colliderSize, float mass, bool isStatic)
+PhysicsComponent Physics_ComponentCreate(RJGlobal_Size entity, Vector3 colliderSize, float mass, bool isStatic)
 {
     RJGlobal_DebugAssert(PMS.data.count + PMS.data.freeIndices.count < PMS.data.capacity, "Maximum physics component capacity of %u reached.", PMS.data.capacity);
 
-    PhysicsComponent newComponent = PMS.data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&PMS.data.freeIndices)) : PMS.data.count;
+    PhysicsComponent newComponent = PMS.data.freeIndices.count != 0 ? *((RJGlobal_Size *)ListArray_Pop(&PMS.data.freeIndices)) : PMS.data.count;
 
     pmsEntity(newComponent) = entity;
     pmsColliderSize(newComponent) = colliderSize;

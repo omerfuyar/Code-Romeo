@@ -134,10 +134,10 @@
 /// @brief Size of the temporary buffer used in various operations.
 #define RJGLOBAL_TEMP_BUFFER_SIZE (RJGlobal_Size)128
 
-#define RJGLOBAL_INDEX_INVALID ((RJGlobal_Index)UINT32_MAX)
+#define RJGLOBAL_INDEX_INVALID ((RJGlobal_Size)UINT32_MAX)
 
 /// @brief Macro wrapper for file opening to use it in if statements.
-#define RJGlobal_FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
+#define RJGlobal_FileOpen(filePointer, fileName, mode) ((filePointer = fopen(fileName, mode)) != NULL)
 /// @brief Macro wrapper for memory copy operation.
 #define RJGlobal_MemoryCopy(destination, size, source) memcpy(destination, source, size)
 /// @brief Macro wrapper for memory set operation.
@@ -163,9 +163,6 @@ typedef void (*RJGlobal_VoidFunFloat)(float);
 
 /// @brief Function pointer type used in terminate callback function.
 typedef void (*RJGlobal_VoidFunIntCharPtr)(int, char *);
-
-/// @brief Index type to use for entire project
-typedef uint32_t RJGlobal_Index;
 
 /// @brief Size type to use for entire project
 typedef uint32_t RJGlobal_Size;
@@ -325,18 +322,18 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback)
     } while (false)
 
 /// @brief Asserts that the given pointer is not NULL. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertNullPointerCheck(ptr) \
-    RJGlobal_DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+#define RJGlobal_DebugAssertNullPointerCheck(pointer) \
+    RJGlobal_DebugAssert(pointer != NULL, "Pointer '%s' cannot be NULL.", #pointer)
 
 /// @brief Asserts that the file was opened successfully. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertFileOpenCheck(filePtr, fileName, mode) \
-    RJGlobal_DebugAssert(RJGlobal_FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
+#define RJGlobal_DebugAssertFileOpenCheck(filePointer, fileName, mode) \
+    RJGlobal_DebugAssert(RJGlobal_FileOpen(filePointer, fileName, mode), "File open failed for %s", fileName)
 
-#define RJGlobal_DebugAssertAllocationCheck(type, ptr, count) \
-    RJGlobal_DebugAssert(RJGlobal_Allocate(type, ptr, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
+#define RJGlobal_DebugAssertAllocationCheck(type, pointer, count) \
+    RJGlobal_DebugAssert(RJGlobal_Allocate(type, pointer, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 
-#define RJGlobal_DebugAssertReallocationCheck(type, ptr, count) \
-    RJGlobal_DebugAssert(RJGlobal_Reallocate(type, ptr, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
+#define RJGlobal_DebugAssertReallocationCheck(type, pointer, count) \
+    RJGlobal_DebugAssert(RJGlobal_Reallocate(type, pointer, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 
 #endif
 

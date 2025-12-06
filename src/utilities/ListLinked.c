@@ -18,8 +18,9 @@ typedef struct ListLinkedNode
 /// @return The created ListLinkedNode struct.
 ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data)
 {
-    ListLinkedNode *node = (ListLinkedNode *)malloc(sizeof(ListLinkedNode *) + sizeOfData);
-    RJGlobal_DebugAssertNullPointerCheck(node);
+    ListLinkedNode *node = NULL;
+    RJGlobal_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
+    RJGlobal_DebugAssertAllocationCheck(char, node->data, sizeOfData);
 
     if (data != NULL)
     {
@@ -41,11 +42,10 @@ void ListLinkedNode_Destroy(ListLinkedNode *node)
 {
     RJGlobal_DebugAssertNullPointerCheck(node);
 
-    node->data = NULL;
     node->next = NULL;
 
+    free(node->data);
     free(node);
-    node = NULL;
 }
 
 /// @brief Destroyer function for ListLinkedNode. Destroys itself and the next node recursively.
@@ -67,6 +67,8 @@ void ListLinkedNode_DestroyAll(ListLinkedNode *node)
 /// @param nextNode Next node to connect.
 void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNode)
 {
+    RJGlobal_DebugAssertNullPointerCheck(node);
+
     node->next = nextNode;
 }
 
@@ -75,9 +77,12 @@ void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNode)
 /// @param nextNode Pointer to the next node to connect.
 void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode)
 {
+    RJGlobal_DebugAssertNullPointerCheck(node);
+    RJGlobal_DebugAssertNullPointerCheck(nextNode);
+
     if (node->next == NULL)
     {
-        ListLinkedNode_Connect(node->next, nextNode);
+        ListLinkedNode_Connect(node, nextNode);
     }
     else
     {
@@ -180,7 +185,6 @@ void ListLinked_Set(ListLinked *list, RJGlobal_Size index, const void *item)
 void *ListLinked_Add(ListLinked *list, const void *item)
 {
     RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(item);
 
     ListLinkedNode *newNode = ListLinkedNode_Create(list->sizeOfItem, item);
 
@@ -213,8 +217,9 @@ void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index)
     else
     {
         ListLinkedNode *previousNodeToRemove = ListLinked_Get(list, index - 1);
-        ListLinkedNode_Connect(previousNodeToRemove, previousNodeToRemove->next->next);
-        ListLinkedNode_Destroy(previousNodeToRemove->next);
+        ListLinkedNode *nodeToRemove = previousNodeToRemove->next;
+        ListLinkedNode_Connect(previousNodeToRemove, nodeToRemove->next);
+        ListLinkedNode_Destroy(nodeToRemove);
     }
 
     list->count--;

@@ -51,12 +51,6 @@ typedef struct RendererDebugVertex
     Color vertexColor;
 } RendererDebugVertex;
 
-/// @brief 4x4 matrix type for renderer.
-typedef struct Renderer_Matrix4
-{
-    alignas(16) float m[4][4];
-} Renderer_Matrix4;
-
 /// @brief Handle for a shader program object.
 typedef uint32_t RendererShaderProgramHandle;
 /// @brief Handle for a texture object.
@@ -79,20 +73,20 @@ typedef uint32_t RendererUBOHandle;
 /// @brief A batch of render components that use the same model.
 typedef struct RENDERER_BATCH
 {
-    ResourceModel *model;
-
-    struct RENDERER_DATA
+    struct RENDERER_BATCH_DATA
     {
         RJGlobal_Size capacity;
         RJGlobal_Size count;
-        ListArray freeIndices; // RJGlobal_Index
+        ListArray freeIndices; // RJGlobal_Size
+
+        ResourceModel *model;
     } data;
 
     struct RENDERER_COMPONENTS
     {
-        RJGlobal_Index *entities;
+        RJGlobal_Size *entities;
 
-        Renderer_Matrix4 *objectMatrices;
+        Resource_Matrix4 *objectMatrices;
 
         Vector3 *positionReferences;
         Vector3 *rotationReferences;
@@ -108,13 +102,14 @@ struct RENDERER_MAIN_SCENE
 {
     ContextWindow *window;
 
-    struct RENDERER_DATA
+    struct RENDERER_SCENE_DATA
     {
         RJGlobal_Size capacity;
         RJGlobal_Size count;
-        ListArray freeIndices; // RJGlobal_Index
+        ListArray freeIndices; // RJGlobal_Size
 
         RENDERER_BATCH *batches; // RENDERER_BATCH
+        // todo maybe change with linked list for dynamic resizing?
     } data;
 
     struct RENDERER_CAMERA
@@ -122,8 +117,8 @@ struct RENDERER_MAIN_SCENE
         Vector3 *positionReference;
         Vector3 *rotationReference;
 
-        Renderer_Matrix4 projectionMatrix;
-        Renderer_Matrix4 viewMatrix;
+        Resource_Matrix4 projectionMatrix;
+        Resource_Matrix4 viewMatrix;
 
         float *sizeReference; // fov if perspective, orthographic size if orthographic
         float *nearClipPlaneReference;
@@ -237,26 +232,6 @@ void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GL
     }
 }
 
-/// @brief
-/// @param matrix
-/// @param position
-/// @param rotation
-/// @param scale
-void TRANSFORM_TO_MODEL_MATRIX(Renderer_Matrix4 *matrix, const Vector3 *position, const Vector3 *rotation, const Vector3 *scale)
-{
-    RJGlobal_DebugAssertNullPointerCheck(matrix);
-
-    glm_mat4_identity((vec4 *)matrix);
-
-    glm_translate((vec4 *)matrix, (float *)&(vec3){position->x, position->y, position->z});
-
-    glm_rotate((vec4 *)matrix, rotation->x, (float *)&(vec3){1, 0, 0});
-    glm_rotate((vec4 *)matrix, rotation->y, (float *)&(vec3){0, 1, 0});
-    glm_rotate((vec4 *)matrix, rotation->z, (float *)&(vec3){0, 0, 1});
-
-    glm_scale((vec4 *)matrix, (float *)&(vec3){scale->x, scale->y, scale->z});
-}
-
 #pragma endregion Source Only
 
 #pragma region Renderer
@@ -270,7 +245,7 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
 
     RMS.data.capacity = initialBatchCapacity;
     RMS.data.count = 0;
-    RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJGlobal_Index), initialBatchCapacity);
+    RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJGlobal_Size), initialBatchCapacity);
 
     RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
@@ -585,11 +560,22 @@ void Renderer_Update()
                 continue;
             }
 
-            TRANSFORM_TO_MODEL_MATRIX(
-                &rmsObjectMatrix(batch, component),
-                &rmsPositionReference(batch, component),
-                &rmsRotationReference(batch, component),
-                &rmsScaleReference(batch, component));
+            // todo send transform data to gpu instead of calculating here
+
+            Resource_Matrix4 *offsetMatrix = &rmsObjectMatrix(batch, component);
+            Vector3 *positionOffset = &rmsPositionReference(batch, component);
+            Vector3 *rotationOffset = &rmsRotationReference(batch, component);
+            Vector3 *scaleOffset = &rmsScaleReference(batch, component);
+
+            glm_mat4_identity((vec4 *)offsetMatrix->m);
+
+            glm_translate((vec4 *)offsetMatrix->m, (float *)&(vec3){positionOffset->x, positionOffset->y, positionOffset->z});
+
+            glm_rotate((vec4 *)offsetMatrix->m, rotationOffset->x, (float *)&(vec3){1, 0, 0});
+            glm_rotate((vec4 *)offsetMatrix->m, rotationOffset->y, (float *)&(vec3){0, 1, 0});
+            glm_rotate((vec4 *)offsetMatrix->m, rotationOffset->z, (float *)&(vec3){0, 0, 1});
+
+            glm_scale((vec4 *)offsetMatrix->m, (float *)&(vec3){scaleOffset->x, scaleOffset->y, scaleOffset->z});
         }
     }
 }
@@ -657,13 +643,13 @@ void Renderer_Render()
                      RENDERER_OPENGL_DRAW_TYPE);
 
         glBufferData(GL_ARRAY_BUFFER,
-                     (long long)(rmsBatch(batch).model->vertices.sizeOfItem * rmsBatch(batch).model->vertices.count),
-                     rmsBatch(batch).model->vertices.data,
+                     (long long)(rmsBatch(batch).data.model->vertices.sizeOfItem * rmsBatch(batch).data.model->vertices.count),
+                     rmsBatch(batch).data.model->vertices.data,
                      RENDERER_OPENGL_DRAW_TYPE);
 
-        for (RJGlobal_Size j = 0; j < rmsBatch(batch).model->meshes.count; j++)
+        for (RJGlobal_Size j = 0; j < rmsBatch(batch).data.model->meshes.count; j++)
         {
-            ResourceMesh *mesh = (ResourceMesh *)ListArray_Get(&rmsBatch(batch).model->meshes, j);
+            ResourceMesh *mesh = (ResourceMesh *)ListArray_Get(&rmsBatch(batch).data.model->meshes, j);
 
             if (mesh->material != previousMaterial)
             {
@@ -715,29 +701,29 @@ void Renderer_Render()
     // RJGlobal_DebugInfo("Scene '%s' rendered", scene.name.characters);
 }
 
-RendererBatch Renderer_BatchCreate(StringView mdlFile, RJGlobal_Size initialCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
+RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
 {
     RJGlobal_DebugAssert(RMS.data.count + RMS.data.freeIndices.count < RMS.data.capacity, "Maximum renderer batch capacity of %u reached.", RMS.data.capacity); // todo expand capacity
 
     RendererBatch newBatch = RJGLOBAL_INDEX_INVALID;
 
-    newBatch = RMS.data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&RMS.data.freeIndices)) : RMS.data.count;
+    newBatch = RMS.data.freeIndices.count != 0 ? *((RJGlobal_Size *)ListArray_Pop(&RMS.data.freeIndices)) : RMS.data.count;
 
-    rmsBatch(newBatch).model = NULL; // todo
+    rmsBatch(newBatch).data.model = ResourceModel_GetOrCreate(mdlFile, transformOffset);
 
-    rmsBatch(newBatch).data.capacity = initialCapacity;
+    rmsBatch(newBatch).data.capacity = initialComponentCapacity;
     rmsBatch(newBatch).data.count = 0;
-    rmsBatch(newBatch).data.freeIndices = ListArray_Create("RJGlobal_Index", sizeof(RJGlobal_Index), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    rmsBatch(newBatch).data.freeIndices = ListArray_Create("RJGlobal_Size", sizeof(RJGlobal_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
-    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Index, rmsBatch(newBatch).components.entities, initialCapacity);
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, rmsBatch(newBatch).components.entities, initialComponentCapacity);
 
-    RJGlobal_DebugAssertAllocationCheck(Renderer_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialCapacity);
+    RJGlobal_DebugAssertAllocationCheck(Resource_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity);
 
     rmsBatch(newBatch).components.positionReferences = positionReferences;
     rmsBatch(newBatch).components.rotationReferences = rotationReferences;
     rmsBatch(newBatch).components.scaleReferences = scaleReferences;
 
-    RJGlobal_DebugAssertAllocationCheck(uint8_t, rmsBatch(newBatch).components.flags, initialCapacity);
+    RJGlobal_DebugAssertAllocationCheck(uint8_t, rmsBatch(newBatch).components.flags, initialComponentCapacity);
 
     RMS.data.count++;
 
@@ -748,7 +734,7 @@ void Renderer_BatchDestroy(RendererBatch batch)
 {
     rmsAssertBatch(batch);
 
-    rmsBatch(batch).model = NULL;
+    rmsBatch(batch).data.model = NULL;
 
     rmsBatch(batch).data.capacity = 0;
     rmsBatch(batch).data.count = 0;
@@ -779,9 +765,9 @@ void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionRef
     rmsBatch(batch).components.rotationReferences = rotationReferences;
     rmsBatch(batch).components.scaleReferences = scaleReferences;
 
-    RJGlobal_DebugAssertReallocationCheck(RJGlobal_Index, rmsBatch(batch).components.entities, newComponentCapacity);
+    RJGlobal_DebugAssertReallocationCheck(RJGlobal_Size, rmsBatch(batch).components.entities, newComponentCapacity);
 
-    RJGlobal_DebugAssertReallocationCheck(Renderer_Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
+    RJGlobal_DebugAssertReallocationCheck(Resource_Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
 
     rmsBatch(batch).components.positionReferences = positionReferences;
     rmsBatch(batch).components.rotationReferences = rotationReferences;
@@ -790,13 +776,13 @@ void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionRef
     RJGlobal_DebugAssertReallocationCheck(uint8_t, rmsBatch(batch).components.flags, newComponentCapacity);
 }
 
-RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch)
+RendererComponent Renderer_ComponentCreate(RJGlobal_Size entity, RendererBatch batch)
 {
     rmsAssertBatch(batch);
     RJGlobal_DebugAssert(rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count < rmsBatch(batch).data.capacity, "Maximum renderer batch %u component capacity of %u reached.", batch, rmsBatch(batch).data.capacity); // todo expand capacity
     //    RJGlobal_DebugAssert(batch->objectMatrices.count <= RENDERER_BATCH_MAX_OBJECT_COUNT, "Maximum object capacity of batch is reached : %d", RENDERER_BATCH_MAX_OBJECT_COUNT);
 
-    RendererComponent newComponent = rmsBatch(batch).data.freeIndices.count != 0 ? *((RJGlobal_Index *)ListArray_Pop(&rmsBatch(batch).data.freeIndices)) : rmsBatch(batch).data.count;
+    RendererComponent newComponent = rmsBatch(batch).data.freeIndices.count != 0 ? *((RJGlobal_Size *)ListArray_Pop(&rmsBatch(batch).data.freeIndices)) : rmsBatch(batch).data.count;
 
     rmsEntity(batch, newComponent) = entity;
     rmsSetActive(batch, newComponent, true);
@@ -928,7 +914,7 @@ void RendererDebug_StartRendering()
     glUseProgram(RMS.debugShader.programHandle);
 }
 
-void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, const Renderer_Matrix4 *camViewMatrix)
+void RendererDebug_FinishRendering()
 {
     if (RMS.debugShader.vertices.count == 0)
     {
@@ -936,8 +922,8 @@ void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, 
     }
 
     glUseProgram(RMS.debugShader.programHandle);
-    glUniformMatrix4fv(RMS.debugShader.camProjectionMatrix, 1, GL_FALSE, (GLfloat *)camProjectionMatrix);
-    glUniformMatrix4fv(RMS.debugShader.camViewMatrix, 1, GL_FALSE, (GLfloat *)camViewMatrix);
+    glUniformMatrix4fv(RMS.debugShader.camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&RMS.camera.projectionMatrix);
+    glUniformMatrix4fv(RMS.debugShader.camViewMatrix, 1, GL_FALSE, (GLfloat *)&RMS.camera.viewMatrix);
 
     glBindVertexArray(RMS.debugShader.vao);
     glBindBuffer(GL_ARRAY_BUFFER, RMS.debugShader.vbo);

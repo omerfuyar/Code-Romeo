@@ -37,37 +37,78 @@
 #pragma region typedefs
 
 /// @brief Represents a component that can interact with the renderer system.
-typedef RJGlobal_Index RendererComponent;
+typedef RJGlobal_Size RendererComponent;
 
 /// @brief Represents a batch of objects that share the same model for rendering.
-typedef RJGlobal_Index RendererBatch;
+typedef RJGlobal_Size RendererBatch;
 
 #pragma endregion typedefs
 
 #pragma region Renderer
 
+/// @brief Initializes the renderer system.
+/// @param window The context window to render to.
+/// @param initialBatchCapacity The initial capacity for renderer batches.
 void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapacity);
 
-/// @brief Terminator for renderer.
+/// @brief Terminates the renderer system.
 void Renderer_Terminate();
 
+/// @brief Configures the shaders used by the renderer.
+/// @param vertexShaderFile The file path of the vertex shader.
+/// @param fragmentShaderFile The file path of the fragment shader.
 void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
+/// @brief Configures the camera parameters for the renderer.
+/// @param positionReference The reference to the camera's position vector.
+/// @param rotationReference The reference to the camera's rotation vector.
+/// @param sizeReference The reference to the camera's size. FOV if perspective, orthographic size if orthographic.
+/// @param nearClipPlaneReference The reference to the camera's near clipping plane distance.
+/// @param farClipPlaneReference The reference to the camera's far clipping plane distance.
+/// @param isPerspectiveReference The reference to whether the camera uses perspective projection or orthographic projection.
 void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference);
 
+/// @brief Resizes the renderer's batch capacity.
+/// @param newBatchCapacity The new capacity for renderer batches.
 void Renderer_Resize(RJGlobal_Size newBatchCapacity);
-// void Renderer_Update(){}
 
+/// @brief Updates the renderer system.
+void Renderer_Update();
+
+/// @brief Renders the current frame.
 void Renderer_Render();
 
-RendererBatch Renderer_BatchCreate(StringView mdlFile, RJGlobal_Size initialCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
+/// @brief Creates a renderer batch.
+/// @param mdlFile The file path of the model.
+/// @param transformOffset The offset to apply to the model's transform.
+/// @param initialComponentCapacity The initial capacity for components in the batch.
+/// @param positionReferences The array of position references for components.
+/// @param rotationReferences The array of rotation references for components.
+/// @param scaleReferences The array of scale references for components.
+/// @return The handle to the created renderer batch.
+RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
 
+/// @brief Destroys a renderer batch.
+/// @param batch The handle to the renderer batch to destroy.
 void Renderer_BatchDestroy(RendererBatch batch);
 
+/// @brief Configures the references for a renderer batch.
+/// @param batch The handle to the renderer batch.
+/// @param positionReferences The array of position references for components.
+/// @param rotationReferences The array of rotation references for components.
+/// @param scaleReferences The array of scale references for components.
+/// @param newComponentCapacity The new capacity for components in the batch.
 void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJGlobal_Size newComponentCapacity);
 
-RendererComponent Renderer_ComponentCreate(RJGlobal_Index entity, RendererBatch batch);
+/// @brief Creates a renderer component within a specified batch.
+/// @param entity The entity associated with the renderer component.
+/// @param batch The handle to the renderer batch.
+/// @return The handle to the created renderer component.
+RendererComponent Renderer_ComponentCreate(RJGlobal_Size entity, RendererBatch batch);
 
+/// @brief Destroys a renderer component within a specified batch.
+/// @param batch The handle to the renderer batch.
+/// @param component The handle to the renderer component to destroy.
 void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component);
 
 #pragma endregion Renderer
@@ -87,9 +128,7 @@ void RendererDebug_Terminate();
 void RendererDebug_StartRendering();
 
 /// @brief Should be called before Renderer_FinishRendering to draw all debug shapes.
-/// @param camProjectionMatrix The projection matrix of the camera.
-/// @param camViewMatrix The view matrix of the camera.
-void RendererDebug_FinishRendering(const Renderer_Matrix4 *camProjectionMatrix, const Renderer_Matrix4 *camViewMatrix);
+void RendererDebug_FinishRendering();
 
 /// @brief Draws a line in 3D space for debugging purposes.
 /// @param start The starting point of the line.

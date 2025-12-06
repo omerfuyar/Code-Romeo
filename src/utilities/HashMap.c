@@ -75,7 +75,7 @@ void HashMap_Register(HashMap *map, const char *key, const void *value)
 {
     RJGlobal_DebugAssertNullPointerCheck(map);
 
-    void *targetLocation = (void *)((char *)map->data + HashMap_Hash(key, map->capacity) * map->sizeOfItem);
+    void *targetLocation = (void *)((char *)map->data + HashMap_Hash(map, key) * map->sizeOfItem);
 
     RJGlobal_MemoryCopy(targetLocation, map->sizeOfItem, value);
 
@@ -84,5 +84,5 @@ void HashMap_Register(HashMap *map, const char *key, const void *value)
 
 void *HashMap_Access(const HashMap *map, const char *key)
 {
-    return (void *)((char *)map->data + HashMap_Hash(key, map->capacity) * map->sizeOfItem);
+    return (void *)((char *)map->data + HashMap_Hash(map, key) * map->sizeOfItem);
 }

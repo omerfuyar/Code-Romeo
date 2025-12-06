@@ -87,6 +87,12 @@ void String_ConcatBegin(String *string, StringView other);
 /// @note Comparison is done up to the length of the shorter string.
 int String_Compare(StringView string, StringView other);
 
+/// @brief Checks if two String objects are the same. Works faster than String_Compare.
+/// @param string View of the first String object.
+/// @param other View of the second String object.
+/// @return True if they are the same, false otherwise.
+bool String_AreSame(StringView string, StringView other);
+
 /// @brief Tokenizes a string into an array of string views. Returned buffer uses the memory of the first string parameter.
 /// @param string The string to tokenize.
 /// @param delimeter The delimiter to use for tokenization.
