@@ -99,10 +99,15 @@ void ResourceTexture_Destroy(ResourceTexture *texture)
 {
     RJGlobal_DebugAssertNullPointerCheck(texture);
 
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    scb(texture->name, tempTitle);
+
     String_Destroy(&texture->name);
     ResourceImage_Destroy(texture->image);
     glDeleteTextures(1, &texture->handle);
     ListLinked_RemoveAtIndex(&RESOURCE_TEXTURE_POOL, texture->index);
+
+    RJGlobal_DebugInfo("Resource Texture '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceTexture
@@ -171,6 +176,8 @@ void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePa
                 currentMaterial = (ResourceMaterial *)ListLinked_Add(&RESOURCE_MATERIAL_POOL, NULL);
                 currentMaterial->index = RESOURCE_MATERIAL_POOL.count - 1;
                 currentMaterial->name = scc(matLineTokens[1]);
+
+                RJGlobal_DebugInfo("Resource Material '%s' created successfully.", currentMaterial->name.characters);
             }
         }
         else if (String_AreSame(matFirstToken, strNS))
@@ -231,9 +238,14 @@ void ResourceMaterial_Destroy(ResourceMaterial *material)
 {
     RJGlobal_DebugAssertNullPointerCheck(material);
 
+    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
+    scb(material->name, tempTitle);
+
     ResourceTexture_Destroy(material->diffuseMap);
     String_Destroy(&material->name);
     ListLinked_RemoveAtIndex(&RESOURCE_MATERIAL_POOL, material->index);
+
+    RJGlobal_DebugInfo("Resource Material '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceMaterial
@@ -351,7 +363,7 @@ void ResourceText_Destroy(ResourceText *resource)
         resource = NULL;
     }
 
-    RJGlobal_DebugInfo("Resource '%s' destroyed successfully.", tempTitle);
+    RJGlobal_DebugInfo("Resource Text '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceText
@@ -680,7 +692,7 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
     free(triangleCounts);
     ResourceText_Destroy(mdlFileResource);
 
-    RJGlobal_DebugInfo("Resource Model '%s' loaded successfully.", fileName.characters);
+    RJGlobal_DebugInfo("Resource Model '%s' loaded successfully with %u meshes.", fileName.characters, model->meshes.count);
 
     return model;
 }

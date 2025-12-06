@@ -230,19 +230,35 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback)
 /// @brief Flush log file after every log entry. May reduce performance but ensures all logs are written to file immediately.
 #define RJGLOBAL_DEBUG_FLUSH_AFTER_LOG RJGLOBAL_DEBUG_SAFE_LOGGING
 
+#ifndef RJGLOBAL_DEBUG_INFO
 /// @brief Info level logging macros enabled.
 #define RJGLOBAL_DEBUG_INFO RJGLOBAL_BUILD_DEBUG
+#endif
+
+#ifndef RJGLOBAL_DEBUG_WARNING
 /// @brief Warning level logging macros enabled.
 #define RJGLOBAL_DEBUG_WARNING RJGLOBAL_BUILD_DEBUG
+#endif
+
+#ifndef RJGLOBAL_DEBUG_ERROR
 /// @brief Error level logging macros enabled.
 #define RJGLOBAL_DEBUG_ERROR RJGLOBAL_BUILD_DEBUG
+#endif
+
+#ifndef RJGLOBAL_DEBUG_ASSERT
 /// @brief Assertion macros enabled.
 #define RJGLOBAL_DEBUG_ASSERT RJGLOBAL_BUILD_DEBUG
+#endif
 
+#ifndef RJGLOBAL_DEBUG_TERMINATE_ON_ERROR
 /// @brief Terminate application on error log.
 #define RJGLOBAL_DEBUG_TERMINATE_ON_ERROR RJGLOBAL_DEBUG_SAFE_LOGGING
+#endif
+
+#ifndef RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT
 /// @brief Terminate application on assertion failure.
 #define RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT RJGLOBAL_DEBUG_SAFE_LOGGING
+#endif
 
 /// @brief Time format for debug log entries. Uses strftime format. Used when logging to the debug log file.
 #define RJGLOBAL_DEBUG_TIME_FORMAT "%H:%M:%S"
@@ -329,9 +345,11 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback)
 #define RJGlobal_DebugAssertFileOpenCheck(filePointer, fileName, mode) \
     RJGlobal_DebugAssert(RJGlobal_FileOpen(filePointer, fileName, mode), "File open failed for %s", fileName)
 
+/// @brief Asserts that the memory allocation was successful. Logs and terminates on failure if configured.
 #define RJGlobal_DebugAssertAllocationCheck(type, pointer, count) \
     RJGlobal_DebugAssert(RJGlobal_Allocate(type, pointer, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 
+/// @brief Asserts that the memory reallocation was successful. Logs and terminates on failure if configured.
 #define RJGlobal_DebugAssertReallocationCheck(type, pointer, count) \
     RJGlobal_DebugAssert(RJGlobal_Reallocate(type, pointer, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 

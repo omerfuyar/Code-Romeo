@@ -111,6 +111,18 @@ RendererComponent Renderer_ComponentCreate(RJGlobal_Size entity, RendererBatch b
 /// @param component The handle to the renderer component to destroy.
 void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component);
 
+/// @brief Checks if a renderer component within a specified batch is active.
+/// @param batch The handle to the renderer batch.
+/// @param component The handle to the renderer component.
+/// @return True if the component is active, false otherwise.
+bool Renderer_ComponentIsActive(RendererBatch batch, RendererComponent component);
+
+/// @brief Sets the active state of a renderer component within a specified batch.
+/// @param batch The handle to the renderer batch.
+/// @param component The handle to the renderer component.
+/// @param isActive The new active state to set.
+void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent component, bool isActive);
+
 #pragma endregion Renderer
 
 #pragma region Renderer Debug
