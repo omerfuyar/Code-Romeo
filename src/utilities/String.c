@@ -85,6 +85,27 @@ int String_Compare(StringView string, StringView other)
     return result;
 }
 
+bool String_AreSame(StringView string, StringView other)
+{
+    RJGlobal_DebugAssertNullPointerCheck(string.characters);
+    RJGlobal_DebugAssertNullPointerCheck(other.characters);
+
+    if (string.length != other.length)
+    {
+        return false;
+    }
+
+    for (RJGlobal_Size i = 0; i < string.length; i++)
+    {
+        if (string.characters[i] != other.characters[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void String_Tokenize(StringView string, StringView delimeter, RJGlobal_Size *tokenCountRet, StringView *tokenBufferRet, RJGlobal_Size String_MaxTokenCount)
 {
     RJGlobal_DebugAssertNullPointerCheck(tokenBufferRet);
@@ -95,7 +116,7 @@ void String_Tokenize(StringView string, StringView delimeter, RJGlobal_Size *tok
     RJGlobal_Size index = 0;
     while (index < string.length && tokenCount < String_MaxTokenCount)
     {
-        if (String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
+        if (String_AreSame(delimeter, scs(string.characters + index, delimeter.length)))
         {
             if (index > lastTokenIndex)
             {
@@ -107,7 +128,7 @@ void String_Tokenize(StringView string, StringView delimeter, RJGlobal_Size *tok
 
             while (index < string.length &&
                    index + delimeter.length <= string.length &&
-                   String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
+                   String_AreSame(delimeter, scs(string.characters + index, delimeter.length)))
             {
                 index += delimeter.length;
             }

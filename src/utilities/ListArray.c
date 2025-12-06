@@ -129,7 +129,7 @@ void *ListArray_AddRange(ListArray *list, const void *item, RJGlobal_Size itemCo
 
     while (list->count + itemCount > list->capacity)
     {
-        RJGlobal_DebugWarning("ListArray '%s' is full. Resizing it...", list->nameOfType);
+        RJGlobal_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->nameOfType, list->capacity, (RJGlobal_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
         ListArray_Resize(list, (RJGlobal_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 
