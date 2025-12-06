@@ -630,16 +630,7 @@ void Renderer_Render()
 
         glBufferData(GL_UNIFORM_BUFFER,
                      (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
-                     rmsBatch(batch).components.positionReferences,
-                     RENDERER_OPENGL_DRAW_TYPE);
-
-        glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
-                     rmsBatch(batch).components.rotationReferences,
-                     RENDERER_OPENGL_DRAW_TYPE);
-        glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
-                     rmsBatch(batch).components.scaleReferences,
+                     rmsBatch(batch).components.objectMatrices,
                      RENDERER_OPENGL_DRAW_TYPE);
 
         glBufferData(GL_ARRAY_BUFFER,
