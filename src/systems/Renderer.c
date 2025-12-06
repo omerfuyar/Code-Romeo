@@ -285,27 +285,6 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
 
     //! ... other attributes in vertex
 
-    RMS.shader.camProjectionMatrix = glGetUniformLocation(RMS.shader.programHandle, "camProjectionMatrix");
-    RMS.shader.camViewMatrix = glGetUniformLocation(RMS.shader.programHandle, "camViewMatrix");
-    RMS.shader.camPosition = glGetUniformLocation(RMS.shader.programHandle, "camPosition");
-    RMS.shader.camRotation = glGetUniformLocation(RMS.shader.programHandle, "camRotation");
-    RMS.shader.camSize = glGetUniformLocation(RMS.shader.programHandle, "camSize");
-    RMS.shader.camIsPerspective = glGetUniformLocation(RMS.shader.programHandle, "camIsPerspective");
-
-    RMS.shader.matAmbientColor = glGetUniformLocation(RMS.shader.programHandle, "matAmbientColor");
-    RMS.shader.matDiffuseColor = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseColor");
-    RMS.shader.matSpecularColor = glGetUniformLocation(RMS.shader.programHandle, "matSpecularColor");
-    RMS.shader.matEmissiveColor = glGetUniformLocation(RMS.shader.programHandle, "matEmissiveColor");
-    RMS.shader.matSpecularExponent = glGetUniformLocation(RMS.shader.programHandle, "matSpecularExponent");
-    RMS.shader.matDissolve = glGetUniformLocation(RMS.shader.programHandle, "matDissolve");
-    RMS.shader.matDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseMap");
-    RMS.shader.matHasDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matHasDiffuseMap");
-
-    RMS.shader.objectMatricesHandle = glGetUniformBlockIndex(RMS.shader.programHandle, "modelMatrices");
-    glUniformBlockBinding(RMS.shader.programHandle, RMS.shader.objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
-    glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, RMS.shader.uboObjectMatrices);
-    // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
-
     RJGlobal_DebugInfo("Renderer initialized successfully.");
 }
 
@@ -415,6 +394,27 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    RMS.shader.camProjectionMatrix = glGetUniformLocation(RMS.shader.programHandle, "camProjectionMatrix");
+    RMS.shader.camViewMatrix = glGetUniformLocation(RMS.shader.programHandle, "camViewMatrix");
+    RMS.shader.camPosition = glGetUniformLocation(RMS.shader.programHandle, "camPosition");
+    RMS.shader.camRotation = glGetUniformLocation(RMS.shader.programHandle, "camRotation");
+    RMS.shader.camSize = glGetUniformLocation(RMS.shader.programHandle, "camSize");
+    RMS.shader.camIsPerspective = glGetUniformLocation(RMS.shader.programHandle, "camIsPerspective");
+
+    RMS.shader.matAmbientColor = glGetUniformLocation(RMS.shader.programHandle, "matAmbientColor");
+    RMS.shader.matDiffuseColor = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseColor");
+    RMS.shader.matSpecularColor = glGetUniformLocation(RMS.shader.programHandle, "matSpecularColor");
+    RMS.shader.matEmissiveColor = glGetUniformLocation(RMS.shader.programHandle, "matEmissiveColor");
+    RMS.shader.matSpecularExponent = glGetUniformLocation(RMS.shader.programHandle, "matSpecularExponent");
+    RMS.shader.matDissolve = glGetUniformLocation(RMS.shader.programHandle, "matDissolve");
+    RMS.shader.matDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseMap");
+    RMS.shader.matHasDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matHasDiffuseMap");
+
+    RMS.shader.objectMatricesHandle = glGetUniformBlockIndex(RMS.shader.programHandle, "modelMatrices");
+    glUniformBlockBinding(RMS.shader.programHandle, RMS.shader.objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
+    glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, RMS.shader.uboObjectMatrices);
+    // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
+
     RJGlobal_DebugInfo("Shader program linked and created successfully.");
 }
 
@@ -426,6 +426,30 @@ void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationRefer
     RMS.camera.nearClipPlaneReference = nearClipPlaneReference;
     RMS.camera.farClipPlaneReference = farClipPlaneReference;
     RMS.camera.isPerspectiveReference = isPerspectiveReference;
+
+    RJGlobal_DebugInfo("Camera: Pos=(%.2f,%.2f,%.2f) Rot=(%.2f,%.2f,%.2f)",
+                       RMS.camera.positionReference->x, RMS.camera.positionReference->y, RMS.camera.positionReference->z,
+                       RMS.camera.rotationReference->x, RMS.camera.rotationReference->y, RMS.camera.rotationReference->z);
+}
+
+void Renderer_Resize(RJGlobal_Size newBatchCapacity)
+{
+    RJGlobal_DebugAssert(newBatchCapacity > RMS.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RMS.data.count);
+
+    RENDERER_BATCH *newBatches = NULL;
+    RJGlobal_DebugAssertAllocationCheck(RENDERER_BATCH, newBatches, newBatchCapacity);
+
+    for (RJGlobal_Size i = 0; i < RMS.data.count; i++)
+    {
+        newBatches[i] = rmsBatch(i);
+    }
+
+    free(RMS.data.batches);
+    RMS.data.batches = newBatches;
+
+    RMS.data.capacity = newBatchCapacity;
+
+    RJGlobal_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
 }
 
 /*
@@ -555,49 +579,24 @@ void Renderer_Update()
     {
         for (RJGlobal_Size component = 0; component < rmsBatch(batch).data.count; component++)
         {
+            // todo send transform data to gpu instead of calculating here
+
+            glm_mat4_identity((vec4 *)&rmsObjectMatrix(batch, component));
+
             if (!rmsIsActive(batch, component))
             {
                 continue;
             }
 
-            // todo send transform data to gpu instead of calculating here
+            glm_translate((vec4 *)&rmsObjectMatrix(batch, component), (float *)&(vec3){(&rmsPositionReference(batch, component))->x, (&rmsPositionReference(batch, component))->y, (&rmsPositionReference(batch, component))->z});
 
-            Resource_Matrix4 *offsetMatrix = &rmsObjectMatrix(batch, component);
-            Vector3 *positionOffset = &rmsPositionReference(batch, component);
-            Vector3 *rotationOffset = &rmsRotationReference(batch, component);
-            Vector3 *scaleOffset = &rmsScaleReference(batch, component);
+            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), (&rmsRotationReference(batch, component))->x, (float *)&(vec3){1, 0, 0});
+            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), (&rmsRotationReference(batch, component))->y, (float *)&(vec3){0, 1, 0});
+            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), (&rmsRotationReference(batch, component))->z, (float *)&(vec3){0, 0, 1});
 
-            glm_mat4_identity((vec4 *)offsetMatrix->m);
-
-            glm_translate((vec4 *)offsetMatrix->m, (float *)&(vec3){positionOffset->x, positionOffset->y, positionOffset->z});
-
-            glm_rotate((vec4 *)offsetMatrix->m, rotationOffset->x, (float *)&(vec3){1, 0, 0});
-            glm_rotate((vec4 *)offsetMatrix->m, rotationOffset->y, (float *)&(vec3){0, 1, 0});
-            glm_rotate((vec4 *)offsetMatrix->m, rotationOffset->z, (float *)&(vec3){0, 0, 1});
-
-            glm_scale((vec4 *)offsetMatrix->m, (float *)&(vec3){scaleOffset->x, scaleOffset->y, scaleOffset->z});
+            glm_scale((vec4 *)&rmsObjectMatrix(batch, component), (float *)&(vec3){(&rmsScaleReference(batch, component))->x, (&rmsScaleReference(batch, component))->y, (&rmsScaleReference(batch, component))->z});
         }
     }
-}
-
-void Renderer_Resize(RJGlobal_Size newBatchCapacity)
-{
-    RJGlobal_DebugAssert(newBatchCapacity > RMS.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RMS.data.count);
-
-    RENDERER_BATCH *newBatches = NULL;
-    RJGlobal_DebugAssertAllocationCheck(RENDERER_BATCH, newBatches, newBatchCapacity);
-
-    for (RJGlobal_Size i = 0; i < RMS.data.count; i++)
-    {
-        newBatches[i] = rmsBatch(i);
-    }
-
-    free(RMS.data.batches);
-    RMS.data.batches = newBatches;
-
-    RMS.data.capacity = newBatchCapacity;
-
-    RJGlobal_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
 }
 
 void Renderer_Render()
@@ -629,7 +628,7 @@ void Renderer_Render()
         ResourceMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Vector3) * rmsBatch(batch).data.count),
+                     (long long)(sizeof(Resource_Matrix4) * rmsBatch(batch).data.count),
                      rmsBatch(batch).components.objectMatrices,
                      RENDERER_OPENGL_DRAW_TYPE);
 
@@ -680,16 +679,7 @@ void Renderer_Render()
         }
     }
 
-    // RendererDebug_CheckError();
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
     glfwSwapBuffers(RMS.window->handle);
-
-    // RJGlobal_DebugInfo("Scene '%s' rendered", scene.name.characters);
 }
 
 RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
@@ -794,6 +784,22 @@ void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component)
     ListArray_Add(&rmsBatch(batch).data.freeIndices, &component);
 
     rmsBatch(batch).data.count--;
+}
+
+bool Renderer_ComponentIsActive(RendererBatch batch, RendererComponent component)
+{
+    rmsAssertBatch(batch);
+    rmsAssertComponent(batch, component);
+
+    return rmsIsActive(batch, component);
+}
+
+void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent component, bool isActive)
+{
+    rmsAssertBatch(batch);
+    rmsAssertComponent(batch, component);
+
+    rmsSetActive(batch, component, isActive);
 }
 
 #pragma endregion Renderer
@@ -920,9 +926,6 @@ void RendererDebug_FinishRendering()
     glBindBuffer(GL_ARRAY_BUFFER, RMS.debugShader.vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(RMS.debugShader.vertices.sizeOfItem * RMS.debugShader.vertices.count), RMS.debugShader.vertices.data, RENDERER_OPENGL_DRAW_TYPE);
     glDrawArrays(GL_LINES, 0, (GLsizei)RMS.debugShader.vertices.count);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 
     ListArray_Clear(&RMS.debugShader.vertices);
 }

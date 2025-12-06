@@ -1,3 +1,7 @@
+//! disable debug info for this file
+#undef RJGLOBAL_DEBUG_INFO
+#define RJGLOBAL_DEBUG_INFO false
+
 #include "utilities/ListArray.h"
 
 #define ListArray_Min(a, b) ((a) < (b) ? (a) : (b))
