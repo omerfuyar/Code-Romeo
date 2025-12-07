@@ -44,6 +44,14 @@
         RJGlobal_DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
     } while (0)
 
+//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL UNIFORM BLOCK LAYOUT IN VERTEX SHADER
+typedef struct ObjectTransform
+{
+    alignas(16) Vector3 position;
+    alignas(16) Vector3 rotation;
+    alignas(16) Vector3 scale;
+} ObjectTransform;
+
 //! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (RENDERER DEBUG INITIALIZE)
 typedef struct RendererDebugVertex
 {
@@ -86,7 +94,7 @@ typedef struct RENDERER_BATCH
     {
         RJGlobal_Size *entities;
 
-        Resource_Matrix4 *objectMatrices;
+        ObjectTransform *objectTransforms;
 
         Vector3 *positionReferences;
         Vector3 *rotationReferences;
@@ -172,7 +180,7 @@ struct RENDERER_MAIN_SCENE
 #define rmsBatch(batch) (RMS.data.batches[batch])
 #define rmsEntity(batch, component) (rmsBatch(batch).components.entities[component])
 
-#define rmsObjectMatrix(batch, component) (rmsBatch(batch).components.objectMatrices[component])
+#define rmsObjectTransform(batch, component) (rmsBatch(batch).components.objectTransforms[component])
 
 #define rmsPositionReference(batch, component) (rmsBatch(batch).components.positionReferences[component])
 #define rmsRotationReference(batch, component) (rmsBatch(batch).components.rotationReferences[component])
@@ -410,7 +418,7 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
     RMS.shader.matDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matDiffuseMap");
     RMS.shader.matHasDiffuseMap = glGetUniformLocation(RMS.shader.programHandle, "matHasDiffuseMap");
 
-    RMS.shader.objectMatricesHandle = glGetUniformBlockIndex(RMS.shader.programHandle, "modelMatrices");
+    RMS.shader.objectMatricesHandle = glGetUniformBlockIndex(RMS.shader.programHandle, "objectTransforms");
     glUniformBlockBinding(RMS.shader.programHandle, RMS.shader.objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
     glBindBufferBase(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, RMS.shader.uboObjectMatrices);
     // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
@@ -542,7 +550,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
 }
 */
 
-// todo move this to shader, compute in gpu
+// Matrices calculated in vertex shader now
 void Renderer_Update()
 {
     glm_mat4_identity((vec4 *)&RMS.camera.projectionMatrix);
@@ -575,26 +583,24 @@ void Renderer_Update()
                   (vec4 *)&RMS.camera.projectionMatrix);
     }
 
+    // Copy transform data to UBO structure for all active objects
     for (RJGlobal_Size batch = 0; batch < RMS.data.count; batch++)
     {
         for (RJGlobal_Size component = 0; component < rmsBatch(batch).data.count; component++)
         {
-            // todo send transform data to gpu instead of calculating here
-
-            glm_mat4_identity((vec4 *)&rmsObjectMatrix(batch, component));
-
             if (!rmsIsActive(batch, component))
             {
+                // Set inactive objects to zero scale so they don't render
+                rmsObjectTransform(batch, component).position = Vector3_New(0, 0, 0);
+                rmsObjectTransform(batch, component).rotation = Vector3_New(0, 0, 0);
+                rmsObjectTransform(batch, component).scale = Vector3_New(0, 0, 0);
                 continue;
             }
 
-            glm_translate((vec4 *)&rmsObjectMatrix(batch, component), (float *)&(vec3){(&rmsPositionReference(batch, component))->x, (&rmsPositionReference(batch, component))->y, (&rmsPositionReference(batch, component))->z});
-
-            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), (&rmsRotationReference(batch, component))->x, (float *)&(vec3){1, 0, 0});
-            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), (&rmsRotationReference(batch, component))->y, (float *)&(vec3){0, 1, 0});
-            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), (&rmsRotationReference(batch, component))->z, (float *)&(vec3){0, 0, 1});
-
-            glm_scale((vec4 *)&rmsObjectMatrix(batch, component), (float *)&(vec3){(&rmsScaleReference(batch, component))->x, (&rmsScaleReference(batch, component))->y, (&rmsScaleReference(batch, component))->z});
+            // Copy transform data from references to UBO structure
+            rmsObjectTransform(batch, component).position = rmsPositionReference(batch, component);
+            rmsObjectTransform(batch, component).rotation = rmsRotationReference(batch, component);
+            rmsObjectTransform(batch, component).scale = rmsScaleReference(batch, component);
         }
     }
 }
@@ -628,8 +634,8 @@ void Renderer_Render()
         ResourceMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Resource_Matrix4) * rmsBatch(batch).data.count),
-                     rmsBatch(batch).components.objectMatrices,
+                     (long long)(sizeof(ObjectTransform) * rmsBatch(batch).data.count),
+                     rmsBatch(batch).components.objectTransforms,
                      RENDERER_OPENGL_DRAW_TYPE);
 
         glBufferData(GL_ARRAY_BUFFER,
@@ -698,7 +704,7 @@ RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset,
 
     RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, rmsBatch(newBatch).components.entities, initialComponentCapacity);
 
-    RJGlobal_DebugAssertAllocationCheck(Resource_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity);
+    RJGlobal_DebugAssertAllocationCheck(ObjectTransform, rmsBatch(newBatch).components.objectTransforms, initialComponentCapacity);
 
     rmsBatch(newBatch).components.positionReferences = positionReferences;
     rmsBatch(newBatch).components.rotationReferences = rotationReferences;
@@ -722,11 +728,11 @@ void Renderer_BatchDestroy(RendererBatch batch)
     ListArray_Destroy(&rmsBatch(batch).data.freeIndices);
 
     free(rmsBatch(batch).components.entities);
-    free(rmsBatch(batch).components.objectMatrices);
+    free(rmsBatch(batch).components.objectTransforms);
     free(rmsBatch(batch).components.flags);
 
     rmsBatch(batch).components.entities = NULL;
-    rmsBatch(batch).components.objectMatrices = NULL;
+    rmsBatch(batch).components.objectTransforms = NULL;
     rmsBatch(batch).components.flags = NULL;
 
     RMS.data.count--;
@@ -748,7 +754,7 @@ void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionRef
 
     RJGlobal_DebugAssertReallocationCheck(RJGlobal_Size, rmsBatch(batch).components.entities, newComponentCapacity);
 
-    RJGlobal_DebugAssertReallocationCheck(Resource_Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
+    RJGlobal_DebugAssertReallocationCheck(ObjectTransform, rmsBatch(batch).components.objectTransforms, newComponentCapacity);
 
     rmsBatch(batch).components.positionReferences = positionReferences;
     rmsBatch(batch).components.rotationReferences = rotationReferences;
