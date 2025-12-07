@@ -53,6 +53,8 @@ The vertex shader now calculates the model matrix using these steps:
 3. Combine matrices: `modelMatrix = translate * rotate * scale`
 4. Apply to vertex position
 
+**Important**: GLSL matrices use column-major order. The mat4 constructor takes values column by column, not row by row. All matrix constructors in the example shader are properly formatted for column-major layout.
+
 ## Usage
 
 To use these shaders in your application:
