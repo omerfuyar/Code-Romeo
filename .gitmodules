@@ -4,3 +4,6 @@
 [submodule "dependencies/cglm"]
 	path = dependencies/cglm
 	url = https://github.com/recp/cglm.git
+[submodule "dependencies/shuild"]
+	path = dependencies/shuild
+	url = https://github.com/omerfuyar/shuild.git
