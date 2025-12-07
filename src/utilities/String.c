@@ -3,15 +3,14 @@
 #define String_Min(a, b) ((a) < (b) ? (a) : (b))
 #define String_Max(a, b) ((a) > (b) ? (a) : (b))
 
-String String_CreateCopySafe(const char *string, size_t length)
+String String_CreateCopySafe(const char *string, RJGlobal_Size length)
 {
     RJGlobal_DebugAssertNullPointerCheck(string);
 
     String createdString = {0};
 
     createdString.length = length;
-    createdString.characters = (char *)malloc((createdString.length + 1));
-    RJGlobal_DebugAssertNullPointerCheck(createdString.characters);
+    RJGlobal_DebugAssertAllocationCheck(char, createdString.characters, createdString.length + 1);
 
     RJGlobal_MemoryCopy(createdString.characters, createdString.length, string);
     createdString.characters[createdString.length] = '\0';
@@ -86,17 +85,38 @@ int String_Compare(StringView string, StringView other)
     return result;
 }
 
-void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCountRet, StringView *tokenBufferRet, size_t String_MaxTokenCount)
+bool String_AreSame(StringView string, StringView other)
+{
+    RJGlobal_DebugAssertNullPointerCheck(string.characters);
+    RJGlobal_DebugAssertNullPointerCheck(other.characters);
+
+    if (string.length != other.length)
+    {
+        return false;
+    }
+
+    for (RJGlobal_Size i = 0; i < string.length; i++)
+    {
+        if (string.characters[i] != other.characters[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void String_Tokenize(StringView string, StringView delimeter, RJGlobal_Size *tokenCountRet, StringView *tokenBufferRet, RJGlobal_Size String_MaxTokenCount)
 {
     RJGlobal_DebugAssertNullPointerCheck(tokenBufferRet);
 
-    size_t tokenCount = 0;
-    size_t lastTokenIndex = 0;
+    RJGlobal_Size tokenCount = 0;
+    RJGlobal_Size lastTokenIndex = 0;
 
-    size_t index = 0;
+    RJGlobal_Size index = 0;
     while (index < string.length && tokenCount < String_MaxTokenCount)
     {
-        if (String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
+        if (String_AreSame(delimeter, scs(string.characters + index, delimeter.length)))
         {
             if (index > lastTokenIndex)
             {
@@ -108,7 +128,7 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
 
             while (index < string.length &&
                    index + delimeter.length <= string.length &&
-                   String_Compare(delimeter, scs(string.characters + index, delimeter.length)) == 0)
+                   String_AreSame(delimeter, scs(string.characters + index, delimeter.length)))
             {
                 index += delimeter.length;
             }
@@ -133,7 +153,7 @@ void String_Tokenize(StringView string, StringView delimeter, size_t *tokenCount
     }
 }
 
-char String_GetChar(StringView string, size_t index)
+char String_GetChar(StringView string, RJGlobal_Size index)
 {
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
@@ -147,7 +167,7 @@ float String_ToFloat(StringView string)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_NUMERIC_CHAR_BUFFER];
-    size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
+    RJGlobal_Size copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     float result = (float)atof(buffer);
@@ -160,7 +180,7 @@ int String_ToInt(StringView string)
     RJGlobal_DebugAssertNullPointerCheck(string.characters);
 
     char buffer[STRING_NUMERIC_CHAR_BUFFER];
-    size_t copyLength = String_Min(sizeof(buffer) - 1, string.length);
+    RJGlobal_Size copyLength = String_Min(sizeof(buffer) - 1, string.length);
     RJGlobal_MemoryCopy(buffer, copyLength, string.characters);
     buffer[copyLength] = '\0';
     int result = atoi(buffer);

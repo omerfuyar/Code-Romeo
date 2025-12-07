@@ -117,6 +117,7 @@
 
 #if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_WINDOWS
 
+// todo use '/' for all and convert when passing to OS functions
 /// @brief Character used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_CHAR '\\'
 /// @brief String used for path delimiters.
@@ -132,16 +133,26 @@
 #endif
 
 /// @brief Size of the temporary buffer used in various operations.
-#define RJGLOBAL_TEMP_BUFFER_SIZE (size_t)128
+#define RJGLOBAL_TEMP_BUFFER_SIZE (RJGlobal_Size)128
+
+#define RJGLOBAL_INDEX_INVALID ((RJGlobal_Size)UINT32_MAX)
 
 /// @brief Macro wrapper for file opening to use it in if statements.
-#define RJGlobal_FileOpen(filePtr, fileName, mode) ((filePtr = fopen(fileName, mode)) != NULL)
+#define RJGlobal_FileOpen(filePointer, fileName, mode) ((filePointer = fopen(fileName, mode)) != NULL)
 /// @brief Macro wrapper for memory copy operation.
 #define RJGlobal_MemoryCopy(destination, size, source) memcpy(destination, source, size)
 /// @brief Macro wrapper for memory set operation.
-#define RJGlobal_MemorySet(destination, size, value) memset(destination, value, size)
+#define RJGlobal_MemorySet(destination, size, value) memset(destination, (int)value, size)
 /// @brief Macro wrapper for memory move operation.
 #define RJGlobal_MemoryMove(destination, size, source) memmove(destination, source, size)
+/// @brief Macro wrapper for memory compare operation.
+#define RJGlobal_MemoryCompare(ptr1, size, ptr2) memcmp(ptr1, ptr2, size)
+/// @brief Macro wrapper for string length operation.
+#define RJGlobal_StringLength(string) (RJGlobal_Size) strlen(string)
+/// @brief Macro wrapper for memory allocation operation. Pass char if the pointer type os void.
+#define RJGlobal_Allocate(type, pointer, count) ((pointer = (type *)calloc((count), sizeof(type))) != NULL)
+/// @brief Macro wrapper for memory reallocation operation. Pass char if the pointer type os void.
+#define RJGlobal_Reallocate(type, pointer, newCount) ((pointer = (type *)realloc(pointer, sizeof(type) * (newCount))) != NULL)
 
 #pragma region Typedefs
 
@@ -152,7 +163,10 @@ typedef void (*RJGlobal_VoidFunIntCharPtrPtr)(int, char **);
 typedef void (*RJGlobal_VoidFunFloat)(float);
 
 /// @brief Function pointer type used in terminate callback function.
-typedef void (*RJGlobal_VoidFunIntCharptr)(int, char *);
+typedef void (*RJGlobal_VoidFunIntCharPtr)(int, char *);
+
+/// @brief Size type to use for entire project
+typedef uint32_t RJGlobal_Size;
 
 #pragma endregion Typedefs
 
@@ -194,7 +208,7 @@ void RJGlobal_SetLoopCallback(RJGlobal_VoidFunFloat loopCallback);
 
 /// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
 /// @param terminateCallback Function to call when terminate is called. Should not exit the program. Receives exit code and exit message as parameters.
-void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback);
+void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback);
 
 #pragma endregion Functions and Macros
 
@@ -217,19 +231,35 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
 /// @brief Flush log file after every log entry. May reduce performance but ensures all logs are written to file immediately.
 #define RJGLOBAL_DEBUG_FLUSH_AFTER_LOG RJGLOBAL_DEBUG_SAFE_LOGGING
 
+#ifndef RJGLOBAL_DEBUG_INFO
 /// @brief Info level logging macros enabled.
 #define RJGLOBAL_DEBUG_INFO RJGLOBAL_BUILD_DEBUG
+#endif
+
+#ifndef RJGLOBAL_DEBUG_WARNING
 /// @brief Warning level logging macros enabled.
 #define RJGLOBAL_DEBUG_WARNING RJGLOBAL_BUILD_DEBUG
+#endif
+
+#ifndef RJGLOBAL_DEBUG_ERROR
 /// @brief Error level logging macros enabled.
 #define RJGLOBAL_DEBUG_ERROR RJGLOBAL_BUILD_DEBUG
+#endif
+
+#ifndef RJGLOBAL_DEBUG_ASSERT
 /// @brief Assertion macros enabled.
 #define RJGLOBAL_DEBUG_ASSERT RJGLOBAL_BUILD_DEBUG
+#endif
 
+#ifndef RJGLOBAL_DEBUG_TERMINATE_ON_ERROR
 /// @brief Terminate application on error log.
 #define RJGLOBAL_DEBUG_TERMINATE_ON_ERROR RJGLOBAL_DEBUG_SAFE_LOGGING
+#endif
+
+#ifndef RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT
 /// @brief Terminate application on assertion failure.
 #define RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT RJGLOBAL_DEBUG_SAFE_LOGGING
+#endif
 
 /// @brief Time format for debug log entries. Uses strftime format. Used when logging to the debug log file.
 #define RJGLOBAL_DEBUG_TIME_FORMAT "%H:%M:%S"
@@ -293,6 +323,8 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
 #define RJGlobal_DebugAssert(condition, format, ...) (void)(condition)
 #define RJGlobal_DebugAssertNullPointerCheck(ptr)
 #define RJGlobal_DebugAssertFileOpenCheck(filePtr, fileName, mode) RJGlobal_FileOpen(filePtr, fileName, mode)
+#define RJGlobal_DebugAssertAllocationCheck(type, ptr, count) RJGlobal_Allocate(type, ptr, count)
+#define RJGlobal_DebugAssertReallocationCheck(type, ptr, count) RJGlobal_Reallocate(type, ptr, count)
 
 #else
 
@@ -307,12 +339,20 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharptr terminateCallback)
     } while (false)
 
 /// @brief Asserts that the given pointer is not NULL. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertNullPointerCheck(ptr) \
-    RJGlobal_DebugAssert(ptr != NULL, "Pointer '%s' cannot be NULL.", #ptr)
+#define RJGlobal_DebugAssertNullPointerCheck(pointer) \
+    RJGlobal_DebugAssert(pointer != NULL, "Pointer '%s' cannot be NULL.", #pointer)
 
 /// @brief Asserts that the file was opened successfully. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertFileOpenCheck(filePtr, fileName, mode) \
-    RJGlobal_DebugAssert(RJGlobal_FileOpen(filePtr, fileName, mode), "File open failed for %s", fileName)
+#define RJGlobal_DebugAssertFileOpenCheck(filePointer, fileName, mode) \
+    RJGlobal_DebugAssert(RJGlobal_FileOpen(filePointer, fileName, mode), "File open failed for %s", fileName)
+
+/// @brief Asserts that the memory allocation was successful. Logs and terminates on failure if configured.
+#define RJGlobal_DebugAssertAllocationCheck(type, pointer, count) \
+    RJGlobal_DebugAssert(RJGlobal_Allocate(type, pointer, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
+
+/// @brief Asserts that the memory reallocation was successful. Logs and terminates on failure if configured.
+#define RJGlobal_DebugAssertReallocationCheck(type, pointer, count) \
+    RJGlobal_DebugAssert(RJGlobal_Reallocate(type, pointer, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 
 #endif
 

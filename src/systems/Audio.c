@@ -28,156 +28,234 @@
 #pragma warning(pop)
 #endif
 
+#define AUDIO_FLAG_ACTIVE (1 << 0)
+
 #pragma region Source Only
 
-ma_engine AUDIO_MAIN_ENGINE = {0};
+struct AUDIO_MAIN_SCENE
+{
+    ma_engine engine;
+
+    struct AUDIO_SCENE_DATA
+    {
+        RJGlobal_Size capacity;
+        RJGlobal_Size count;
+        ListArray freeIndices; // RJGlobal_Size
+    } data;
+
+    struct AUDIO_COMPONENTS
+    {
+        RJGlobal_Size *entities;
+
+        ma_sound *sounds;
+        Vector3 *positionReferences;
+
+        uint8_t *flags;
+    } components;
+
+    struct AUDIO_LISTENER
+    {
+        Vector3 *positionReference;
+        Vector3 *rotationReference;
+    } listener;
+} AMS = {0};
+
+#define amsEntity(component) (AMS.components.entities[component])
+#define amsSound(component) (AMS.components.sounds[component])
+#define amsPositionReference(component) (AMS.components.positionReferences[amsEntity(component)])
+#define amsFlag(component) (AMS.components.flags[component])
+
+#define amsIsActive(component) (amsFlag(component) & AUDIO_FLAG_ACTIVE)
+#define amsSetActive(component, isActive) (amsFlag(component) = isActive ? (amsFlag(component) | AUDIO_FLAG_ACTIVE) : (amsFlag(component) & ~AUDIO_FLAG_ACTIVE))
+
+#define amsAssertComponent(component) RJGlobal_DebugAssert(component < AMS.data.count + AMS.data.freeIndices.count && amsEntity(component) != RJGLOBAL_INDEX_INVALID && amsIsActive(component), "Audio component %u either exceeds maximum possible index %u, invalid or inactive.", component, AMS.data.count + AMS.data.freeIndices.count)
 
 #pragma endregion Source Only
 
-#pragma region Audio
-
-void Audio_Initialize()
+void Audio_Initialize(RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences)
 {
-    ma_result result = ma_engine_init(NULL, &AUDIO_MAIN_ENGINE);
+    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
+
+    ma_result result = ma_engine_init(NULL, &AMS.engine);
     RJGlobal_DebugAssert(result == MA_SUCCESS, "Failed to initialize miniaudio : %zu", result);
+
+    AMS.data.capacity = initialComponentCapacity;
+    AMS.data.count = 0;
+    AMS.data.freeIndices = ListArray_Create("Audio Free Indices", sizeof(RJGlobal_Size), AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE);
+
+    AMS.components.positionReferences = positionReferences;
+
+    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, AMS.components.entities, initialComponentCapacity);
+    RJGlobal_DebugAssertAllocationCheck(ma_sound, AMS.components.sounds, initialComponentCapacity);
+    RJGlobal_DebugAssertAllocationCheck(uint8_t, AMS.components.flags, initialComponentCapacity);
+
+    RJGlobal_DebugInfo("Audio system initialized with component capacity %u.", initialComponentCapacity);
 }
 
 void Audio_Terminate()
 {
-    ma_engine_uninit(&AUDIO_MAIN_ENGINE);
+    ma_engine_uninit(&AMS.engine);
+
+    AMS.data.capacity = 0;
+    AMS.data.count = 0;
+    ListArray_Destroy(&AMS.data.freeIndices);
+
+    free(AMS.components.entities);
+    free(AMS.components.sounds);
+    free(AMS.components.flags);
+
+    AMS.components.entities = NULL;
+    AMS.components.sounds = NULL;
+    AMS.components.flags = NULL;
+    AMS.components.positionReferences = NULL;
+
+    AMS.listener.positionReference = NULL;
+    AMS.listener.rotationReference = NULL;
+
+    RJGlobal_DebugInfo("Audio system terminated successfully.");
 }
 
-#pragma endregion Audio
-
-#pragma region AudioScene
-
-AudioScene *AudioScene_Create(StringView name, size_t initialComponentCapacity)
+void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationReference)
 {
-    AudioScene *scene = (AudioScene *)malloc(sizeof(AudioScene));
-    scene->name = scc(name);
-    scene->listener = NULL;
-    scene->components = ListArray_Create("AudioComponent", sizeof(AudioComponent), initialComponentCapacity);
-
-    return scene;
-}
-
-void AudioScene_Destroy(AudioScene *scene)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-
-    String_Destroy(&scene->name);
-    ListArray_Destroy(&scene->components);
-
-    free(scene);
-}
-
-void AudioScene_SetMainListener(AudioScene *scene, AudioListenerComponent *listener)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
-    RJGlobal_DebugAssertNullPointerCheck(listener);
-
-    scene->listener = listener;
-}
-
-AudioComponent *AudioScene_CreateComponent(AudioScene *scene, StringView file, Vector3 *positionReference)
-{
-    RJGlobal_DebugAssertNullPointerCheck(scene);
     RJGlobal_DebugAssertNullPointerCheck(positionReference);
+    RJGlobal_DebugAssertNullPointerCheck(rotationReference);
 
-    AudioComponent component = {0};
-    component.scene = scene;
-    component.componentOffsetInScene = scene->components.count;
-    component.positionReference = positionReference;
+    AMS.listener.positionReference = positionReference;
+    AMS.listener.rotationReference = rotationReference;
+}
 
-    String fullPath = scc(file);
+void Audio_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newComponentCapacity)
+{
+    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
+    RJGlobal_DebugAssert(newComponentCapacity > AMS.data.count, "New component capacity must be greater than current audio component count");
+
+    AMS.components.positionReferences = positionReferences;
+    AMS.data.capacity = newComponentCapacity;
+
+    RJGlobal_Reallocate(RJGlobal_Size, AMS.components.entities, AMS.data.capacity);
+    RJGlobal_Reallocate(ma_sound, AMS.components.sounds, AMS.data.capacity);
+    RJGlobal_Reallocate(uint8_t, AMS.components.flags, AMS.data.capacity);
+
+    RJGlobal_DebugInfo("Audio position references reconfigured with new capacity %u.", AMS.data.capacity);
+}
+
+void Audio_Update()
+{
+    for (RJGlobal_Size component = 0; component < AMS.data.count; component++)
+    {
+        if (!amsIsActive(component))
+        {
+            continue;
+        }
+
+        ma_sound_set_position((ma_sound *)&amsSound(component), amsPositionReference(component).x, amsPositionReference(component).y, amsPositionReference(component).z);
+    }
+
+    ma_engine_listener_set_position(&AMS.engine, 0, AMS.listener.positionReference->x, AMS.listener.positionReference->y, AMS.listener.positionReference->z);
+    ma_engine_listener_set_direction(&AMS.engine, 0, AMS.listener.rotationReference->x, AMS.listener.rotationReference->y, AMS.listener.rotationReference->z); // todo forward rotation
+}
+
+AudioComponent Audio_ComponentCreate(RJGlobal_Size entity, StringView audioFile)
+{
+    RJGlobal_DebugAssert(AMS.data.count + AMS.data.freeIndices.count < AMS.data.capacity, "Maximum audio component capacity of %u reached.", AMS.data.capacity);
+
+    AudioComponent newComponent = AMS.data.freeIndices.count != 0 ? *((RJGlobal_Size *)ListArray_Pop(&AMS.data.freeIndices)) : AMS.data.count;
+
+    amsEntity(newComponent) = entity;
+    amsSetActive(newComponent, true);
+
+    String fullPath = scc(audioFile);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
 
-    component.data = malloc(sizeof(ma_sound));
     ma_result result = ma_sound_init_from_file(
-        &AUDIO_MAIN_ENGINE,
+        &AMS.engine,
         fullPath.characters,
         0,
         NULL,
         NULL,
-        (ma_sound *)component.data);
+        (ma_sound *)&amsSound(newComponent));
+
     RJGlobal_DebugAssert(result == MA_SUCCESS, "Failed to create AudioComponent for '%s' : %d", fullPath.characters, result);
 
     String_Destroy(&fullPath);
 
-    return (AudioComponent *)ListArray_Add(&scene->components, &component);
+    AMS.data.count++;
+
+    return newComponent;
 }
 
-AudioListenerComponent *AudioScene_CreateListenerComponent(AudioScene *scene, Vector3 *positionReference, Vector3 *rotationReference)
+void Audio_ComponentDestroy(AudioComponent component)
 {
-    RJGlobal_DebugAssertNullPointerCheck(scene);
+    amsAssertComponent(component);
 
-    AudioListenerComponent *listener = (AudioListenerComponent *)malloc(sizeof(AudioListenerComponent));
-    listener->positionReference = positionReference;
-    listener->rotationReference = rotationReference;
-    listener->scene = scene;
-    scene->listener = listener;
+    amsEntity(component) = RJGLOBAL_INDEX_INVALID;
+    ma_sound_uninit((ma_sound *)&amsSound(component));
+    amsFlag(component) = false;
 
-    return listener;
+    ListArray_Add(&AMS.data.freeIndices, &component);
+
+    AMS.data.count--;
 }
 
-#pragma endregion AudioScene
-
-#pragma region AudioComponent
-
-void AudioComponent_Update(AudioComponent *component)
+bool Audio_ComponentIsActive(AudioComponent component)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
-    ma_sound_set_position((ma_sound *)component->data, component->positionReference->x, component->positionReference->y, component->positionReference->z);
+    amsAssertComponent(component);
+
+    return amsIsActive(component);
 }
 
-void AudioComponent_Play(AudioComponent *component)
+void Audio_ComponentSetActive(AudioComponent component, bool isActive)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
-    ma_sound_start((ma_sound *)component->data);
+    amsAssertComponent(component);
+
+    amsSetActive(component, isActive);
 }
 
-void AudioComponent_Pause(AudioComponent *component)
+bool Audio_ComponentIsPlaying(AudioComponent component)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
-    ma_sound_stop((ma_sound *)component->data);
+    amsAssertComponent(component);
+
+    return ma_sound_is_playing((ma_sound *)&amsSound(component));
 }
 
-bool AudioComponent_IsPlaying(AudioComponent *component)
+void Audio_ComponentSetPlaying(AudioComponent component, bool play)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
-    return ma_sound_is_playing((ma_sound *)component->data);
+    amsAssertComponent(component);
+
+    if (play)
+    {
+        ma_sound_start((ma_sound *)&amsSound(component));
+    }
+    else
+    {
+        ma_sound_stop((ma_sound *)&amsSound(component));
+    }
 }
 
-void AudioComponent_Rewind(AudioComponent *component, float interval)
+void Audio_ComponentRewind(AudioComponent component, float interval)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
+    amsAssertComponent(component);
 
     ma_uint64 totalFrames = 0;
 
-    ma_sound_get_length_in_pcm_frames((ma_sound *)component->data, &totalFrames);
+    ma_sound_get_length_in_pcm_frames((ma_sound *)&amsSound(component), &totalFrames);
 
     ma_uint64 targetFrame = (ma_uint64)(totalFrames * Maths_Clamp(interval, 0.0f, 1.0f));
 
-    ma_sound_seek_to_pcm_frame((ma_sound *)component->data, targetFrame);
+    ma_sound_seek_to_pcm_frame((ma_sound *)&amsSound(component), targetFrame);
 }
 
-void AudioComponent_SetLooping(AudioComponent *component, bool loop)
+bool Audio_ComponentIsLooping(AudioComponent component)
 {
-    RJGlobal_DebugAssertNullPointerCheck(component);
-    ma_sound_set_looping((ma_sound *)component->data, loop);
+    amsAssertComponent(component);
+
+    return ma_sound_is_looping((ma_sound *)&amsSound(component));
 }
 
-#pragma endregion AudioComponent
-
-#pragma region AudioListenerComponent
-
-void AudioListenerComponent_Update(AudioListenerComponent *listener)
+void Audio_ComponentSetLooping(AudioComponent component, bool loop)
 {
-    RJGlobal_DebugAssertNullPointerCheck(listener);
+    amsAssertComponent(component);
 
-    ma_engine_listener_set_position(&AUDIO_MAIN_ENGINE, 0, listener->positionReference->x, listener->positionReference->y, listener->positionReference->z);
-    ma_engine_listener_set_direction(&AUDIO_MAIN_ENGINE, 0, listener->rotationReference->x, listener->rotationReference->y, listener->rotationReference->z); // todo forward rotation
+    ma_sound_set_looping((ma_sound *)&amsSound(component), loop);
 }
-
-#pragma endregion AudioListenerComponent

@@ -8,9 +8,9 @@
 typedef struct HashMap
 {
     void *data;
-    size_t capacity;
-    size_t count;
-    size_t sizeOfItem;
+    RJGlobal_Size capacity;
+    RJGlobal_Size count;
+    RJGlobal_Size sizeOfItem;
     char *nameOfType;
 } HashMap;
 
@@ -21,7 +21,7 @@ typedef struct HashMap
 /// @param sizeOfItem Size of the item type to store.
 /// @param capacity Initial capacity of the hash map.
 /// @return The created HashMap struct.
-HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacity);
+HashMap HashMap_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJGlobal_Size capacity);
 
 /// @brief Destroyer function for HashMap.
 /// @param hashMap Pointer to the HashMap to destroy.

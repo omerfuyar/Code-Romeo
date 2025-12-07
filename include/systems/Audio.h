@@ -6,96 +6,82 @@
 #include "utilities/Vector.h"
 #include "utilities/ListArray.h"
 
-/// @brief Scene to build a audio functionality.
-typedef struct AudioScene AudioScene;
+// typedef uint32_t AudioComponent;
 
-/// @brief Listener Component to hold necessary data to listen sound in a scene.
-typedef struct AudioListenerComponent
-{
-    AudioScene *scene;
+/// @brief Capacity of free indices array of the audio system.
+#define AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE 4
 
-    Vector3 *positionReference;
-    Vector3 *rotationReference;
-} AudioListenerComponent;
+#pragma region Typedefs
 
-/// @brief Scene to build a audio functionality.
-typedef struct AudioScene
-{
-    String name;
-    AudioListenerComponent *listener;
-    ListArray components; // AudioComponent
-} AudioScene;
+/// @brief Represents a component that can interact with the audio system.
+typedef RJGlobal_Size AudioComponent;
 
-/// @brief Audio component to hold the necessary data to play and store a sound.
-typedef struct AudioComponent
-{
-    AudioScene *scene;
+#pragma endregion Typedefs
 
-    Vector3 *positionReference;
-
-    size_t componentOffsetInScene;
-    void *data;
-} AudioComponent;
-
-#pragma region Audio
-
-/// @brief Initialize the necessary resources for audio system.
-void Audio_Initialize();
+/// @brief Initialize the audio system with the specified component capacity.
+/// @param initialComponentCapacity The initial capacity for audio components.
+/// @param positionReferences Reference to the array of position vectors for audio components.
+void Audio_Initialize(RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences);
 
 /// @brief Terminate and free the necessary resources for audio system.
 void Audio_Terminate();
 
-#pragma endregion Audio
+/// @brief Configure the audio listener's position and rotation references.
+/// @param positionReference Reference to the listener's position.
+/// @param rotationReference Reference to the listener's rotation.
+void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationReference);
 
-#pragma region AudioScene
+/// @brief Reconfigure the audio system's position references and component capacity.
+/// @param positionReferences Reference to the array of position vectors for audio components.
+/// @param newComponentCapacity The new capacity for audio components.
+void Audio_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newComponentCapacity);
 
-AudioScene *AudioScene_Create(StringView name, size_t initialComponentCapacity);
+/// @brief Update the audio system.
+void Audio_Update();
 
-void AudioScene_Destroy(AudioScene *scene);
+/// @brief Creates an audio component and associates it with an entity.
+/// @param entity The entity to associate the component with.
+/// @param audioFile The audio file to be used by the component.
+/// @param positionReference Reference to the position of the audio component.
+/// @return The created audio component.
+AudioComponent Audio_ComponentCreate(RJGlobal_Size entity, StringView audioFile);
 
-void AudioScene_SetMainListener(AudioScene *scene, AudioListenerComponent *listener);
+/// @brief Destroys an audio component and frees its resources.
+/// @param component Component to destroy.
+void Audio_ComponentDestroy(AudioComponent component);
 
-AudioComponent *AudioScene_CreateComponent(AudioScene *scene, StringView file, Vector3 *positionReference);
+/// @brief Checks if the audio component is currently active.
+/// @param component Component to check.
+/// @return True if the component is active, false otherwise.
+bool Audio_ComponentIsActive(AudioComponent component);
 
-AudioListenerComponent *AudioScene_CreateListenerComponent(AudioScene *scene, Vector3 *positionReference, Vector3 *rotationReference);
-
-#pragma endregion AudioScene
-
-#pragma region AudioComponent
-
-/// @brief Update the component to its 3D space.
-/// @param component Component to update.
-void AudioComponent_Update(AudioComponent *component);
-
-/// @brief Play the components audio.
-/// @param component Component to play the audio
-void AudioComponent_Play(AudioComponent *component);
-
-/// @brief Pause the components audio.
-/// @param component Component to pause the audio.
-void AudioComponent_Pause(AudioComponent *component);
+/// @brief Sets the active state of the audio component.
+/// @param component Component to configure.
+/// @param isActive True to activate the component, false to deactivate.
+void Audio_ComponentSetActive(AudioComponent component, bool isActive);
 
 /// @brief Is the audio of the component currently playing or not.
 /// @param component Component to check.
 /// @return True if the audio is playing, false if not.
-bool AudioComponent_IsPlaying(AudioComponent *component);
+bool Audio_ComponentIsPlaying(AudioComponent component);
+
+/// @brief Sets the playing state of the audio component.
+/// @param component Component to check.
+/// @param play Play the audio if true, pause if false.
+void Audio_ComponentSetPlaying(AudioComponent component, bool play);
 
 /// @brief Rewinds the audio by moving its cursor.
+/// @param batch Audio batch the component is in.
 /// @param component Component to rewind.
 /// @param interval Between 0 and 1. 0 is the start and 1 is the end. Clamps to 0-1 internally.
-void AudioComponent_Rewind(AudioComponent *component, float interval);
+void Audio_ComponentRewind(AudioComponent component, float interval);
+
+/// @brief Checks if the component is set to loop the audio.
+/// @param component Component to check.
+/// @return True if the component is set to loop the audio, false otherwise.
+bool Audio_ComponentIsLooping(AudioComponent component);
 
 /// @brief Configures the component to loop the audio not.
 /// @param component Component to configure
 /// @param loop Loop or not.
-void AudioComponent_SetLooping(AudioComponent *component, bool loop);
-
-#pragma endregion AudioComponent
-
-#pragma region AudioListenerComponent
-
-/// @brief Update the listener to its 3D space.
-/// @param listener Listener to update.
-void AudioListenerComponent_Update(AudioListenerComponent *listener);
-
-#pragma endregion AudioListenerComponent
+void Audio_ComponentSetLooping(AudioComponent component, bool loop);

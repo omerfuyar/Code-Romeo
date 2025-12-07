@@ -5,48 +5,44 @@
 
 #pragma region Source Only
 
-/// @brief
-/// @param key
-/// @param capacity
-/// @return
-size_t HashMap_Hash(const char *key, size_t capacity)
+/// @brief Hash function for HashMap.
+/// @param map The HashMap to hash for.
+/// @param key The key to hash.
+/// @return The hash value.
+RJGlobal_Size HashMap_Hash(const HashMap *map, const char *key)
 {
-    size_t strLength = strlen(key);
+    RJGlobal_Size strLength = RJGlobal_StringLength(key);
 
-    size_t sum = 0;
-    size_t mul = 1;
+    RJGlobal_Size sum = 0;
+    RJGlobal_Size mul = 1;
 
-    for (size_t i = 0; i < strLength; i++)
+    for (RJGlobal_Size i = 0; i < strLength; i++)
     {
         mul = (i % 4 == 0) ? 1 : mul * 256;
-        sum += (size_t)key[i] * mul;
+        sum += (RJGlobal_Size)key[i] * mul;
     }
 
-    return sum % capacity;
+    return sum % map->capacity;
 }
 
 #pragma endregion Source Only
 
-HashMap HashMap_Create(const char *nameOfType, size_t sizeOfItem, size_t capacity)
+HashMap HashMap_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJGlobal_Size capacity)
 {
     HashMap map;
     map.capacity = capacity;
     map.sizeOfItem = sizeOfItem;
 
-    size_t nameOfTypeLength = strlen(nameOfType);
+    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
 
-    map.nameOfType = (char *)malloc(nameOfTypeLength + 1);
-    RJGlobal_DebugAssertNullPointerCheck(map.nameOfType);
+    RJGlobal_DebugAssertAllocationCheck(char, map.nameOfType, nameOfTypeLength + 1);
     RJGlobal_MemoryCopy(map.nameOfType, nameOfTypeLength + 1, nameOfType);
     map.nameOfType[nameOfTypeLength] = '\0';
 
     map.count = 0;
-    map.data = (void *)malloc(capacity * sizeOfItem);
-    RJGlobal_DebugAssertNullPointerCheck(map.data);
+    RJGlobal_DebugAssertAllocationCheck(char, map.data, capacity *sizeOfItem);
 
-    RJGlobal_MemorySet(map.data, map.sizeOfItem * map.capacity, 0);
-
-    RJGlobal_DebugInfo("HashMap '%s' created with initial capacity: %zu, size of item: %zu", nameOfType, capacity, sizeOfItem);
+    RJGlobal_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", nameOfType, capacity, sizeOfItem);
 
     return map;
 }
@@ -56,7 +52,7 @@ void HashMap_Destroy(HashMap *map)
     RJGlobal_DebugAssertNullPointerCheck(map);
     RJGlobal_DebugAssertNullPointerCheck(map->data);
 
-    size_t nameOfTypeLength = strlen(map->nameOfType);
+    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(map->nameOfType);
 
     char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
     RJGlobal_MemoryCopy(tempTitle, HashMap_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), map->nameOfType);
@@ -79,7 +75,7 @@ void HashMap_Register(HashMap *map, const char *key, const void *value)
 {
     RJGlobal_DebugAssertNullPointerCheck(map);
 
-    void *targetLocation = (void *)((char *)map->data + HashMap_Hash(key, map->capacity) * map->sizeOfItem);
+    void *targetLocation = (void *)((char *)map->data + HashMap_Hash(map, key) * map->sizeOfItem);
 
     RJGlobal_MemoryCopy(targetLocation, map->sizeOfItem, value);
 
@@ -88,5 +84,5 @@ void HashMap_Register(HashMap *map, const char *key, const void *value)
 
 void *HashMap_Access(const HashMap *map, const char *key)
 {
-    return (void *)((char *)map->data + HashMap_Hash(key, map->capacity) * map->sizeOfItem);
+    return (void *)((char *)map->data + HashMap_Hash(map, key) * map->sizeOfItem);
 }
