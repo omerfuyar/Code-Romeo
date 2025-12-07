@@ -117,6 +117,7 @@
 
 #if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_WINDOWS
 
+// todo use '/' for all and convert when passing to OS functions
 /// @brief Character used for path delimiters.
 #define RJGLOBAL_PATH_DELIMETER_CHAR '\\'
 /// @brief String used for path delimiters.
@@ -141,7 +142,7 @@
 /// @brief Macro wrapper for memory copy operation.
 #define RJGlobal_MemoryCopy(destination, size, source) memcpy(destination, source, size)
 /// @brief Macro wrapper for memory set operation.
-#define RJGlobal_MemorySet(destination, size, value) memset(destination, value, size)
+#define RJGlobal_MemorySet(destination, size, value) memset(destination, (int)value, size)
 /// @brief Macro wrapper for memory move operation.
 #define RJGlobal_MemoryMove(destination, size, source) memmove(destination, source, size)
 /// @brief Macro wrapper for memory compare operation.

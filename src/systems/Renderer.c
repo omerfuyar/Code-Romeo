@@ -32,6 +32,7 @@
 #endif
 
 #define RENDERER_OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
+#define RENDERER_FLAG_ACTIVE (1 << 0)
 
 #pragma region Source Only
 
@@ -170,14 +171,12 @@ struct RENDERER_MAIN_SCENE
 } RMS = {0};
 
 #define rmsBatch(batch) (RMS.data.batches[batch])
+
 #define rmsEntity(batch, component) (rmsBatch(batch).components.entities[component])
-
 #define rmsObjectMatrix(batch, component) (rmsBatch(batch).components.objectMatrices[component])
-
-#define rmsPositionReference(batch, component) (rmsBatch(batch).components.positionReferences[component])
-#define rmsRotationReference(batch, component) (rmsBatch(batch).components.rotationReferences[component])
-#define rmsScaleReference(batch, component) (rmsBatch(batch).components.scaleReferences[component])
-
+#define rmsPositionReference(batch, component) (rmsBatch(batch).components.positionReferences[rmsEntity(batch, component)])
+#define rmsRotationReference(batch, component) (rmsBatch(batch).components.rotationReferences[rmsEntity(batch, component)])
+#define rmsScaleReference(batch, component) (rmsBatch(batch).components.scaleReferences[rmsEntity(batch, component)])
 #define rmsFlag(batch, component) (rmsBatch(batch).components.flags[component])
 
 #define rmsIsActive(batch, component) (rmsFlag(batch, component) & RENDERER_FLAG_ACTIVE)
@@ -241,11 +240,12 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
     RJGlobal_DebugAssertNullPointerCheck(window);
 
     RMS.window = window;
+
     RJGlobal_DebugAssertAllocationCheck(RENDERER_BATCH, RMS.data.batches, initialBatchCapacity);
 
     RMS.data.capacity = initialBatchCapacity;
     RMS.data.count = 0;
-    RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJGlobal_Size), initialBatchCapacity);
+    RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJGlobal_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
@@ -298,6 +298,7 @@ void Renderer_Terminate()
     }
 
     free(RMS.data.batches);
+    RMS.data.batches = NULL;
 
     RMS.data.capacity = 0;
     RMS.data.count = 0;
@@ -623,6 +624,8 @@ void Renderer_Render()
     glUniform1f(RMS.shader.camSize, *RMS.camera.sizeReference);
     glUniform1i(RMS.shader.camIsPerspective, *RMS.camera.isPerspectiveReference);
 
+    ResourceModel *previousModel = NULL;
+
     for (RJGlobal_Size batch = 0; batch < RMS.data.count; batch++)
     {
         ResourceMaterial *previousMaterial = NULL;
@@ -630,12 +633,17 @@ void Renderer_Render()
         glBufferData(GL_UNIFORM_BUFFER,
                      (long long)(sizeof(Resource_Matrix4) * rmsBatch(batch).data.count),
                      rmsBatch(batch).components.objectMatrices,
-                     RENDERER_OPENGL_DRAW_TYPE);
+                     RENDERER_OPENGL_DRAW_TYPE); // todo send transforms
 
-        glBufferData(GL_ARRAY_BUFFER,
-                     (long long)(rmsBatch(batch).data.model->vertices.sizeOfItem * rmsBatch(batch).data.model->vertices.count),
-                     rmsBatch(batch).data.model->vertices.data,
-                     RENDERER_OPENGL_DRAW_TYPE);
+        if (previousModel != rmsBatch(batch).data.model)
+        {
+            glBufferData(GL_ARRAY_BUFFER,
+                         (long long)(rmsBatch(batch).data.model->vertices.sizeOfItem * rmsBatch(batch).data.model->vertices.count),
+                         rmsBatch(batch).data.model->vertices.data,
+                         RENDERER_OPENGL_DRAW_TYPE);
+
+            previousModel = rmsBatch(batch).data.model;
+        }
 
         for (RJGlobal_Size j = 0; j < rmsBatch(batch).data.model->meshes.count; j++)
         {

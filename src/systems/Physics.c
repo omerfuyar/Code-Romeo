@@ -5,6 +5,7 @@
 
 #define PHYSICS_FLAG_ACTIVE (1 << 0)
 #define PHYSICS_FLAG_STATIC (1 << 1)
+#define PHYSICS_SEPARATION_EPSILON 0.001f
 
 #pragma region Source Only
 
@@ -61,8 +62,8 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, Physi
     {
         pmsPositionReference(dynamicComponent).x +=
             pmsPositionReference(dynamicComponent).x < pmsPositionReference(staticComponent).x
-                ? -overlap.x
-                : overlap.x;
+                ? -(overlap.x + PHYSICS_SEPARATION_EPSILON)
+                : (overlap.x + PHYSICS_SEPARATION_EPSILON);
 
         pmsVelocity(dynamicComponent).x *= -PMS.properties.elasticity;
     }
@@ -70,8 +71,8 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, Physi
     {
         pmsPositionReference(dynamicComponent).y +=
             pmsPositionReference(dynamicComponent).y < pmsPositionReference(staticComponent).y
-                ? -overlap.y
-                : overlap.y;
+                ? -(overlap.y + PHYSICS_SEPARATION_EPSILON)
+                : (overlap.y + PHYSICS_SEPARATION_EPSILON);
 
         pmsVelocity(dynamicComponent).y *= -PMS.properties.elasticity;
     }
@@ -79,8 +80,8 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, Physi
     {
         pmsPositionReference(dynamicComponent).z +=
             pmsPositionReference(dynamicComponent).z < pmsPositionReference(staticComponent).z
-                ? -overlap.z
-                : overlap.z;
+                ? -(overlap.z + PHYSICS_SEPARATION_EPSILON)
+                : (overlap.z + PHYSICS_SEPARATION_EPSILON);
 
         pmsVelocity(dynamicComponent).z *= -PMS.properties.elasticity;
     }
@@ -223,7 +224,7 @@ void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionRefere
 
     PMS.data.positionReferences = positionReferences;
 
-    RJGlobal_DebugInfo("Physics initialized with capacity %u.", PMS.data.capacity);
+    RJGlobal_DebugInfo("Physics initialized with component capacity %u.", PMS.data.capacity);
 }
 
 void Physics_Terminate()
@@ -254,16 +255,16 @@ void Physics_Terminate()
 void Physics_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newCapacity)
 {
     RJGlobal_DebugAssertNullPointerCheck(positionReferences);
-    RJGlobal_DebugAssert(newCapacity > PMS.data.count, "Limiting must be greater than current physics component count.");
+    RJGlobal_DebugAssert(newCapacity > PMS.data.count, "New component capacity must be greater than current physics component count.");
 
     PMS.data.positionReferences = positionReferences;
     PMS.data.capacity = newCapacity;
 
-    PMS.data.entities = (RJGlobal_Size *)realloc(PMS.data.entities, sizeof(RJGlobal_Size) * PMS.data.capacity);
-    PMS.data.velocities = (Vector3 *)realloc(PMS.data.velocities, sizeof(Vector3) * PMS.data.capacity);
-    PMS.data.colliderSizes = (Vector3 *)realloc(PMS.data.colliderSizes, sizeof(Vector3) * PMS.data.capacity);
-    PMS.data.masses = (float *)realloc(PMS.data.masses, sizeof(float) * PMS.data.capacity);
-    PMS.data.flags = (uint8_t *)realloc(PMS.data.flags, sizeof(uint8_t) * PMS.data.capacity);
+    RJGlobal_Reallocate(RJGlobal_Size, PMS.data.entities, PMS.data.capacity);
+    RJGlobal_Reallocate(Vector3, PMS.data.velocities, PMS.data.capacity);
+    RJGlobal_Reallocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
+    RJGlobal_Reallocate(float, PMS.data.masses, PMS.data.capacity);
+    RJGlobal_Reallocate(uint8_t, PMS.data.flags, PMS.data.capacity);
 
     RJGlobal_DebugInfo("Physics position references reconfigured with new capacity %u.", PMS.data.capacity);
 }

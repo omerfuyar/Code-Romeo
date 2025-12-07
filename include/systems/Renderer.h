@@ -10,8 +10,6 @@
 /// @brief Capacity of free indices array of the renderer system.
 #define RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE 4
 
-#define RENDERER_FLAG_ACTIVE (1 << 0)
-
 #define RENDERER_OPENGL_CLEAR_COLOR 0.3f, 0.3f, 0.3f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
