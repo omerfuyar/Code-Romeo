@@ -62,6 +62,7 @@ mat4 rotationMatrix(vec3 rotation)
         0.0, 0.0, 0.0, 1.0
     );
     
+    // Apply rotations in X -> Y -> Z order (same as glm_rotate calls in CPU code)
     return rotZ * rotY * rotX;
 }
 

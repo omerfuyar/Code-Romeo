@@ -583,14 +583,17 @@ void Renderer_Update()
                   (vec4 *)&RMS.camera.projectionMatrix);
     }
 
-    // Copy transform data to UBO structure for all active objects
+    // Copy transform data to UBO structure for all objects
+    // Note: Instanced rendering draws all objects in the batch, including inactive ones.
+    // Inactive objects are handled by setting scale to zero, making them not visible.
     for (RJGlobal_Size batch = 0; batch < RMS.data.count; batch++)
     {
         for (RJGlobal_Size component = 0; component < rmsBatch(batch).data.count; component++)
         {
             if (!rmsIsActive(batch, component))
             {
-                // Set inactive objects to zero scale so they don't render
+                // Inactive objects: set scale to zero to make them invisible
+                // (Previous implementation left inactive objects at identity matrix)
                 rmsObjectTransform(batch, component).position = Vector3_New(0, 0, 0);
                 rmsObjectTransform(batch, component).rotation = Vector3_New(0, 0, 0);
                 rmsObjectTransform(batch, component).scale = Vector3_New(0, 0, 0);
