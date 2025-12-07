@@ -41,25 +41,27 @@ mat4 rotationMatrix(vec3 rotation)
     float sz = sin(rotation.z);
     
     // Rotation order: X -> Y -> Z (same as CPU implementation)
+    // Note: GLSL mat4 constructor takes values in column-major order
+    // These matrices are written with columns as parameters for clarity
     mat4 rotX = mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, cx, sx, 0.0,
-        0.0, -sx, cx, 0.0,
-        0.0, 0.0, 0.0, 1.0
+        1.0,  0.0,  0.0, 0.0,  // column 0
+        0.0,  cx,  -sx,  0.0,  // column 1
+        0.0,  sx,   cx,  0.0,  // column 2
+        0.0,  0.0,  0.0, 1.0   // column 3
     );
     
     mat4 rotY = mat4(
-        cy, 0.0, -sy, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        sy, 0.0, cy, 0.0,
-        0.0, 0.0, 0.0, 1.0
+         cy,  0.0,  sy, 0.0,  // column 0
+        0.0,  1.0, 0.0, 0.0,  // column 1
+        -sy,  0.0,  cy, 0.0,  // column 2
+        0.0,  0.0, 0.0, 1.0   // column 3
     );
     
     mat4 rotZ = mat4(
-        cz, sz, 0.0, 0.0,
-        -sz, cz, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
+         cz, -sz, 0.0, 0.0,  // column 0
+         sz,  cz, 0.0, 0.0,  // column 1
+        0.0, 0.0, 1.0, 0.0,  // column 2
+        0.0, 0.0, 0.0, 1.0   // column 3
     );
     
     // Apply rotations in X -> Y -> Z order (same as glm_rotate calls in CPU code)
@@ -69,22 +71,24 @@ mat4 rotationMatrix(vec3 rotation)
 // Function to create a translation matrix
 mat4 translationMatrix(vec3 position)
 {
+    // GLSL mat4 constructor takes values in column-major order
     return mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        position.x, position.y, position.z, 1.0
+        1.0, 0.0, 0.0, 0.0,          // column 0
+        0.0, 1.0, 0.0, 0.0,          // column 1
+        0.0, 0.0, 1.0, 0.0,          // column 2
+        position.x, position.y, position.z, 1.0  // column 3 (translation)
     );
 }
 
 // Function to create a scale matrix
 mat4 scaleMatrix(vec3 scale)
 {
+    // GLSL mat4 constructor takes values in column-major order
     return mat4(
-        scale.x, 0.0, 0.0, 0.0,
-        0.0, scale.y, 0.0, 0.0,
-        0.0, 0.0, scale.z, 0.0,
-        0.0, 0.0, 0.0, 1.0
+        scale.x, 0.0, 0.0, 0.0,  // column 0
+        0.0, scale.y, 0.0, 0.0,  // column 1
+        0.0, 0.0, scale.z, 0.0,  // column 2
+        0.0, 0.0, 0.0, 1.0       // column 3
     );
 }
 
