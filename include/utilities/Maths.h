@@ -21,6 +21,8 @@
 #define Maths_Max(a, b) ((a) > (b) ? (a) : (b))
 /// @brief Returns the absolute value of a.
 #define Maths_Abs(a) ((a) < 0 ? -(a) : (a))
+/// @brief Returns the rounded value of a.
+#define Maths_Round(a) ((a) < 0 ? (float)((int)((float)(a) - 0.5f)) : (float)((int)((float)(a) + 0.5f)))
 /// @brief Clamps a value between a minimum and maximum value.
 #define Maths_Clamp(value, minValue, maxValue) (Maths_Min(Maths_Max(value, minValue), maxValue))
 /// @brief Converts degrees to radians.
