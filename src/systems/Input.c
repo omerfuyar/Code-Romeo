@@ -335,7 +335,7 @@ bool Input_GetKey(InputKeyCode key, InputState state)
 
 bool Input_GetMouseButton(InputMouseButtonCode button, InputState state)
 {
-    return Input_GetMouseButtonState(button) == state;
+    return (Input_GetMouseButtonState(button) & state) != 0;
 }
 
 InputState Input_GetKeyState(InputKeyCode key)

@@ -98,10 +98,10 @@ typedef enum InputMouseButtonCode
 /// @brief States of a key or button. Can be used with flags in parameters.
 typedef enum InputState
 {
-    InputState_Released = 1,
-    InputState_Down = 2,
-    InputState_Pressed = 4,
-    InputState_Up = 8
+    InputState_Released = (1 << 0),
+    InputState_Down = (1 << 1),
+    InputState_Pressed = (1 << 2),
+    InputState_Up = (1 << 3)
 } InputState;
 
 /// @brief Mouse modes for the input system.
