@@ -57,19 +57,19 @@ typedef struct Vector4Int
 #pragma endregion typedefs
 
 /// @brief Creates a new Vector2 struct.
-#define Vector2_New(x, y) ((Vector2){(x), (y)})
+#define Vector2_New(x, y) ((Vector2){(float)(x), (float)(y)})
 /// @brief Creates a new Vector3 struct.
-#define Vector3_New(x, y, z) ((Vector3){(x), (y), (z)})
+#define Vector3_New(x, y, z) ((Vector3){(float)(x), (float)(y), (float)(z)})
 /// @brief Creates a new Vector4 struct.
-#define Vector4_New(x, y, z, w) ((Vector4){(x), (y), (z), (w)})
+#define Vector4_New(x, y, z, w) ((Vector4){(float)(x), (float)(y), (float)(z), (float)(w)})
 /// @brief Creates a new Color struct.
 #define Color_New(x, y, z, w) Vector4_New(x, y, z, w)
 /// @brief Creates a new Vector2Int struct.
-#define Vector2Int_New(x, y) ((Vector2Int){(x), (y)})
+#define Vector2Int_New(x, y) ((Vector2Int){(int)(x), (int)(y)})
 /// @brief Creates a new Vector3Int struct.
-#define Vector3Int_New(x, y, z) ((Vector3Int){(x), (y), (z)})
+#define Vector3Int_New(x, y, z) ((Vector3Int){(int)(x), (int)(y), (int)(z)})
 /// @brief Creates a new Vector4Int struct.
-#define Vector4Int_New(x, y, z, w) ((Vector4Int){(x), (y), (z), (w)})
+#define Vector4Int_New(x, y, z, w) ((Vector4Int){(int)(x), (int)(y), (int)(z), (int)(w)})
 
 /// @brief Creates new Vector2 with all components set to the same value.
 #define Vector2_NewN(n) (Vector2_New(n, n))
