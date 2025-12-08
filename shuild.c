@@ -113,11 +113,10 @@ int main(int argc, char **argv)
     SHU_ModuleBegin("Code-Romeo");
 
     SHU_ModuleAddIncludeDirectory("include/");
-    SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
+    SHU_ModuleAddIncludeDirectory("dependencies/");
     SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
     SHU_ModuleAddIncludeDirectory("dependencies/glad/include/");
-    SHU_ModuleAddIncludeDirectory("dependencies/stb/include/");
-    SHU_ModuleAddIncludeDirectory("dependencies/miniaudio/include/");
+    SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
 
     SHU_ModuleAddSourceDirectory("src/");
     SHU_ModuleAddSourcefile("dependencies/glad/src/glad.c");

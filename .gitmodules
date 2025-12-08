@@ -7,3 +7,6 @@
 [submodule "dependencies/shuild"]
 	path = dependencies/shuild
 	url = https://github.com/omerfuyar/shuild.git
+[submodule "dependencies/tecter"]
+	path = dependencies/tecter
+	url = https://github.com/omerfuyar/tecter.git
