@@ -674,7 +674,7 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         {
             currentMaterial = ResourceMaterial_GetByName(mdlLineTokens[1]);
 
-            RJGlobal_DebugAssertNullPointerCheck(currentMaterial);
+            RJGlobal_DebugAssert(currentMaterial != NULL, "Material could not be found in material pool.");
         }
     }
 

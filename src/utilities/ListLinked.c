@@ -1,6 +1,6 @@
 //! disable debug info for this file
-#undef RJGLOBAL_DEBUG_INFO
-#define RJGLOBAL_DEBUG_INFO false
+// #undef RJGLOBAL_DEBUG_INFO
+// #define RJGLOBAL_DEBUG_INFO false
 
 #include "utilities/ListLinked.h"
 

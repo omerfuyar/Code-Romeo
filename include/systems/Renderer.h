@@ -66,11 +66,17 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
 /// @param isPerspectiveReference The reference to whether the camera uses perspective projection or orthographic projection.
 void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference);
 
+/// @brief Converts screen coordinates to world coordinates with given depth.
+/// @param screenPosition Screen coordinate to convert.
+/// @param depth Depth of the cast. How far you want to get from camera
+/// @return World space position of the converted coordinate.
+Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth);
+
 /// @brief Resizes the renderer's batch capacity.
 /// @param newBatchCapacity The new capacity for renderer batches.
 void Renderer_Resize(RJGlobal_Size newBatchCapacity);
 
-/// @brief Updates the renderer system.
+/// @brief Updates the renderer system. Call before using any renderer function in during the frame.
 void Renderer_Update();
 
 /// @brief Renders the current frame.

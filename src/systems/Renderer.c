@@ -427,10 +427,40 @@ void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationRefer
     RMS.camera.nearClipPlaneReference = nearClipPlaneReference;
     RMS.camera.farClipPlaneReference = farClipPlaneReference;
     RMS.camera.isPerspectiveReference = isPerspectiveReference;
+}
 
-    RJGlobal_DebugInfo("Camera: Pos=(%.2f,%.2f,%.2f) Rot=(%.2f,%.2f,%.2f)",
-                       RMS.camera.positionReference->x, RMS.camera.positionReference->y, RMS.camera.positionReference->z,
-                       RMS.camera.rotationReference->x, RMS.camera.rotationReference->y, RMS.camera.rotationReference->z);
+Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
+{
+    Vector3 nearWindowCoords = Vector3_New(
+        (float)screenPosition.x,
+        (float)(RMS.window->size.y - screenPosition.y),
+        0.0f);
+
+    Vector3 farWindowCoords = Vector3_New(
+        (float)screenPosition.x,
+        (float)(RMS.window->size.y - screenPosition.y),
+        1.0f);
+
+    Vector4 viewport = Vector4_New(0, 0, (float)RMS.window->size.x, (float)RMS.window->size.y);
+
+    mat4 tempMatrix;
+    glm_mat4_mul((vec4 *)&RMS.camera.projectionMatrix, (vec4 *)&RMS.camera.viewMatrix, tempMatrix);
+
+    Vector3 nearPoint = Vector3_Zero;
+    Vector3 farPoint = Vector3_Zero;
+    glm_unproject((float *)&nearWindowCoords, (vec4 *)tempMatrix, (float *)&viewport, (float *)&nearPoint);
+    glm_unproject((float *)&farWindowCoords, (vec4 *)tempMatrix, (float *)&viewport, (float *)&farPoint);
+
+    Vector3 rayDirection = Vector3_Normalized(Vector3_Add(farPoint, Vector3_Scale(nearPoint, -1.0f)));
+
+    if (*RMS.camera.isPerspectiveReference)
+    {
+        return Vector3_Add(*RMS.camera.positionReference, Vector3_Scale(rayDirection, depth));
+    }
+    else
+    {
+        return Vector3_Add(Vector3_Add(nearPoint, Vector3_New(0.0f, 0.0f, -(*RMS.camera.nearClipPlaneReference))), Vector3_Scale(rayDirection, depth));
+    }
 }
 
 void Renderer_Resize(RJGlobal_Size newBatchCapacity)
