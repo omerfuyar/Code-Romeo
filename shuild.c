@@ -126,6 +126,5 @@ int main(int argc, char **argv)
     return 0;
 
 usageError:
-    SHU_LogInfo("Usage is <compiler> <d/r> [all]");
-    return 1;
+    SHU_LogError(1, "Usage is <compiler> <d/r> [all]");
 }
