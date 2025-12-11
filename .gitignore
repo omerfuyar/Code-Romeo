@@ -29,6 +29,7 @@ mono_crash.*
 
 # Build results
 [Bb]uild/
+[Bb]uild-*/
 [Bb]uild-san/
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -45,7 +46,6 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
-[Bb]uild/
 [Bb]uilds/
 buildR
 buildD
