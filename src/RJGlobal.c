@@ -4,29 +4,9 @@
 #include <windows.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) GetModuleFileName(NULL, buffer, bufferSize)
 
-#elif RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_LINUX
+#elif RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_UNIX
 #include <unistd.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
-
-#elif RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_MACOS
-#include <mach-o/dyld.h>
-static ssize_t macos_get_exe_path(char *buffer, size_t bufferSize)
-{
-    // _NSGetExecutablePath requires uint32_t size
-    // If bufferSize is too large, cap it at UINT32_MAX
-    if (bufferSize > UINT32_MAX)
-    {
-        bufferSize = UINT32_MAX;
-    }
-    
-    uint32_t size = (uint32_t)bufferSize;
-    if (_NSGetExecutablePath(buffer, &size) == 0)
-    {
-        return (ssize_t)strlen(buffer);
-    }
-    return -1;
-}
-#define RJGlobal_GetExePath(buffer, bufferSize) macos_get_exe_path(buffer, bufferSize)
 
 #endif
 
