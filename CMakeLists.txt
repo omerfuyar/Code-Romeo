@@ -10,10 +10,28 @@ option(BUILD_TESTS "Build tests" ON)
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 
-# Check for submodules
+# Check for submodules - verify multiple critical files
+set(SUBMODULE_CHECK_FAILED FALSE)
+set(MISSING_SUBMODULES "")
+
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/dependencies/shuild/shuild.h")
+    set(SUBMODULE_CHECK_FAILED TRUE)
+    list(APPEND MISSING_SUBMODULES "shuild")
+endif()
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/dependencies/cglm/CMakeLists.txt")
+    set(SUBMODULE_CHECK_FAILED TRUE)
+    list(APPEND MISSING_SUBMODULES "cglm")
+endif()
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/dependencies/glfw/CMakeLists.txt")
+    set(SUBMODULE_CHECK_FAILED TRUE)
+    list(APPEND MISSING_SUBMODULES "glfw")
+endif()
+
+if(SUBMODULE_CHECK_FAILED)
     message(FATAL_ERROR 
-        "Submodules not initialized!\n"
+        "Submodules not initialized: ${MISSING_SUBMODULES}\n"
         "Please run: git submodule update --init --recursive")
 endif()
 

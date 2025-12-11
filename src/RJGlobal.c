@@ -12,6 +12,13 @@
 #include <mach-o/dyld.h>
 static ssize_t macos_get_exe_path(char *buffer, size_t bufferSize)
 {
+    // _NSGetExecutablePath requires uint32_t size
+    // If bufferSize is too large, cap it at UINT32_MAX
+    if (bufferSize > UINT32_MAX)
+    {
+        bufferSize = UINT32_MAX;
+    }
+    
     uint32_t size = (uint32_t)bufferSize;
     if (_NSGetExecutablePath(buffer, &size) == 0)
     {
