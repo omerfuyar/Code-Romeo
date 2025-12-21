@@ -34,6 +34,8 @@ int main(int argc, char **argv)
     SHU_CompilerSetFlags("-w -DCGLM_STATIC");
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
+#elif SHUM_HOST_PLATFORM == SHUM_PLATFORM_LINUX
+    SHU_CompilerAddFlags("-D_GLFW_X11");
 #endif
 
     char *arcOutputDirectory = isDebug ? "build/debug/" : "build/release/";
@@ -104,6 +106,8 @@ int main(int argc, char **argv)
     SHU_CompilerAddFlags("-DCGLM_STATIC");
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
+#elif SHUM_HOST_PLATFORM == SHUM_PLATFORM_LINUX
+    SHU_CompilerAddFlags("-D_GLFW_X11");
 #endif
 
     SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Build info : %s", buildTypeString);

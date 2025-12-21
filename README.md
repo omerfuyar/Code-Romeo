@@ -20,7 +20,11 @@ cd Code-Romeo
 
 ### Linux commands to install dependencies
 ``` shell
-sudo apt install libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev  libxcursor-dev libxi-dev libgl1-mesa-dev xvfb
+# For Debian/Ubuntu
+sudo apt install libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev xvfb
+
+# For Arch
+sudo pacman -S libxkbcommon wayland wayland-protocols libx11 libxrandr libxinerama libxcursor libxi mesa xorg-server-xvfb
 ```
 
 ## Build

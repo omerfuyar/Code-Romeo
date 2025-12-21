@@ -99,6 +99,8 @@ typedef struct RENDERER_BATCH
 
 #pragma endregion typedefs
 
+bool RENDERER_INITIALIZED = false;
+
 struct RENDERER_MAIN_SCENE
 {
     ContextWindow *window;
@@ -247,10 +249,11 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
     RMS.data.count = 0;
     RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJGlobal_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
+    // todo only glfw function in this file, make a wrapper in context
     RJGlobal_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
-    Context_ConfigureLogCallback(RENDERER_MAIN_WINDOW_LOG_CALLBACK);
+    glDebugMessageCallback((GLDEBUGPROC)RENDERER_MAIN_WINDOW_LOG_CALLBACK, NULL);
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -285,6 +288,7 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
 
     //! ... other attributes in vertex
 
+    RENDERER_INITIALIZED = true;
     RJGlobal_DebugInfo("Renderer initialized successfully.");
 }
 
@@ -346,7 +350,13 @@ void Renderer_Terminate()
 
     RMS.shader.objectMatricesHandle = 0;
 
+    RENDERER_INITIALIZED = false;
     RJGlobal_DebugInfo("Renderer terminated successfully.");
+}
+
+bool Renderer_IsInitialized()
+{
+    return RENDERER_INITIALIZED;
 }
 
 void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
@@ -632,12 +642,6 @@ void Renderer_Update()
 
 void Renderer_Render()
 {
-    if (glfwWindowShouldClose(RMS.window->handle))
-    {
-        RJGlobal_DebugInfo("Main window close input received");
-        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
-    }
-
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(RMS.shader.programHandle);
@@ -718,6 +722,7 @@ void Renderer_Render()
     }
 
     glfwSwapBuffers(RMS.window->handle);
+    glFinish();
 }
 
 RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)

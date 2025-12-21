@@ -52,6 +52,10 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
 /// @brief Terminates the renderer system.
 void Renderer_Terminate();
 
+/// @brief Get the status of renderer module.
+/// @return Renderer module is initialized or not.
+bool Renderer_IsInitialized();
+
 /// @brief Configures the shaders used by the renderer.
 /// @param vertexShaderFile The file path of the vertex shader.
 /// @param fragmentShaderFile The file path of the fragment shader.

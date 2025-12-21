@@ -34,6 +34,16 @@ typedef void (*Context_VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int,
 /// @return Pointer to the main window context structure
 ContextWindow *Context_Initialize();
 
+/// @brief Clean up and terminate the context system
+void Context_Terminate();
+
+/// @brief Get the status of context module.
+/// @return Context module is initialized or not.
+bool Context_IsInitialized();
+
+/// @brief Updates the window. Should be called before any system module update.
+void Context_Update();
+
 /// @brief Configure all window properties at once
 /// @param title Window title text
 /// @param windowSize Window dimensions in pixels
@@ -61,10 +71,3 @@ void Context_ConfigureFullScreen(bool fullScreen);
 /// @brief Set the window resize callback function
 /// @param callback Function to call when window is resized, or NULL to remove callback
 void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback);
-
-/// @brief Set the window log callback function
-/// @param callback Function to call when window log events occur, or NULL to remove callback
-void Context_ConfigureLogCallback(Context_VoidFunUintUintUintUintIntCcharptrCvoidptr callback);
-
-/// @brief Clean up and terminate the context system
-void Context_Terminate();

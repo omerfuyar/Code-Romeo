@@ -1,14 +1,24 @@
 #include "tools/Context.h"
 
-#include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
+#pragma region Source Only
+
+bool CONTEXT_INITIALIZED = false;
 ContextWindow CONTEXT_MAIN_WINDOW = {0};
 Context_VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
 Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
 
+void CONTEXT_ERROR_CALLBACK(int error, const char *description)
+{
+    RJGlobal_DebugError("Context get error code '%d' : \n'%s'", error, description);
+}
+
+#pragma endregion Source Only
+
 ContextWindow *Context_Initialize()
 {
+    glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
     RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
@@ -22,17 +32,43 @@ ContextWindow *Context_Initialize()
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 
+    CONTEXT_INITIALIZED = true;
     RJGlobal_DebugInfo("Main window created successfully.");
 
     return &CONTEXT_MAIN_WINDOW;
+}
+
+void Context_Terminate()
+{
+    glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
+    glfwTerminate();
+
+    CONTEXT_INITIALIZED = false;
+    RJGlobal_DebugInfo("Context terminated successfully.");
+}
+
+bool Context_IsInitialized()
+{
+    return CONTEXT_INITIALIZED;
+}
+
+void Context_Update()
+{
+    glfwPollEvents();
+
+    if (glfwWindowShouldClose(CONTEXT_MAIN_WINDOW.handle))
+    {
+        RJGlobal_DebugInfo("Main window close input received");
+        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
+    }
 }
 
 void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, Context_VoidFunVoidptrIntInt resizeCallback)
 {
     Context_ConfigureTitle(title);
     Context_ConfigureResizeCallback(resizeCallback);
-    Context_ConfigureFullScreen(fullScreen);
     Context_ConfigureSize(windowSize);
+    Context_ConfigureFullScreen(fullScreen);
     Context_ConfigureVSync(vSync);
 }
 
@@ -87,20 +123,5 @@ void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback)
 
     glfwSetFramebufferSizeCallback(CONTEXT_MAIN_WINDOW.handle, (GLFWframebuffersizefun)CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK);
 
-    Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
-}
-
-void Context_ConfigureLogCallback(Context_VoidFunUintUintUintUintIntCcharptrCvoidptr callback)
-{
-    CONTEXT_MAIN_WINDOW_LOG_CALLBACK = callback;
-
-    glDebugMessageCallback((GLDEBUGPROC)CONTEXT_MAIN_WINDOW_LOG_CALLBACK, NULL);
-}
-
-void Context_Terminate()
-{
-    glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
-    glfwTerminate();
-
-    RJGlobal_DebugInfo("Context terminated successfully.");
+    // Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
 }
