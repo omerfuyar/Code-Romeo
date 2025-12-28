@@ -9,14 +9,14 @@ ContextWindow CONTEXT_MAIN_WINDOW = {0};
 Context_VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
 Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
 
-void CONTEXT_ERROR_CALLBACK(int error, const char *description)
+static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 {
     RJGlobal_DebugError("Context get error code '%d' : \n'%s'", error, description);
 }
 
 #pragma endregion Source Only
 
-ContextWindow *Context_Initialize()
+ContextWindow *Context_Initialize(void)
 {
     glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
     RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
@@ -38,7 +38,7 @@ ContextWindow *Context_Initialize()
     return &CONTEXT_MAIN_WINDOW;
 }
 
-void Context_Terminate()
+void Context_Terminate(void)
 {
     glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
     glfwTerminate();
@@ -47,12 +47,12 @@ void Context_Terminate()
     RJGlobal_DebugInfo("Context terminated successfully.");
 }
 
-bool Context_IsInitialized()
+bool Context_IsInitialized(void)
 {
     return CONTEXT_INITIALIZED;
 }
 
-void Context_Update()
+void Context_Update(void)
 {
     glfwPollEvents();
 

@@ -9,7 +9,7 @@
 /// @param map The HashMap to hash for.
 /// @param key The key to hash.
 /// @return The hash value.
-RJGlobal_Size HashMap_Hash(const HashMap *map, const char *key)
+static RJGlobal_Size HashMap_Hash(const HashMap *map, const char *key)
 {
     RJGlobal_Size strLength = RJGlobal_StringLength(key);
 

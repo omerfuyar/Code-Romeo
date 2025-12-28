@@ -191,7 +191,7 @@ struct RENDERER_MAIN_SCENE
 /// @param window
 /// @param width
 /// @param height
-void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
+static void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 {
     RJGlobal_DebugAssertNullPointerCheck(window);
 
@@ -214,7 +214,7 @@ void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int height)
 /// @param length
 /// @param message
 /// @param userParam
-void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
+static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
     (void)source;
     (void)id;
@@ -292,7 +292,7 @@ void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapaci
     RJGlobal_DebugInfo("Renderer initialized successfully.");
 }
 
-void Renderer_Terminate()
+void Renderer_Terminate(void)
 {
     RMS.window = NULL;
 
@@ -354,7 +354,7 @@ void Renderer_Terminate()
     RJGlobal_DebugInfo("Renderer terminated successfully.");
 }
 
-bool Renderer_IsInitialized()
+bool Renderer_IsInitialized(void)
 {
     return RENDERER_INITIALIZED;
 }
@@ -584,7 +584,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
 */
 
 // todo move this to shader, compute in gpu
-void Renderer_Update()
+void Renderer_Update(void)
 {
     glm_mat4_identity((vec4 *)&RMS.camera.projectionMatrix);
     glm_mat4_identity((vec4 *)&RMS.camera.viewMatrix);
@@ -640,7 +640,7 @@ void Renderer_Update()
     }
 }
 
-void Renderer_Render()
+void Renderer_Render(void)
 {
     glClearColor(RENDERER_OPENGL_CLEAR_COLOR);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -921,7 +921,7 @@ void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentSh
     RJGlobal_DebugInfo("Debug Renderer initialized successfully.");
 }
 
-void RendererDebug_Terminate()
+void RendererDebug_Terminate(void)
 {
     if (RMS.debugShader.vbo != 0)
     {
@@ -949,12 +949,12 @@ void RendererDebug_Terminate()
     RJGlobal_DebugInfo("Debug Renderer terminated successfully.");
 }
 
-void RendererDebug_StartRendering()
+void RendererDebug_StartRendering(void)
 {
     glUseProgram(RMS.debugShader.programHandle);
 }
 
-void RendererDebug_FinishRendering()
+void RendererDebug_FinishRendering(void)
 {
     if (RMS.debugShader.vertices.count == 0)
     {

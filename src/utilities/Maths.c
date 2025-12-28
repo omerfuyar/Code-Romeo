@@ -17,16 +17,6 @@ float Maths_Power(float base, float exponent)
     return powf(base, exponent);
 }
 
-float Maths_SquareRoot(float value)
-{
-    return sqrtf(value);
-}
-
-float CubeRoot(float value)
-{
-    return cbrtf(value);
-}
-
 float Maths_Sin(float degree)
 {
     return sinf(Maths_DegToRad(degree));

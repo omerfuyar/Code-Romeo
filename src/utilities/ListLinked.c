@@ -20,7 +20,7 @@ typedef struct ListLinkedNode
 /// @param sizeOfData Size of the data to be stored in the node.
 /// @param data Pointer to the data to store inside the node.
 /// @return The created ListLinkedNode struct.
-ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data)
+static ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data)
 {
     ListLinkedNode *node = NULL;
     RJGlobal_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
@@ -42,7 +42,7 @@ ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data
 
 /// @brief Destroyer function for ListLinkedNode. Frees the data and the node itself.
 /// @param node Pointer to the ListLinkedNode to destroy.
-void ListLinkedNode_Destroy(ListLinkedNode *node)
+static void ListLinkedNode_Destroy(ListLinkedNode *node)
 {
     RJGlobal_DebugAssertNullPointerCheck(node);
 
@@ -54,7 +54,7 @@ void ListLinkedNode_Destroy(ListLinkedNode *node)
 
 /// @brief Destroyer function for ListLinkedNode. Destroys itself and the next node recursively.
 /// @param node Pointer to the head node of the linked list to destroy.
-void ListLinkedNode_DestroyAll(ListLinkedNode *node)
+static void ListLinkedNode_DestroyAll(ListLinkedNode *node)
 {
     RJGlobal_DebugAssertNullPointerCheck(node);
 
@@ -69,7 +69,7 @@ void ListLinkedNode_DestroyAll(ListLinkedNode *node)
 /// @brief Connects the node to nextNode.
 /// @param node Node to connect to next.
 /// @param nextNode Next node to connect.
-void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNode)
+static void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNode)
 {
     RJGlobal_DebugAssertNullPointerCheck(node);
 
@@ -79,7 +79,7 @@ void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNode)
 /// @brief Connects two linked list nodes if the next is null recursively.
 /// @param node Pointer to the current node to set next node of.
 /// @param nextNode Pointer to the next node to connect.
-void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode)
+static void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode)
 {
     RJGlobal_DebugAssertNullPointerCheck(node);
     RJGlobal_DebugAssertNullPointerCheck(nextNode);
@@ -100,7 +100,7 @@ void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode)
 /// @param data Data to compare with node's data.
 /// @param startIndex Index to pass until the item is found. Incremented by one if the data didn't match.
 /// @return The index which is incremented from previous calls. Returns -1 if item is not found in the sequence.
-long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJGlobal_Size sizeOfItem, const void *data, long long startIndex)
+static long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJGlobal_Size sizeOfItem, const void *data, long long startIndex)
 {
     if (RJGlobal_MemoryCompare(node->data, sizeOfItem, data) == 0)
     {

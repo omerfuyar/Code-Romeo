@@ -27,7 +27,7 @@ typedef RJGlobal_Size PhysicsComponent;
 void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity);
 
 /// @brief Destroys a physics scene and all its components.
-void Physics_Terminate();
+void Physics_Terminate(void);
 
 /// @brief Changes the position references for all physics components in the scene.
 /// @param positionReferences A pointer to the start of the new position vector references.
@@ -46,7 +46,7 @@ bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component
 void Physics_UpdateComponents(float deltaTime);
 
 /// @brief Detects and resolves collisions between components in the scene.
-void Physics_ResolveCollisions();
+void Physics_ResolveCollisions(void);
 
 /// @brief Creates a new physics component and adds it to the scene.
 /// @param entity The entity associated with the physics component.

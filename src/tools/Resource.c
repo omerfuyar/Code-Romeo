@@ -36,7 +36,7 @@ ListLinked RESOURCE_TEXTURE_POOL = {0};
 
 #pragma region ResourceTexture
 
-ResourceTexture *ResourceTexture_GetByNameOrCreate(StringView name, StringView filePathInResources)
+static ResourceTexture *ResourceTexture_GetByNameOrCreate(StringView name, StringView filePathInResources)
 {
     for (RJGlobal_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
@@ -95,7 +95,7 @@ ResourceTexture *ResourceTexture_GetByNameOrCreate(StringView name, StringView f
     return texture;
 }
 
-void ResourceTexture_Destroy(ResourceTexture *texture)
+static void ResourceTexture_Destroy(ResourceTexture *texture)
 {
     RJGlobal_DebugAssertNullPointerCheck(texture);
 
@@ -114,7 +114,7 @@ void ResourceTexture_Destroy(ResourceTexture *texture)
 
 #pragma region ResourceMaterial
 
-ResourceMaterial *ResourceMaterial_GetByName(StringView name)
+static ResourceMaterial *ResourceMaterial_GetByName(StringView name)
 {
     for (RJGlobal_Size materialIndex = 0; materialIndex < RESOURCE_MATERIAL_POOL.count; materialIndex++)
     {
@@ -130,7 +130,7 @@ ResourceMaterial *ResourceMaterial_GetByName(StringView name)
     return NULL;
 }
 
-void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePathInResources)
+static void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePathInResources)
 {
     String tempFilePath = scc(resourcePathInResources);
     String_ConcatEnd(&tempFilePath, matFile);
@@ -234,7 +234,7 @@ void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePa
     ResourceText_Destroy(matFileResource);
 }
 
-void ResourceMaterial_Destroy(ResourceMaterial *material)
+static void ResourceMaterial_Destroy(ResourceMaterial *material)
 {
     RJGlobal_DebugAssertNullPointerCheck(material);
 
@@ -252,7 +252,7 @@ void ResourceMaterial_Destroy(ResourceMaterial *material)
 
 #pragma region ResourceMesh
 
-ResourceMesh *ResourceMesh_Create(ResourceModel *model, RJGlobal_Size indexCount, ResourceMaterial *material)
+static ResourceMesh *ResourceMesh_Create(ResourceModel *model, RJGlobal_Size indexCount, ResourceMaterial *material)
 {
     ResourceMesh *mesh = (ResourceMesh *)ListArray_Add(&model->meshes, NULL);
 
@@ -262,7 +262,7 @@ ResourceMesh *ResourceMesh_Create(ResourceModel *model, RJGlobal_Size indexCount
     return mesh;
 }
 
-void ResourceMesh_Destroy(ResourceMesh *mesh)
+static void ResourceMesh_Destroy(ResourceMesh *mesh)
 {
     RJGlobal_DebugAssertNullPointerCheck(mesh);
 
@@ -416,7 +416,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
 
 #pragma region ResourceModel
 
-void ProcessFaceVertex(StringView faceToken, ResourceModel *model, ResourceMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
+static void ProcessFaceVertex(StringView faceToken, ResourceModel *model, ResourceMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
 {
     StringView faceData[3]; // v/vt/vn
     RJGlobal_Size faceDataCount;

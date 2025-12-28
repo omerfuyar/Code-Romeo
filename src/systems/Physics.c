@@ -56,7 +56,7 @@ struct PHYSICS_MAIN_SCENE
 /// @param staticComponent Static physics component.
 /// @param dynamicComponent Dynamic physics component.
 /// @param overlap Overlap vector indicating the penetration depth.
-void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, PhysicsComponent dynamicComponent, Vector3 overlap)
+static void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, PhysicsComponent dynamicComponent, Vector3 overlap)
 {
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
@@ -91,7 +91,7 @@ void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, Physi
 /// @param firstComponent First dynamic physics component.
 /// @param secondComponent Second dynamic physics component.
 /// @param overlap Overlap vector indicating the penetration depth.
-void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent, PhysicsComponent secondComponent, Vector3 overlap)
+static void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent, PhysicsComponent secondComponent, Vector3 overlap)
 {
     float totalInvMass = 1.0f / pmsMass(firstComponent) + 1.0f / pmsMass(secondComponent);
     float move1 = 0.0f;
@@ -177,7 +177,7 @@ void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent, Physi
 /// @brief Resolve a collision between two physics components. Which resolution method to use is determined by whether components are static or dynamic.
 /// @param firstComponent First physics component.
 /// @param secondComponent Second physics component.
-void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, PhysicsComponent secondComponent)
+static void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, PhysicsComponent secondComponent)
 {
     Vector3 overlap;
 
@@ -227,7 +227,7 @@ void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionRefere
     RJGlobal_DebugInfo("Physics initialized with component capacity %u.", PMS.data.capacity);
 }
 
-void Physics_Terminate()
+void Physics_Terminate(void)
 {
     PMS.data.capacity = 0;
     PMS.data.count = 0;
@@ -320,7 +320,7 @@ void Physics_UpdateComponents(float deltaTime)
     }
 }
 
-void Physics_ResolveCollisions()
+void Physics_ResolveCollisions(void)
 {
     for (RJGlobal_Size iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
     {

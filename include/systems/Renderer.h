@@ -50,11 +50,11 @@ typedef RJGlobal_Size RendererBatch;
 void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
-void Renderer_Terminate();
+void Renderer_Terminate(void);
 
 /// @brief Get the status of renderer module.
 /// @return Renderer module is initialized or not.
-bool Renderer_IsInitialized();
+bool Renderer_IsInitialized(void);
 
 /// @brief Configures the shaders used by the renderer.
 /// @param vertexShaderFile The file path of the vertex shader.
@@ -81,10 +81,10 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth);
 void Renderer_Resize(RJGlobal_Size newBatchCapacity);
 
 /// @brief Updates the renderer system. Call before using any renderer function in during the frame.
-void Renderer_Update();
+void Renderer_Update(void);
 
 /// @brief Renders the current frame.
-void Renderer_Render();
+void Renderer_Render(void);
 
 /// @brief Creates a renderer batch.
 /// @param mdlFile The file path of the model.
@@ -142,13 +142,13 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJGlobal_Size initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
-void RendererDebug_Terminate();
+void RendererDebug_Terminate(void);
 
 /// @brief Should be called before using debug rendering functions, and after main renderer's rendering functions.
-void RendererDebug_StartRendering();
+void RendererDebug_StartRendering(void);
 
 /// @brief Should be called before Renderer_FinishRendering to draw all debug shapes.
-void RendererDebug_FinishRendering();
+void RendererDebug_FinishRendering(void);
 
 /// @brief Draws a line in 3D space for debugging purposes.
 /// @param start The starting point of the line.

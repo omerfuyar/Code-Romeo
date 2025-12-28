@@ -30,7 +30,7 @@ Vector2Int INPUT_PREVIOUS_MOUSE_POSITION = {0};
 /// @param scanCode
 /// @param action
 /// @param mods
-void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, int mods)
+static void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, int mods)
 {
     (void)window;
     (void)scanCode;
@@ -132,7 +132,7 @@ void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, i
 /// @param window
 /// @param positionX
 /// @param positionY
-void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double positionY)
+static void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double positionY)
 {
     (void)window;
 
@@ -147,7 +147,7 @@ void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double 
 /// @param button
 /// @param action
 /// @param mods
-void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int mods)
+static void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int mods)
 {
     (void)window;
     (void)mods;
@@ -178,7 +178,7 @@ void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int
 /// @param window
 /// @param offsetX
 /// @param offsetY
-void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offsetY)
+static void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offsetY)
 {
     (void)window;
     (void)offsetX;
@@ -217,7 +217,7 @@ void Input_ConfigureMouseMode(InputMouseMode mode)
     glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, (int)mode);
 }
 
-void Input_Update()
+void Input_Update(void)
 {
     INPUT_PREVIOUS_MOUSE_POSITION = INPUT_MOUSE_POSITION;
     INPUT_MOUSE_SCROLL = 0.0f;
@@ -381,22 +381,22 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button)
     }
 }
 
-float Input_GetMouseScroll()
+float Input_GetMouseScroll(void)
 {
     return INPUT_MOUSE_SCROLL;
 }
 
-Vector2Int Input_GetMousePosition()
+Vector2Int Input_GetMousePosition(void)
 {
     return INPUT_MOUSE_POSITION;
 }
 
-Vector2Int Input_GetMousePositionDelta()
+Vector2Int Input_GetMousePositionDelta(void)
 {
     return Vector2Int_Add(INPUT_MOUSE_POSITION, Vector2Int_Scale(INPUT_PREVIOUS_MOUSE_POSITION, -1.0f));
 }
 
-Vector3 Input_GetMovementVector()
+Vector3 Input_GetMovementVector(void)
 {
     Vector3 input = {0};
 

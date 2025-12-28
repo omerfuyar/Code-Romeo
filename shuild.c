@@ -3,6 +3,17 @@
 #define SHUILD_IMPLEMENTATION
 #include "dependencies/shuild/shuild.h"
 
+void ShowBuildConfig(const char *header, const char *compiler, char isDebug)
+{
+    SHU_Log(0, header, "Build info : %s", isDebug ? "Debug" : "Release");
+    SHU_Log(0, header, "Compiler info : %s", compiler);
+
+    char flagBuffer[2048] = {0};
+    SHU_CompilerGetFlags(flagBuffer, sizeof(flagBuffer));
+
+    SHU_Log(0, header, "Compile options : %s", flagBuffer);
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -11,16 +22,13 @@ int main(int argc, char **argv)
     }
 
     char isDebug = -1;
-    char *buildTypeString = NULL;
 
     if (strcmp(argv[2], "d") == 0)
     {
-        buildTypeString = "Debug";
         isDebug = 1;
     }
     else if (strcmp(argv[2], "r") == 0)
     {
-        buildTypeString = "Release";
         isDebug = 0;
     }
     else
@@ -40,24 +48,11 @@ int main(int argc, char **argv)
 
     char *arcOutputDirectory = isDebug ? "build/debug/" : "build/release/";
 
-    char *compilerFlags = NULL;
-
     if (argc > 3)
     {
-        if (strcmp(argv[1], "clang-cl") == 0 || strcmp(argv[1], "cl") == 0)
-        {
-            compilerFlags = "/O2 /DNDEBUG";
-        }
-        else if (strcmp(argv[1], "clang") == 0 || strcmp(argv[1], "gcc") == 0)
-        {
-            compilerFlags = "-O3 -DNDEBUG";
-        }
-        else
-        {
-            return 3;
-        }
+        SHU_CompilerOptimization(SHUM_COMPILER_OPTIMIZATION_HIGH);
 
-        SHU_CompilerAddFlags(compilerFlags);
+        ShowBuildConfig(SHUM_COLOR_BLUE("Romeo Dependencies"), argv[1], isDebug);
 
         SHU_ModuleBegin("cglm");
         SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
@@ -70,38 +65,21 @@ int main(int argc, char **argv)
         SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
     }
 
+    SHU_CompilerClearFlags();
+
     if (isDebug)
     {
-        if (strcmp(argv[1], "clang-cl") == 0 || strcmp(argv[1], "cl") == 0)
+        SHU_CompilerDebug();
+        SHU_CompilerWarning(SHUM_COMPILER_WARNING_HIGH, 1);
+        if (!strcmp(argv[1], "clang") || !strcmp(argv[1], "gcc"))
         {
-            compilerFlags = "/Zi /Od /W4 /permissive- /GS /WX /wd4324";
-        }
-        else if (strcmp(argv[1], "clang") == 0 || strcmp(argv[1], "gcc") == 0)
-        {
-            compilerFlags = "-g -O0 -Wall -Werror -Wextra -Wshadow -Wpedantic -Wconversion -Wnull-dereference -Wunused-result -Wno-strict-prototypes -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-value -fstack-protector-strong";
-        }
-        else
-        {
-            return 3;
+            SHU_CompilerAddFlags("-Wno-gnu-zero-variadic-macro-arguments -Wno-format-nonliteral");
         }
     }
     else
     {
-        if (strcmp(argv[1], "clang-cl") == 0 || strcmp(argv[1], "cl") == 0)
-        {
-            compilerFlags = "/O2 /DNDEBUG";
-        }
-        else if (strcmp(argv[1], "clang") == 0 || strcmp(argv[1], "gcc") == 0)
-        {
-            compilerFlags = "-O3 -DNDEBUG";
-        }
-        else
-        {
-            return 3;
-        }
+        SHU_CompilerOptimization(SHUM_COMPILER_OPTIMIZATION_HIGH);
     }
-
-    SHU_CompilerSetFlags(compilerFlags);
 
     SHU_CompilerAddFlags("-DCGLM_STATIC");
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
@@ -110,9 +88,7 @@ int main(int argc, char **argv)
     SHU_CompilerAddFlags("-D_GLFW_X11");
 #endif
 
-    SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Build info : %s", buildTypeString);
-    SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Compiler info : %s", argv[1]);
-    SHU_Log(0, SHUM_COLOR_BLUE("Romeo"), "Compile options : %s", compilerFlags);
+    ShowBuildConfig(SHUM_COLOR_BLUE("Romeo"), argv[1], isDebug);
 
     SHU_ModuleBegin("Code-Romeo");
 
@@ -123,7 +99,7 @@ int main(int argc, char **argv)
     SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
 
     SHU_ModuleAddSourceDirectory("src/");
-    SHU_ModuleAddSourcefile("dependencies/glad/src/glad.c");
+    SHU_ModuleAddSourceFile("dependencies/glad/src/glad.c");
 
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 

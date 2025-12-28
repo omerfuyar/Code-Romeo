@@ -92,7 +92,7 @@ void Audio_Initialize(RJGlobal_Size initialComponentCapacity, Vector3 *positionR
     RJGlobal_DebugInfo("Audio system initialized with component capacity %u.", initialComponentCapacity);
 }
 
-void Audio_Terminate()
+void Audio_Terminate(void)
 {
     ma_engine_uninit(&AMS.engine);
 
@@ -139,7 +139,7 @@ void Audio_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newCom
     RJGlobal_DebugInfo("Audio position references reconfigured with new capacity %u.", AMS.data.capacity);
 }
 
-void Audio_Update()
+void Audio_Update(void)
 {
     for (RJGlobal_Size component = 0; component < AMS.data.count; component++)
     {

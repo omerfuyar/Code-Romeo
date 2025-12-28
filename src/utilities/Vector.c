@@ -155,11 +155,6 @@ Vector2Int Vector2Int_Scale(Vector2Int vector, float scalar)
     return Vector2Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar));
 }
 
-Vector2 Vector2_ToFloat(Vector2Int vector)
-{
-    return Vector2_New((float)vector.x, (float)vector.y);
-}
-
 float Vector2Int_Magnitude(Vector2Int vector)
 {
     return sqrtf((float)(vector.x * vector.x + vector.y * vector.y));

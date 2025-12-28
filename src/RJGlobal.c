@@ -8,6 +8,10 @@
 #include <unistd.h>
 #define RJGlobal_GetExePath(buffer, bufferSize) readlink("/proc/self/exe", buffer, bufferSize)
 
+#elif RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_MACOS
+#include <mach-o/dyld.h>
+#define RJGlobal_GetExePath(buffer, bufferSize) _NSGetExecutablePath(buffer, &size)
+
 #endif
 
 // #pragma message("Build info: " RJGLOBAL_PLATFORM " | " RJGLOBAL_COMPILER_NAME " | " RJGLOBAL_ARCHITECTURE)
@@ -94,7 +98,7 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
     }
 }
 
-const char *RJGlobal_GetExecutablePath()
+const char *RJGlobal_GetExecutablePath(void)
 {
     if (RJGLOBAL_GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
     {

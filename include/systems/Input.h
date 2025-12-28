@@ -122,7 +122,7 @@ void Input_ConfigureMouseMode(InputMouseMode mode);
 
 /// @brief Updates the state of all input devices (keyboard, mouse) for the current frame
 /// @note This function should be called once per frame before any input queries
-void Input_Update();
+void Input_Update(void);
 
 /// @brief Checks if a keyboard key is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state.
 /// @param key The key code to check
@@ -148,16 +148,16 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button);
 
 /// @brief Gets the current mouse wheel scroll delta
 /// @return A float value representing the scroll amount (positive for scrolling up, negative for scrolling down)
-float Input_GetMouseScroll();
+float Input_GetMouseScroll(void);
 
 /// @brief Gets the current mouse cursor position in screen coordinates. Relative to the top-left corner of the window.
 /// @return A Vector2Int containing the (x, y) coordinates of the mouse cursor
-Vector2Int Input_GetMousePosition();
+Vector2Int Input_GetMousePosition(void);
 
 /// @brief Gets the change in mouse position since the last frame. Relative to the top-left corner of the window.
 /// @return A Vector2Int containing the (deltaX, deltaY) of the mouse movement
-Vector2Int Input_GetMousePositionDelta();
+Vector2Int Input_GetMousePositionDelta(void);
 
 /// @brief Gets the movement vector of the user. X axis is D-A / RightArrow-LeftArrow, Y axis is W-S / UpArrow-DownArrow, Z axis is Space-(LeftControl/RightControl).
 /// @return The built vector from user input. Final vector is normalized;
-Vector3 Input_GetMovementVector();
+Vector3 Input_GetMovementVector(void);

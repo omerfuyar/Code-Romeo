@@ -24,7 +24,7 @@ typedef RJGlobal_Size AudioComponent;
 void Audio_Initialize(RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences);
 
 /// @brief Terminate and free the necessary resources for audio system.
-void Audio_Terminate();
+void Audio_Terminate(void);
 
 /// @brief Configure the audio listener's position and rotation references.
 /// @param positionReference Reference to the listener's position.
@@ -37,7 +37,7 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
 void Audio_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newComponentCapacity);
 
 /// @brief Update the audio system.
-void Audio_Update();
+void Audio_Update(void);
 
 /// @brief Creates an audio component and associates it with an entity.
 /// @param entity The entity to associate the component with.

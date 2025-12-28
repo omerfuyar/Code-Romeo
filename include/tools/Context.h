@@ -32,17 +32,17 @@ typedef void (*Context_VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int,
 
 /// @brief Initialize the context system and create the main window
 /// @return Pointer to the main window context structure
-ContextWindow *Context_Initialize();
+ContextWindow *Context_Initialize(void);
 
 /// @brief Clean up and terminate the context system
-void Context_Terminate();
+void Context_Terminate(void);
 
 /// @brief Get the status of context module.
 /// @return Context module is initialized or not.
-bool Context_IsInitialized();
+bool Context_IsInitialized(void);
 
 /// @brief Updates the window. Should be called before any system module update.
-void Context_Update();
+void Context_Update(void);
 
 /// @brief Configure all window properties at once
 /// @param title Window title text

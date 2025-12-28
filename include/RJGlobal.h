@@ -185,7 +185,7 @@ void RJGlobal_Log(bool terminate, const char *header, const char *file, int line
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
-const char *RJGlobal_GetExecutablePath();
+const char *RJGlobal_GetExecutablePath(void);
 
 /// @brief Runs the main application loop and calls the setup and loop callbacks.
 /// @param argc Command line argument count
