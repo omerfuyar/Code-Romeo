@@ -35,10 +35,10 @@
 #pragma region typedefs
 
 /// @brief Represents a component that can interact with the renderer system.
-typedef RJGlobal_Size RendererComponent;
+typedef RJ_Size RendererComponent;
 
 /// @brief Represents a batch of objects that share the same model for rendering.
-typedef RJGlobal_Size RendererBatch;
+typedef RJ_Size RendererBatch;
 
 #pragma endregion typedefs
 
@@ -47,7 +47,7 @@ typedef RJGlobal_Size RendererBatch;
 /// @brief Initializes the renderer system.
 /// @param window The context window to render to.
 /// @param initialBatchCapacity The initial capacity for renderer batches.
-void Renderer_Initialize(ContextWindow *window, RJGlobal_Size initialBatchCapacity);
+void Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
 void Renderer_Terminate(void);
@@ -78,7 +78,7 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth);
 
 /// @brief Resizes the renderer's batch capacity.
 /// @param newBatchCapacity The new capacity for renderer batches.
-void Renderer_Resize(RJGlobal_Size newBatchCapacity);
+void Renderer_Resize(RJ_Size newBatchCapacity);
 
 /// @brief Updates the renderer system. Call before using any renderer function in during the frame.
 void Renderer_Update(void);
@@ -94,7 +94,7 @@ void Renderer_Render(void);
 /// @param rotationReferences The array of rotation references for components.
 /// @param scaleReferences The array of scale references for components.
 /// @return The handle to the created renderer batch.
-RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
+RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
 
 /// @brief Destroys a renderer batch.
 /// @param batch The handle to the renderer batch to destroy.
@@ -106,13 +106,13 @@ void Renderer_BatchDestroy(RendererBatch batch);
 /// @param rotationReferences The array of rotation references for components.
 /// @param scaleReferences The array of scale references for components.
 /// @param newComponentCapacity The new capacity for components in the batch.
-void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJGlobal_Size newComponentCapacity);
+void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.
 /// @param batch The handle to the renderer batch.
 /// @return The handle to the created renderer component.
-RendererComponent Renderer_ComponentCreate(RJGlobal_Size entity, RendererBatch batch);
+RendererComponent Renderer_ComponentCreate(RJ_Size entity, RendererBatch batch);
 
 /// @brief Destroys a renderer component within a specified batch.
 /// @param batch The handle to the renderer batch.
@@ -139,7 +139,7 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 /// @param vertexShaderFile The source file for debug vertex shader.
 /// @param fragmentShaderFile The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJGlobal_Size initialVertexCapacity);
+void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate(void);

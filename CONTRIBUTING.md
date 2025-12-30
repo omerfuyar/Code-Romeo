@@ -54,10 +54,10 @@ Layers explained above are also represented in the folder structure of the proje
 There are modules that are providing framework elements to the user, elements under a module must be prefixed with the module name to avoid name collisions and ease of use.
 
 *   **Types:** `PascalCase` - Types also must be prefixed with the module name like `RendererScene`, `InputKeyCode` and `PhysicsComponent`.
-*   **Functions:** `Prefix_PascalCase` - Name of the module or type to indicate must be prefixed to the function name like `RendererScene_CreateBatch`, `Context_Initialize` and `RJGlobal_GetExecutablePath`. Macro functions must also follow this rule.
+*   **Functions:** `Prefix_PascalCase` - Name of the module or type to indicate must be prefixed to the function name like `RendererScene_CreateBatch`, `Context_Initialize` and `RJ_GetExecutablePath`. Macro functions must also follow this rule.
 *   **Enum Members:** `Prefix_PascalCase` - The enum type must be prefixed to the enum value like `InputKeyCode_F`, `InputState_Down` and `InputMouseMode_Hidden`.
 *   **Variables:** `camelCase` - Local variables like `window` and `deltaTime`.
-*   **Constants & Internals:** `ALL_CAPS_SNAKE_CASE` - Constant variables or global values/functions not exposed to user like `RJGLOBAL_BUILD_DEBUG` and `RJGLOBAL_DEBUG_FILE`.
+*   **Constants & Internals:** `ALL_CAPS_SNAKE_CASE` - Constant variables or global values/functions not exposed to user like `RJ_BUILD_DEBUG` and `RJ_DEBUG_FILE`.
 
 ## Module / File Management
 
@@ -96,7 +96,7 @@ int String_Compare(StringView string, StringView other);
 /// @brief Create view from string literal.
 /// @param stringLiteral The literal string to create a view of.
 #define scl(stringLiteral) \
-    (StringView) { .characters = stringLiteral, .length = RJGlobal_Size(stringLiteral) }
+    (StringView) { .characters = stringLiteral, .length = RJ_Size(stringLiteral) }
 ```
 
 `@note` tag is not mandatory but if the developer thinks there is something extra to say about the function, it can be added. Other than that, every parameter must be documented with `@param` tag and the return value must be documented with `@return` tag. Because macro functions do not have return types, they do not need `@return` tag.
@@ -113,11 +113,11 @@ Other elements like types, enums and macros (if not explicit like `Vector3_One`)
 typedef struct StringView
 {
     const char *characters;
-    RJGlobal_Size length;
+    RJ_Size length;
 } StringView;
 
 /// @brief The debug log file pointer for the application.
-FILE *RJGLOBAL_DEBUG_FILE = NULL;
+FILE *RJ_DEBUG_FILE = NULL;
 ```
 
 ## Git Workflow

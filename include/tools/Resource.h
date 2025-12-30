@@ -11,7 +11,7 @@
 /// @brief Maximum token count for a single line in a resource file.
 #define RESOURCE_FILE_LINE_MAX_TOKEN_COUNT 8
 /// @brief Path to the resources folder relative to the executable.
-#define RESOURCE_PATH "resources" RJGLOBAL_PATH_DELIMETER_STR
+#define RESOURCE_PATH "resources" RJ_PATH_DELIMETER_STR
 
 #pragma region Typedefs
 
@@ -20,7 +20,7 @@ typedef struct ResourceText
 {
     String file;
     String data;
-    RJGlobal_Size lineCount;
+    RJ_Size lineCount;
 } ResourceText;
 
 /// @brief Resource representation for image files.
@@ -42,13 +42,13 @@ typedef struct Resource_Matrix4
 } Resource_Matrix4;
 
 /// @brief Should not be used by user.
-typedef RJGlobal_Size ResourceTextureHandle;
+typedef RJ_Size ResourceTextureHandle;
 
 /// @brief Should not be used by user.
 typedef struct ResourceTexture
 {
     String name;
-    RJGlobal_Size index;
+    RJ_Size index;
 
     ResourceTextureHandle handle;
     ResourceImage *image;
@@ -58,7 +58,7 @@ typedef struct ResourceTexture
 typedef struct ResourceMaterial
 {
     String name;
-    RJGlobal_Size index;
+    RJ_Size index;
 
     Vector3 ambientColor;
     Vector3 diffuseColor;
@@ -72,7 +72,7 @@ typedef struct ResourceMaterial
 } ResourceMaterial;
 
 /// @brief Should not be used by user.
-typedef RJGlobal_Size ResourceMeshIndex;
+typedef RJ_Size ResourceMeshIndex;
 
 /// @brief Should not be used by user.
 typedef struct ResourceMeshVertex
@@ -95,7 +95,7 @@ typedef struct ResourceMesh
 typedef struct ResourceModel
 {
     String file;
-    RJGlobal_Size index;
+    RJ_Size index;
 
     ListArray vertices; // ResourceMeshVertex
     ListArray meshes;   // ResourceMesh

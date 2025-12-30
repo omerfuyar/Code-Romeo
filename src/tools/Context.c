@@ -11,7 +11,7 @@ Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLB
 
 static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 {
-    RJGlobal_DebugError("Context get error code '%d' : \n'%s'", error, description);
+    RJ_DebugError("Context get error code '%d' : \n'%s'", error, description);
 }
 
 #pragma endregion Source Only
@@ -19,21 +19,21 @@ static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 ContextWindow *Context_Initialize(void)
 {
     glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
-    RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
+    RJ_DebugAssert(glfwInit(), "Failed to initialize GLFW");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    RJGlobal_DebugInfo("ContextManager initialized successfully.");
+    RJ_DebugInfo("ContextManager initialized successfully.");
 
     CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
     const char *errorLog = NULL;
-    RJGlobal_DebugAssert(CONTEXT_MAIN_WINDOW.handle != NULL, "Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
+    RJ_DebugAssert(CONTEXT_MAIN_WINDOW.handle != NULL, "Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 
     CONTEXT_INITIALIZED = true;
-    RJGlobal_DebugInfo("Main window created successfully.");
+    RJ_DebugInfo("Main window created successfully.");
 
     return &CONTEXT_MAIN_WINDOW;
 }
@@ -44,7 +44,7 @@ void Context_Terminate(void)
     glfwTerminate();
 
     CONTEXT_INITIALIZED = false;
-    RJGlobal_DebugInfo("Context terminated successfully.");
+    RJ_DebugInfo("Context terminated successfully.");
 }
 
 bool Context_IsInitialized(void)
@@ -58,8 +58,8 @@ void Context_Update(void)
 
     if (glfwWindowShouldClose(CONTEXT_MAIN_WINDOW.handle))
     {
-        RJGlobal_DebugInfo("Main window close input received");
-        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
+        RJ_DebugInfo("Main window close input received");
+        RJ_Terminate(EXIT_SUCCESS, "Main window close input received");
     }
 }
 
@@ -89,7 +89,7 @@ void Context_ConfigureSize(Vector2Int size)
     }
     else
     {
-        RJGlobal_DebugWarning("The context resize callback function is NULL. Skipped without calling");
+        RJ_DebugWarning("The context resize callback function is NULL. Skipped without calling");
     }
 }
 

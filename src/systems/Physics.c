@@ -20,11 +20,11 @@ struct PHYSICS_MAIN_SCENE
 
     struct PHYSICS_DATA
     {
-        RJGlobal_Size capacity;
-        RJGlobal_Size count;
-        ListArray freeIndices; // RJGlobal_Size
+        RJ_Size capacity;
+        RJ_Size count;
+        ListArray freeIndices; // RJ_Size
 
-        RJGlobal_Size *entities;
+        RJ_Size *entities;
 
         Vector3 *velocities;
         Vector3 *colliderSizes;
@@ -50,7 +50,7 @@ struct PHYSICS_MAIN_SCENE
 #define pmsIsStatic(component) (pmsFlag(component) & PHYSICS_FLAG_STATIC)
 #define pmsSetStatic(component, isStatic) (pmsFlag(component) = isStatic ? (pmsFlag(component) | PHYSICS_FLAG_STATIC) : (pmsFlag(component) & ~PHYSICS_FLAG_STATIC))
 
-#define pmsAssertComponent(component) RJGlobal_DebugAssert(component < PMS.data.count + PMS.data.freeIndices.count && pmsEntity(component) != RJGLOBAL_INDEX_INVALID && pmsIsActive(component), "Physics component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
+#define pmsAssertComponent(component) RJ_DebugAssert(component < PMS.data.count + PMS.data.freeIndices.count && pmsEntity(component) != RJ_INDEX_INVALID && pmsIsActive(component), "Physics component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
 
 /// @brief Resolve a collision between a static and dynamic physics component.
 /// @param staticComponent Static physics component.
@@ -202,29 +202,29 @@ static void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, Physi
 
 #pragma endregion Source Only
 
-void Physics_Initialize(RJGlobal_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
+void Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
 {
-    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
+    RJ_DebugAssertNullPointerCheck(positionReferences);
 
     PMS.data.capacity = componentCapacity;
     PMS.data.count = 0;
-    PMS.data.freeIndices = ListArray_Create("RJGlobal_Size", sizeof(RJGlobal_Size), PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    PMS.data.freeIndices = ListArray_Create("RJ_Size", sizeof(RJ_Size), PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     PMS.properties.drag = drag;
     PMS.properties.gravity = gravity;
     PMS.properties.elasticity = elasticity;
 
-    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, PMS.data.entities, PMS.data.capacity);
+    RJ_DebugAssertAllocationCheck(RJ_Size, PMS.data.entities, PMS.data.capacity);
 
-    RJGlobal_DebugAssertAllocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
+    RJ_DebugAssertAllocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
 
-    RJGlobal_DebugAssertAllocationCheck(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
-    RJGlobal_DebugAssertAllocationCheck(float, PMS.data.masses, PMS.data.capacity);
-    RJGlobal_DebugAssertAllocationCheck(uint8_t, PMS.data.flags, PMS.data.capacity);
+    RJ_DebugAssertAllocationCheck(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
+    RJ_DebugAssertAllocationCheck(float, PMS.data.masses, PMS.data.capacity);
+    RJ_DebugAssertAllocationCheck(uint8_t, PMS.data.flags, PMS.data.capacity);
 
     PMS.data.positionReferences = positionReferences;
 
-    RJGlobal_DebugInfo("Physics initialized with component capacity %u.", PMS.data.capacity);
+    RJ_DebugInfo("Physics initialized with component capacity %u.", PMS.data.capacity);
 }
 
 void Physics_Terminate(void)
@@ -249,24 +249,24 @@ void Physics_Terminate(void)
     PMS.data.masses = NULL;
     PMS.data.flags = NULL;
 
-    RJGlobal_DebugInfo("Physics terminated successfully.");
+    RJ_DebugInfo("Physics terminated successfully.");
 }
 
-void Physics_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newCapacity)
+void Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity)
 {
-    RJGlobal_DebugAssertNullPointerCheck(positionReferences);
-    RJGlobal_DebugAssert(newCapacity > PMS.data.count, "New component capacity must be greater than current physics component count.");
+    RJ_DebugAssertNullPointerCheck(positionReferences);
+    RJ_DebugAssert(newCapacity > PMS.data.count, "New component capacity must be greater than current physics component count.");
 
     PMS.data.positionReferences = positionReferences;
     PMS.data.capacity = newCapacity;
 
-    RJGlobal_Reallocate(RJGlobal_Size, PMS.data.entities, PMS.data.capacity);
-    RJGlobal_Reallocate(Vector3, PMS.data.velocities, PMS.data.capacity);
-    RJGlobal_Reallocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
-    RJGlobal_Reallocate(float, PMS.data.masses, PMS.data.capacity);
-    RJGlobal_Reallocate(uint8_t, PMS.data.flags, PMS.data.capacity);
+    RJ_DebugAssertReallocationCheck(RJ_Size, PMS.data.entities, PMS.data.capacity);
+    RJ_DebugAssertReallocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
+    RJ_DebugAssertReallocationCheck(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
+    RJ_DebugAssertReallocationCheck(float, PMS.data.masses, PMS.data.capacity);
+    RJ_DebugAssertReallocationCheck(uint8_t, PMS.data.flags, PMS.data.capacity);
 
-    RJGlobal_DebugInfo("Physics position references reconfigured with new capacity %u.", PMS.data.capacity);
+    RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PMS.data.capacity);
 }
 
 bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component2, Vector3 *overlapRet)
@@ -302,7 +302,7 @@ bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component
 
 void Physics_UpdateComponents(float deltaTime)
 {
-    for (RJGlobal_Size component = 0; component < PMS.data.count; component++)
+    for (RJ_Size component = 0; component < PMS.data.count; component++)
     {
         if (!pmsIsActive(component))
         {
@@ -322,16 +322,16 @@ void Physics_UpdateComponents(float deltaTime)
 
 void Physics_ResolveCollisions(void)
 {
-    for (RJGlobal_Size iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
+    for (RJ_Size iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
     {
-        for (RJGlobal_Size firstComponent = 0; firstComponent < PMS.data.count; firstComponent++)
+        for (RJ_Size firstComponent = 0; firstComponent < PMS.data.count; firstComponent++)
         {
             if (!pmsIsActive(firstComponent))
             {
                 continue;
             }
 
-            for (RJGlobal_Size secondComponent = firstComponent + 1; secondComponent < PMS.data.count; secondComponent++)
+            for (RJ_Size secondComponent = firstComponent + 1; secondComponent < PMS.data.count; secondComponent++)
             {
                 if (!pmsIsActive(secondComponent))
                 {
@@ -344,11 +344,11 @@ void Physics_ResolveCollisions(void)
     }
 }
 
-PhysicsComponent Physics_ComponentCreate(RJGlobal_Size entity, Vector3 colliderSize, float mass, bool isStatic)
+PhysicsComponent Physics_ComponentCreate(RJ_Size entity, Vector3 colliderSize, float mass, bool isStatic)
 {
-    RJGlobal_DebugAssert(PMS.data.count + PMS.data.freeIndices.count < PMS.data.capacity, "Maximum physics component capacity of %u reached.", PMS.data.capacity);
+    RJ_DebugAssert(PMS.data.count + PMS.data.freeIndices.count < PMS.data.capacity, "Maximum physics component capacity of %u reached.", PMS.data.capacity);
 
-    PhysicsComponent newComponent = PMS.data.freeIndices.count != 0 ? *((RJGlobal_Size *)ListArray_Pop(&PMS.data.freeIndices)) : PMS.data.count;
+    PhysicsComponent newComponent = PMS.data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&PMS.data.freeIndices)) : PMS.data.count;
 
     pmsEntity(newComponent) = entity;
     pmsColliderSize(newComponent) = colliderSize;
@@ -365,7 +365,7 @@ void Physics_ComponentDestroy(PhysicsComponent component)
 {
     pmsAssertComponent(component);
 
-    pmsEntity(component) = RJGLOBAL_INDEX_INVALID;
+    pmsEntity(component) = RJ_INDEX_INVALID;
 
     pmsVelocity(component) = Vector3_Zero;
     pmsColliderSize(component) = Vector3_Zero;

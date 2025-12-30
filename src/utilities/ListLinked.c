@@ -1,6 +1,6 @@
 //! disable debug info for this file
-// #undef RJGLOBAL_DEBUG_INFO
-// #define RJGLOBAL_DEBUG_INFO false
+// #undef RJ_DEBUG_INFO
+// #define RJ_DEBUG_INFO false
 
 #include "utilities/ListLinked.h"
 
@@ -20,19 +20,19 @@ typedef struct ListLinkedNode
 /// @param sizeOfData Size of the data to be stored in the node.
 /// @param data Pointer to the data to store inside the node.
 /// @return The created ListLinkedNode struct.
-static ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const void *data)
+static ListLinkedNode *ListLinkedNode_Create(RJ_Size sizeOfData, const void *data)
 {
     ListLinkedNode *node = NULL;
-    RJGlobal_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
-    RJGlobal_DebugAssertAllocationCheck(char, node->data, sizeOfData);
+    RJ_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
+    RJ_DebugAssertAllocationCheck(char, node->data, sizeOfData);
 
     if (data != NULL)
     {
-        RJGlobal_MemoryCopy(node->data, sizeOfData, data);
+        memcpy(node->data, data, sizeOfData);
     }
     else
     {
-        RJGlobal_MemorySet(node->data, sizeOfData, 0);
+        memset(node->data, 0, sizeOfData);
     }
 
     node->next = NULL;
@@ -44,7 +44,7 @@ static ListLinkedNode *ListLinkedNode_Create(RJGlobal_Size sizeOfData, const voi
 /// @param node Pointer to the ListLinkedNode to destroy.
 static void ListLinkedNode_Destroy(ListLinkedNode *node)
 {
-    RJGlobal_DebugAssertNullPointerCheck(node);
+    RJ_DebugAssertNullPointerCheck(node);
 
     node->next = NULL;
 
@@ -56,7 +56,7 @@ static void ListLinkedNode_Destroy(ListLinkedNode *node)
 /// @param node Pointer to the head node of the linked list to destroy.
 static void ListLinkedNode_DestroyAll(ListLinkedNode *node)
 {
-    RJGlobal_DebugAssertNullPointerCheck(node);
+    RJ_DebugAssertNullPointerCheck(node);
 
     if (node->next != NULL)
     {
@@ -71,7 +71,7 @@ static void ListLinkedNode_DestroyAll(ListLinkedNode *node)
 /// @param nextNode Next node to connect.
 static void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNode)
 {
-    RJGlobal_DebugAssertNullPointerCheck(node);
+    RJ_DebugAssertNullPointerCheck(node);
 
     node->next = nextNode;
 }
@@ -81,8 +81,8 @@ static void ListLinkedNode_Connect(ListLinkedNode *node, ListLinkedNode *nextNod
 /// @param nextNode Pointer to the next node to connect.
 static void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode)
 {
-    RJGlobal_DebugAssertNullPointerCheck(node);
-    RJGlobal_DebugAssertNullPointerCheck(nextNode);
+    RJ_DebugAssertNullPointerCheck(node);
+    RJ_DebugAssertNullPointerCheck(nextNode);
 
     if (node->next == NULL)
     {
@@ -100,15 +100,15 @@ static void ListLinkedNode_Append(ListLinkedNode *node, ListLinkedNode *nextNode
 /// @param data Data to compare with node's data.
 /// @param startIndex Index to pass until the item is found. Incremented by one if the data didn't match.
 /// @return The index which is incremented from previous calls. Returns -1 if item is not found in the sequence.
-static long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJGlobal_Size sizeOfItem, const void *data, long long startIndex)
+static long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJ_Size sizeOfItem, const void *data, long long startIndex)
 {
-    if (RJGlobal_MemoryCompare(node->data, sizeOfItem, data) == 0)
+    if (memcmp(node->data, data, sizeOfItem) == 0)
     {
         return startIndex;
     }
     else if (node->next == NULL)
     {
-        RJGlobal_DebugWarning("Item not found in ListLinked. Returning -1.");
+        RJ_DebugWarning("Item not found in ListLinked. Returning -1.");
         return -1;
     }
     else
@@ -120,32 +120,32 @@ static long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJGlobal_S
 
 #pragma endregion Source Only
 
-ListLinked ListLinked_Create(const char *nameOfType, RJGlobal_Size sizeOfItem)
+ListLinked ListLinked_Create(const char *nameOfType, RJ_Size sizeOfItem)
 {
     ListLinked list;
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
 
-    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
+    RJ_Size nameOfTypeLength = (RJ_Size)strlen(nameOfType);
 
-    RJGlobal_DebugAssertAllocationCheck(char, list.nameOfType, nameOfTypeLength + 1);
-    RJGlobal_MemoryCopy(list.nameOfType, nameOfTypeLength + 1, nameOfType);
+    RJ_DebugAssertAllocationCheck(char, list.nameOfType, nameOfTypeLength + 1);
+    memcpy(list.nameOfType, nameOfType, nameOfTypeLength + 1);
     list.nameOfType[nameOfTypeLength] = '\0';
 
-    RJGlobal_DebugInfo("ListLinked '%s' created with size of item: %u", nameOfType, sizeOfItem);
+    RJ_DebugInfo("ListLinked '%s' created with size of item: %u", nameOfType, sizeOfItem);
     return list;
 }
 
 void ListLinked_Destroy(ListLinked *list)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list);
 
-    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(list->nameOfType);
+    RJ_Size nameOfTypeLength = (RJ_Size)strlen(list->nameOfType);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, ListLinked_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
-    tempTitle[ListLinked_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
+    memcpy(tempTitle, list->nameOfType, ListLinked_Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength));
+    tempTitle[ListLinked_Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     if (list->head != NULL)
     {
@@ -159,17 +159,17 @@ void ListLinked_Destroy(ListLinked *list)
     list->count = 0;
     list->sizeOfItem = 0;
 
-    RJGlobal_DebugInfo("ListLinked '%s' destroyed.", tempTitle);
+    RJ_DebugInfo("ListLinked '%s' destroyed.", tempTitle);
 }
 
-void *ListLinked_Get(const ListLinked *list, RJGlobal_Size index)
+void *ListLinked_Get(const ListLinked *list, RJ_Size index)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
     ListLinkedNode *currentNode = list->head;
 
-    for (RJGlobal_Size i = 0; i < index; i++)
+    for (RJ_Size i = 0; i < index; i++)
     {
         currentNode = currentNode->next;
     }
@@ -177,18 +177,18 @@ void *ListLinked_Get(const ListLinked *list, RJGlobal_Size index)
     return currentNode->data;
 }
 
-void ListLinked_Set(ListLinked *list, RJGlobal_Size index, const void *item)
+void ListLinked_Set(ListLinked *list, RJ_Size index, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
     ListLinkedNode *nodeToSet = ListLinked_Get(list, index);
-    RJGlobal_MemoryCopy(nodeToSet->data, list->sizeOfItem, item);
+    memcpy(nodeToSet->data, item, list->sizeOfItem);
 }
 
 void *ListLinked_Add(ListLinked *list, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list);
 
     ListLinkedNode *newNode = ListLinkedNode_Create(list->sizeOfItem, item);
 
@@ -206,11 +206,11 @@ void *ListLinked_Add(ListLinked *list, const void *item)
     return newNode->data;
 }
 
-void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index)
+void ListLinked_RemoveAtIndex(ListLinked *list, RJ_Size index)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(list->head);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list->head);
+    RJ_DebugAssert(index < list->count, "Index out of range. List count : %du, index : %du", list->count, index);
 
     if (index == 0)
     {
@@ -231,15 +231,15 @@ void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index)
 
 void ListLinked_RemoveItem(ListLinked *list, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(list->head);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list->head);
 
-    ListLinked_RemoveAtIndex(list, (RJGlobal_Size)ListLinked_IndexOf(list, item));
+    ListLinked_RemoveAtIndex(list, (RJ_Size)ListLinked_IndexOf(list, item));
 }
 
 void ListLinked_Clear(ListLinked *list)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list);
 
     if (list->head != NULL)
     {
@@ -252,8 +252,8 @@ void ListLinked_Clear(ListLinked *list)
 
 long long ListLinked_IndexOf(const ListLinked *list, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(list->head);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list->head);
 
     return ListLinkedNode_GetIndexIfMatch(list->head, list->sizeOfItem, item, 0);
 }

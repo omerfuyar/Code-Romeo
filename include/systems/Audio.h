@@ -14,14 +14,14 @@
 #pragma region Typedefs
 
 /// @brief Represents a component that can interact with the audio system.
-typedef RJGlobal_Size AudioComponent;
+typedef RJ_Size AudioComponent;
 
 #pragma endregion Typedefs
 
 /// @brief Initialize the audio system with the specified component capacity.
 /// @param initialComponentCapacity The initial capacity for audio components.
 /// @param positionReferences Reference to the array of position vectors for audio components.
-void Audio_Initialize(RJGlobal_Size initialComponentCapacity, Vector3 *positionReferences);
+void Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences);
 
 /// @brief Terminate and free the necessary resources for audio system.
 void Audio_Terminate(void);
@@ -34,7 +34,7 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
 /// @brief Reconfigure the audio system's position references and component capacity.
 /// @param positionReferences Reference to the array of position vectors for audio components.
 /// @param newComponentCapacity The new capacity for audio components.
-void Audio_ConfigureReferences(Vector3 *positionReferences, RJGlobal_Size newComponentCapacity);
+void Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponentCapacity);
 
 /// @brief Update the audio system.
 void Audio_Update(void);
@@ -44,7 +44,7 @@ void Audio_Update(void);
 /// @param audioFile The audio file to be used by the component.
 /// @param positionReference Reference to the position of the audio component.
 /// @return The created audio component.
-AudioComponent Audio_ComponentCreate(RJGlobal_Size entity, StringView audioFile);
+AudioComponent Audio_ComponentCreate(RJ_Size entity, StringView audioFile);
 
 /// @brief Destroys an audio component and frees its resources.
 /// @param component Component to destroy.

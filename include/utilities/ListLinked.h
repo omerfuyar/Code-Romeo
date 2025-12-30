@@ -8,8 +8,8 @@
 typedef struct ListLinked
 {
     void *head;
-    RJGlobal_Size count;
-    RJGlobal_Size sizeOfItem;
+    RJ_Size count;
+    RJ_Size sizeOfItem;
     char *nameOfType;
 } ListLinked;
 
@@ -19,7 +19,7 @@ typedef struct ListLinked
 /// @param nameOfType Name of the item type to store in the list.
 /// @param sizeOfItem Size of the item type to store in the list.
 /// @return The created ListLinked struct.
-ListLinked ListLinked_Create(const char *nameOfType, RJGlobal_Size sizeOfItem);
+ListLinked ListLinked_Create(const char *nameOfType, RJ_Size sizeOfItem);
 
 /// @brief Destroyer function for ListLinked. Frees all nodes and the list itself recursively.
 /// @param list ListLinked to destroy.
@@ -29,13 +29,13 @@ void ListLinked_Destroy(ListLinked *list);
 /// @param list Pointer to the ListLinked to get the item from.
 /// @param index Index of the item to retrieve.
 /// @return Pointer to the item at the given index. Should be cast before dereferencing.
-void *ListLinked_Get(const ListLinked *list, RJGlobal_Size index);
+void *ListLinked_Get(const ListLinked *list, RJ_Size index);
 
 /// @brief Item setter function for ListLinked. Replaces the item at the specified index.
 /// @param list Pointer to the ListLinked to modify.
 /// @param index Index of the item to replace.
 /// @param item Pointer to the new item to set at the index.
-void ListLinked_Set(ListLinked *list, RJGlobal_Size index, const void *item);
+void ListLinked_Set(ListLinked *list, RJ_Size index, const void *item);
 
 /// @brief Adder function for ListLinked. Appends the item to the end of the list.
 /// @param list ListLinked to add the item to.
@@ -47,7 +47,7 @@ void *ListLinked_Add(ListLinked *list, const void *item);
 /// @param list ListLinked to remove the item from.
 /// @param index Index of the item to remove.
 /// @return Pointer to the removed item.
-void ListLinked_RemoveAtIndex(ListLinked *list, RJGlobal_Size index);
+void ListLinked_RemoveAtIndex(ListLinked *list, RJ_Size index);
 
 /// @brief Remover function using item pointer for ListLinked. Removes the first occurrence of the specified item.
 /// @param list ListLinked to remove the item from.
