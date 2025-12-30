@@ -11,7 +11,7 @@
 /// @brief Maximum token count for a single line in a resource file.
 #define RESOURCE_FILE_LINE_MAX_TOKEN_COUNT 8
 /// @brief Path to the resources folder relative to the executable.
-#define RESOURCE_PATH "resources" RJ_PATH_DELIMETER_STR
+#define RESOURCE_PATH "resources/"
 
 #pragma region Typedefs
 

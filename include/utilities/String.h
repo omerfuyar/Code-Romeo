@@ -70,6 +70,12 @@ void String_Destroy(String *string);
 /// @param newLength Length of the new string.
 void String_Change(String *string, StringView newString);
 
+/// @brief Replaces a pattern in the given string with given pattern.
+/// @param string String to modify.
+/// @param pattern Pattern to replace.
+/// @param replace New pattern to place.
+void String_Replace(String *string, StringView pattern, StringView replace);
+
 /// @brief Concatenates second String object to the end of the first String object. Changes the first String object to hold the concatenated result.
 /// @param string Pointer to the String object to concatenate to.
 /// @param other Pointer to the String object to concatenate from.

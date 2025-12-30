@@ -40,6 +40,46 @@ void String_Change(String *string, StringView newString)
     string->characters[string->length] = '\0';
 }
 
+void String_Replace(String *string, StringView pattern, StringView replace)
+{
+    RJGlobal_DebugAssertNullPointerCheck(string);
+
+    StringView tokens[STRING_TEMP_BUFFER_SIZE] = {0};
+    size_t replaceCount = 0;
+    String_Tokenize(scv((*string)), pattern, &replaceCount, tokens, STRING_TEMP_BUFFER_SIZE);
+
+    if (replaceCount != 0)
+    {
+        String_Change(string, tokens[0]);
+    }
+
+    for (size_t i = 1; i < replaceCount; i++)
+    {
+        String_ConcatEnd(string, replace);
+        String_ConcatEnd(string, tokens[i]);
+    }
+}
+
+void String_Replace(String *string, StringView pattern, StringView replace)
+{
+    RJGlobal_DebugAssertNullPointerCheck(string);
+
+    StringView tokens[STRING_TEMP_BUFFER_SIZE] = {0};
+    size_t replaceCount = 0;
+    String_Tokenize(scv((*string)), pattern, &replaceCount, tokens, STRING_TEMP_BUFFER_SIZE);
+
+    if (replaceCount != 0)
+    {
+        String_Change(string, tokens[0]);
+    }
+
+    for (size_t i = 1; i < replaceCount; i++)
+    {
+        String_ConcatEnd(string, replace);
+        String_ConcatEnd(string, tokens[i]);
+    }
+}
+
 void String_ConcatEnd(String *string, StringView other)
 {
     RJ_DebugAssertNullPointerCheck(string);
@@ -75,7 +115,7 @@ int String_Compare(StringView string, StringView other)
     RJ_DebugAssertNullPointerCheck(string.characters);
     RJ_DebugAssertNullPointerCheck(other.characters);
 
-    int result = strncmp(string.characters, other.characters, String_Min(string.length, other.length));
+    int result = strcmp(string.characters, other.characters);
 
     if (string.length != other.length && result == 0)
     {
@@ -106,14 +146,16 @@ bool String_AreSame(StringView string, StringView other)
     return true;
 }
 
-void String_Tokenize(StringView string, StringView delimeter, RJ_Size *tokenCountRet, StringView *tokenBufferRet, RJ_Size String_MaxTokenCount)
+void String_Tokenize(StringView string, StringView delimeter, RJ_Size *tokenCountRet, StringView *tokenBufferRet, RJ_Size maxTokenCount)
 {
     RJ_DebugAssertNullPointerCheck(tokenBufferRet);
 
     RJ_Size tokenCount = 0;
     RJ_Size lastTokenIndex = 0;
 
-    RJ_Size index = 0;
+    RJGlobal_Size index = 0;
+    while (index < string.length && tokenCount < maxTokenCount)
+        RJ_Size index = 0;
     while (index < string.length && tokenCount < String_MaxTokenCount)
     {
         if (String_AreSame(delimeter, scs(string.characters + index, delimeter.length)))
@@ -141,7 +183,7 @@ void String_Tokenize(StringView string, StringView delimeter, RJ_Size *tokenCoun
         }
     }
 
-    if (lastTokenIndex < string.length && tokenCount < String_MaxTokenCount)
+    if (lastTokenIndex < string.length && tokenCount < maxTokenCount)
     {
         tokenBufferRet[tokenCount] = scs(string.characters + lastTokenIndex, string.length - lastTokenIndex);
         tokenCount++;

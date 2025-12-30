@@ -105,23 +105,6 @@
 #include <time.h>
 #include <limits.h>
 
-#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
-
-// todo use '/' for all and convert when passing to OS functions
-/// @brief Character used for path delimiters.
-#define RJ_PATH_DELIMETER_CHAR '\\'
-/// @brief String used for path delimiters.
-#define RJ_PATH_DELIMETER_STR "\\"
-
-#else
-
-/// @brief Character used for path delimiters.
-#define RJ_PATH_DELIMETER_CHAR '/'
-/// @brief String used for path delimiters.
-#define RJ_PATH_DELIMETER_STR "/"
-
-#endif
-
 /// @brief Size of the temporary buffer used in various operations.
 #define RJ_TEMP_BUFFER_SIZE (RJ_Size)128
 
