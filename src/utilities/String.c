@@ -42,30 +42,10 @@ void String_Change(String *string, StringView newString)
 
 void String_Replace(String *string, StringView pattern, StringView replace)
 {
-    RJGlobal_DebugAssertNullPointerCheck(string);
+    RJ_DebugAssertNullPointerCheck(string);
 
     StringView tokens[STRING_TEMP_BUFFER_SIZE] = {0};
-    size_t replaceCount = 0;
-    String_Tokenize(scv((*string)), pattern, &replaceCount, tokens, STRING_TEMP_BUFFER_SIZE);
-
-    if (replaceCount != 0)
-    {
-        String_Change(string, tokens[0]);
-    }
-
-    for (size_t i = 1; i < replaceCount; i++)
-    {
-        String_ConcatEnd(string, replace);
-        String_ConcatEnd(string, tokens[i]);
-    }
-}
-
-void String_Replace(String *string, StringView pattern, StringView replace)
-{
-    RJGlobal_DebugAssertNullPointerCheck(string);
-
-    StringView tokens[STRING_TEMP_BUFFER_SIZE] = {0};
-    size_t replaceCount = 0;
+    RJ_Size replaceCount = 0;
     String_Tokenize(scv((*string)), pattern, &replaceCount, tokens, STRING_TEMP_BUFFER_SIZE);
 
     if (replaceCount != 0)
@@ -153,10 +133,8 @@ void String_Tokenize(StringView string, StringView delimeter, RJ_Size *tokenCoun
     RJ_Size tokenCount = 0;
     RJ_Size lastTokenIndex = 0;
 
-    RJGlobal_Size index = 0;
+    RJ_Size index = 0;
     while (index < string.length && tokenCount < maxTokenCount)
-        RJ_Size index = 0;
-    while (index < string.length && tokenCount < String_MaxTokenCount)
     {
         if (String_AreSame(delimeter, scs(string.characters + index, delimeter.length)))
         {

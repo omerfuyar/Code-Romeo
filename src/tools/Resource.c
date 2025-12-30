@@ -295,6 +295,9 @@ ResourceText *ResourceText_Create(StringView file)
     String fullPath = scc(resource->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
+#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
+    String_Replace(&fullPath, scv("\\"), scv("/"));
+#endif
 
     RJ_Size lineCount = 0;
     int character = 0;
@@ -380,6 +383,9 @@ ResourceImage *ResourceImage_Create(StringView file)
     String fullPath = scc(resourceImage->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
+#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
+    String_Replace(&fullPath, scv("\\"), scv("/"));
+#endif
 
     stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 4);
@@ -555,7 +561,7 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         {
             String tempFilePath = scc(fileName);
 
-            while (tempFilePath.length > 0 && tempFilePath.characters[tempFilePath.length - 1] != RJ_PATH_DELIMETER_CHAR)
+            while (tempFilePath.length > 0 && tempFilePath.characters[tempFilePath.length - 1] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
             {
                 tempFilePath.length--;
             }

@@ -107,7 +107,7 @@ const char *RJ_GetExecutablePath(void)
 
         RJ_Size currentIndex = (RJ_Size)strlen(buffer);
 
-        while (buffer[--currentIndex] != RJ_PATH_DELIMETER_CHAR)
+        while (buffer[--currentIndex] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
         {
             buffer[currentIndex] = '\0';
         }
