@@ -155,7 +155,7 @@ static void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent
 
     pmsVelocity(firstComponent) =
         Vector3_Scale(
-            Vector3_Add(
+            Vector3_Sum(
                 Vector3_Scale(pmsVelocity(firstComponent),
                               pmsMass(firstComponent) - PMS.properties.elasticity * pmsMass(secondComponent)),
                 Vector3_Scale(
@@ -165,7 +165,7 @@ static void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent
 
     pmsVelocity(secondComponent) =
         Vector3_Scale(
-            Vector3_Add(
+            Vector3_Sum(
                 Vector3_Scale(pmsVelocity(secondComponent),
                               pmsMass(secondComponent) - PMS.properties.elasticity * pmsMass(firstComponent)),
                 Vector3_Scale(
@@ -314,9 +314,9 @@ void Physics_UpdateComponents(float deltaTime)
             continue;
         }
 
-        pmsVelocity(component) = Vector3_Add(pmsVelocity(component), Vector3_New(0.0f, PMS.properties.gravity * deltaTime, 0.0f));
+        pmsVelocity(component) = Vector3_Sum(pmsVelocity(component), Vector3_New(0.0f, PMS.properties.gravity * deltaTime, 0.0f));
         pmsVelocity(component) = Vector3_Scale(pmsVelocity(component), 1.0f - PMS.properties.drag);
-        pmsPositionReference(component) = Vector3_Add(pmsPositionReference(component), Vector3_Scale(pmsVelocity(component), deltaTime));
+        pmsPositionReference(component) = Vector3_Sum(pmsPositionReference(component), Vector3_Scale(pmsVelocity(component), deltaTime));
     }
 }
 

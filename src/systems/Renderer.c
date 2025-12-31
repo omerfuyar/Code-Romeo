@@ -461,15 +461,15 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
     glm_unproject((float *)&nearWindowCoords, (vec4 *)tempMatrix, (float *)&viewport, (float *)&nearPoint);
     glm_unproject((float *)&farWindowCoords, (vec4 *)tempMatrix, (float *)&viewport, (float *)&farPoint);
 
-    Vector3 rayDirection = Vector3_Normalized(Vector3_Add(farPoint, Vector3_Scale(nearPoint, -1.0f)));
+    Vector3 rayDirection = Vector3_Normalized(Vector3_Sum(farPoint, Vector3_Scale(nearPoint, -1.0f)));
 
     if (*RMS.camera.isPerspectiveReference)
     {
-        return Vector3_Add(*RMS.camera.positionReference, Vector3_Scale(rayDirection, depth));
+        return Vector3_Sum(*RMS.camera.positionReference, Vector3_Scale(rayDirection, depth));
     }
     else
     {
-        return Vector3_Add(Vector3_Add(nearPoint, Vector3_New(0.0f, 0.0f, -(*RMS.camera.nearClipPlaneReference))), Vector3_Scale(rayDirection, depth));
+        return Vector3_Sum(Vector3_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(*RMS.camera.nearClipPlaneReference))), Vector3_Scale(rayDirection, depth));
     }
 }
 
@@ -593,7 +593,7 @@ void Renderer_Update(void)
                                                        Maths_Sin(RMS.camera.rotationReference->x),
                                                        Maths_Cos(RMS.camera.rotationReference->x) * Maths_Sin(RMS.camera.rotationReference->y)));
 
-    Vector3 center = Vector3_Add(*RMS.camera.positionReference, Vector3_Normalized(direction));
+    Vector3 center = Vector3_Sum(*RMS.camera.positionReference, Vector3_Normalized(direction));
 
     glm_lookat((float *)RMS.camera.positionReference, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RMS.camera.viewMatrix);
     if (*RMS.camera.isPerspectiveReference)
@@ -985,8 +985,8 @@ void RendererDebug_DrawLine(Vector3 start, Vector3 end, Color color)
 void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color)
 {
     Vector3 halfSize = Vector3_Scale(size, 0.5f);
-    Vector3 min = Vector3_Add(position, Vector3_Scale(halfSize, -1.0f));
-    Vector3 max = Vector3_Add(position, halfSize);
+    Vector3 min = Vector3_Sum(position, Vector3_Scale(halfSize, -1.0f));
+    Vector3 max = Vector3_Sum(position, halfSize);
 
     Vector3 corners[8] = {
         {min.x, min.y, min.z},
