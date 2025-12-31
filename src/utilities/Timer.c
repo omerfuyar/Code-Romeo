@@ -3,6 +3,27 @@
 #define Timer_Min(a, b) ((a) < (b) ? (a) : (b))
 #define Timer_Max(a, b) ((a) > (b) ? (a) : (b))
 
+#pragma region Source Only
+
+static TimePoint Timer_GetElapsedTime(const Timer *timer)
+{
+    RJ_DebugAssertNullPointerCheck(timer);
+
+    TimePoint elapsedTime;
+    elapsedTime.seconds = timer->endTime.seconds - timer->startTime.seconds;
+    elapsedTime.nanoseconds = timer->endTime.nanoseconds - timer->startTime.nanoseconds;
+
+    if (elapsedTime.nanoseconds < 0)
+    {
+        elapsedTime.seconds -= 1;
+        elapsedTime.nanoseconds += 1000000000;
+    }
+
+    return elapsedTime;
+}
+
+#pragma endregion Source Only
+
 void TimePoint_Update(TimePoint *timePoint)
 {
     RJ_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
@@ -23,12 +44,15 @@ float TimePoint_ToMilliseconds(const TimePoint *timePoint)
 
 Timer Timer_Create(const char *title)
 {
-    Timer timer;
+    Timer timer = {0};
 
-    RJ_Size titleLength = (RJ_Size)strlen(title);
+    size_t titleLength = Timer_Min(RJ_TIMER_MAX_TITLE_LENGTH - 1, strlen(title));
+    if (titleLength < RJ_TIMER_MAX_TITLE_LENGTH)
+    {
+        RJ_DebugWarning("Timer title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, RJ_TIMER_MAX_TITLE_LENGTH - 1);
+    }
 
-    RJ_DebugAssertAllocationCheck(char, timer.title, titleLength + 1);
-    memcpy(timer.title, title, titleLength + 1);
+    memcpy(timer.title, title, titleLength);
     timer.title[titleLength] = '\0';
 
     timer.isRunning = false;
@@ -37,22 +61,6 @@ Timer Timer_Create(const char *title)
     timer.endTime = (TimePoint){0, 0};
 
     return timer;
-}
-
-void Timer_Destroy(Timer *timer)
-{
-    RJ_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
-    RJ_Size titleLength = (RJ_Size)strlen(timer->title);
-
-    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    memcpy(tempTitle, timer->title, Timer_Min(RJ_TEMP_BUFFER_SIZE - 1, titleLength));
-    tempTitle[Timer_Min(RJ_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
-
-    free(timer->title);
-    timer->title = NULL;
-
-    RJ_DebugInfo("Timer '%s' destroyed.", tempTitle);
 }
 
 void Timer_Start(Timer *timer)
@@ -91,23 +99,6 @@ void Timer_Reset(Timer *timer)
 
     TimePoint_Update(&timer->endTime);
     timer->startTime = timer->endTime;
-}
-
-TimePoint Timer_GetElapsedTime(const Timer *timer)
-{
-    RJ_DebugAssertNullPointerCheck(timer);
-
-    TimePoint elapsedTime;
-    elapsedTime.seconds = timer->endTime.seconds - timer->startTime.seconds;
-    elapsedTime.nanoseconds = timer->endTime.nanoseconds - timer->startTime.nanoseconds;
-
-    if (elapsedTime.nanoseconds < 0)
-    {
-        elapsedTime.seconds -= 1;
-        elapsedTime.nanoseconds += 1000000000;
-    }
-
-    return elapsedTime;
 }
 
 time_t Timer_GetElapsedNanoseconds(const Timer *timer)
