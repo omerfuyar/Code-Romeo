@@ -208,7 +208,7 @@ void Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, 
 
     PMS.data.capacity = componentCapacity;
     PMS.data.count = 0;
-    PMS.data.freeIndices = ListArray_Create("RJ_Size", sizeof(RJ_Size), PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    ListArray_Create(&PMS.data.freeIndices, "RJ_Size", sizeof(RJ_Size), PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     PMS.properties.drag = drag;
     PMS.properties.gravity = gravity;

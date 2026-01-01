@@ -3,10 +3,10 @@
 #include "RJGlobal.h"
 
 /// @brief Buffer size for numeric to string conversions.
-#define STRING_NUMERIC_CHAR_BUFFER 32
+#define STRING_NUMERIC_CHAR_BUFFER (RJ_TEMP_BUFFER_SIZE / 4)
 
 /// @brief Buffer size for scb macro.
-#define STRING_TEMP_BUFFER_SIZE 128
+#define STRING_TEMP_BUFFER_SIZE RJ_TEMP_BUFFER_SIZE
 
 #pragma region Typedefs
 

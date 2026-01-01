@@ -27,39 +27,40 @@ static RJ_Size HashMap_Hash(const HashMap *map, const char *key)
 
 #pragma endregion Source Only
 
-HashMap HashMap_Create(const char *nameOfType, RJ_Size sizeOfItem, RJ_Size capacity)
+RJ_Return HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfItem, RJ_Size capacity)
 {
-    HashMap map;
-    map.capacity = capacity;
-    map.sizeOfItem = sizeOfItem;
+    retHashMap->capacity = capacity;
+    retHashMap->sizeOfItem = sizeOfItem;
 
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(nameOfType);
+    RJ_Size nameOfTypeLength = (RJ_Size)strlen(title);
 
-    RJ_DebugAssertAllocationCheck(char, map.nameOfType, nameOfTypeLength + 1);
-    memcpy(map.nameOfType, nameOfType, nameOfTypeLength + 1);
-    map.nameOfType[nameOfTypeLength] = '\0';
+    if (title == NULL)
+    {
+        title = "HashMap";
+    }
 
-    map.count = 0;
-    RJ_DebugAssertAllocationCheck(char, map.data, capacity *sizeOfItem);
+    size_t titleLength = HashMap_Min(HASH_MAP_MAX_TITLE_LENGTH - 1, strlen(title));
+    if (titleLength >= HASH_MAP_MAX_TITLE_LENGTH)
+    {
+        RJ_DebugWarning("HashMap title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, HASH_MAP_MAX_TITLE_LENGTH - 1);
+    }
 
-    RJ_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", nameOfType, capacity, sizeOfItem);
+    retHashMap->count = 0;
+    if (!RJ_Allocate(char, retHashMap->data, capacity *sizeOfItem))
+    {
+        RJ_DebugWarning("Failed to allocate HashMap data for '%s'.", title);
+        return RJ_ERROR_ALLOCATION;
+    }
 
-    return map;
+    RJ_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", title, capacity, sizeOfItem);
+
+    return RJ_OK;
 }
 
 void HashMap_Destroy(HashMap *map)
 {
     RJ_DebugAssertNullPointerCheck(map);
     RJ_DebugAssertNullPointerCheck(map->data);
-
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(map->nameOfType);
-
-    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    memcpy(tempTitle, map->nameOfType, HashMap_Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength));
-    tempTitle[HashMap_Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
-
-    free(map->nameOfType);
-    map->nameOfType = NULL;
 
     free(map->data);
     map->data = NULL;
@@ -68,12 +69,26 @@ void HashMap_Destroy(HashMap *map)
     map->count = 0;
     map->sizeOfItem = 0;
 
-    RJ_DebugInfo("HashMap '%s' destroyed.", tempTitle);
+    RJ_DebugInfo("HashMap '%s' destroyed.", map->title);
+    map->title[0] = '\0';
+}
+
+bool HashMap_Contains(const HashMap *map, const char *key)
+{
+    RJ_DebugAssertNullPointerCheck(map);
+    RJ_DebugAssertNullPointerCheck(key);
+
+    RJ_Size hashIndex = HashMap_Hash(map, key);
+    void *targetLocation = (void *)((char *)map->data + hashIndex * map->sizeOfItem);
+
+    return targetLocation != NULL;
 }
 
 void HashMap_Register(HashMap *map, const char *key, const void *value)
 {
     RJ_DebugAssertNullPointerCheck(map);
+    RJ_DebugAssertNullPointerCheck(key);
+    RJ_DebugAssertNullPointerCheck(value);
 
     void *targetLocation = (void *)((char *)map->data + HashMap_Hash(map, key) * map->sizeOfItem);
 
@@ -84,5 +99,10 @@ void HashMap_Register(HashMap *map, const char *key, const void *value)
 
 void *HashMap_Access(const HashMap *map, const char *key)
 {
+    RJ_DebugAssertNullPointerCheck(map);
+    RJ_DebugAssertNullPointerCheck(key);
+
+    RJ_DebugAssert(HashMap_Contains(map, key), "Key '%s' not found in HashMap '%s'.", key, map->title);
+
     return (void *)((char *)map->data + HashMap_Hash(map, key) * map->sizeOfItem);
 }

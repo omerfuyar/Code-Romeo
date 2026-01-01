@@ -247,7 +247,7 @@ void Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
 
     RMS.data.capacity = initialBatchCapacity;
     RMS.data.count = 0;
-    RMS.data.freeIndices = ListArray_Create("Renderer Free Indices", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    ListArray_Create(&RMS.data.freeIndices, "Renderer Free Indices", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     // todo only glfw function in this file, make a wrapper in context
     RJ_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
@@ -363,8 +363,11 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
 {
     RJ_DebugAssert(RMS.shader.programHandle != 0, "Initialize the renderer before configuring shaders.");
 
-    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderFile);
-    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderFile);
+    ResourceText *rscVertexShader = NULL;
+    ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    // todo check return value in systems
+    ResourceText *rscFragmentShader = NULL;
+    ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
 
     GLint glslHasCompiled = 0;
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
@@ -733,11 +736,12 @@ RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset,
 
     newBatch = RMS.data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&RMS.data.freeIndices)) : RMS.data.count;
 
-    rmsBatch(newBatch).data.model = ResourceModel_GetOrCreate(mdlFile, transformOffset);
+    // todo
+    ResourceModel_GetOrCreate(&rmsBatch(newBatch).data.model, mdlFile, transformOffset);
 
     rmsBatch(newBatch).data.capacity = initialComponentCapacity;
     rmsBatch(newBatch).data.count = 0;
-    rmsBatch(newBatch).data.freeIndices = ListArray_Create("RJ_Size", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    ListArray_Create(&rmsBatch(newBatch).data.freeIndices, "RJ_Size", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     RJ_DebugAssertAllocationCheck(RJ_Size, rmsBatch(newBatch).components.entities, initialComponentCapacity);
 
@@ -851,7 +855,7 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 
 void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
 {
-    RMS.debugShader.vertices = ListArray_Create("Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
+    ListArray_Create(&RMS.debugShader.vertices, "Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
 
     glGenVertexArrays(1, &RMS.debugShader.vao);
     glGenBuffers(1, &RMS.debugShader.vbo);
@@ -859,8 +863,10 @@ void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentSh
     GLint glslHasCompiled = 0;
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
 
-    ResourceText *rscVertexShader = ResourceText_Create(vertexShaderFile);
-    ResourceText *rscFragmentShader = ResourceText_Create(fragmentShaderFile);
+    ResourceText *rscVertexShader = NULL;
+    ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    ResourceText *rscFragmentShader = NULL;
+    ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);

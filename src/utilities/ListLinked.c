@@ -120,32 +120,37 @@ static long long ListLinkedNode_GetIndexIfMatch(ListLinkedNode *node, RJ_Size si
 
 #pragma endregion Source Only
 
-ListLinked ListLinked_Create(const char *nameOfType, RJ_Size sizeOfItem)
+ListLinked ListLinked_Create(const char *title, RJ_Size sizeOfItem)
 {
-    ListLinked list;
+    ListLinked list = {0};
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
 
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(nameOfType);
+    RJ_Size nameOfTypeLength = (RJ_Size)strlen(title);
 
-    RJ_DebugAssertAllocationCheck(char, list.nameOfType, nameOfTypeLength + 1);
-    memcpy(list.nameOfType, nameOfType, nameOfTypeLength + 1);
-    list.nameOfType[nameOfTypeLength] = '\0';
+    if (title == NULL)
+    {
+        title = "ListLinked";
+    }
 
-    RJ_DebugInfo("ListLinked '%s' created with size of item: %u", nameOfType, sizeOfItem);
+    size_t titleLength = ListLinked_Min(LIST_LINKED_MAX_TITLE_LENGTH - 1, strlen(title));
+    if (titleLength >= LIST_LINKED_MAX_TITLE_LENGTH)
+    {
+        RJ_DebugWarning("ListLinked title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, LIST_LINKED_MAX_TITLE_LENGTH - 1);
+    }
+
+    memcpy(list.title, title, titleLength);
+    list.title[titleLength] = '\0';
+
+    RJ_DebugInfo("ListLinked '%s' created with size of item: %u", title, sizeOfItem);
+
     return list;
 }
 
 void ListLinked_Destroy(ListLinked *list)
 {
     RJ_DebugAssertNullPointerCheck(list);
-
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(list->nameOfType);
-
-    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    memcpy(tempTitle, list->nameOfType, ListLinked_Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength));
-    tempTitle[ListLinked_Min(RJ_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
 
     if (list->head != NULL)
     {
@@ -154,12 +159,11 @@ void ListLinked_Destroy(ListLinked *list)
 
     list->head = NULL;
 
-    free(list->nameOfType);
-    list->nameOfType = NULL;
     list->count = 0;
     list->sizeOfItem = 0;
 
-    RJ_DebugInfo("ListLinked '%s' destroyed.", tempTitle);
+    RJ_DebugInfo("ListLinked '%s' destroyed.", list->title);
+    list->title[0] = '\0';
 }
 
 void *ListLinked_Get(const ListLinked *list, RJ_Size index)

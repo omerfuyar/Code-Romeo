@@ -81,7 +81,8 @@ void Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferen
 
     AMS.data.capacity = initialComponentCapacity;
     AMS.data.count = 0;
-    AMS.data.freeIndices = ListArray_Create("Audio Free Indices", sizeof(RJ_Size), AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE);
+
+    ListArray_Create(&AMS.data.freeIndices, "Audio Free Indices", sizeof(RJ_Size), AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     AMS.components.positionReferences = positionReferences;
 

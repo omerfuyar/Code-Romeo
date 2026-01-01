@@ -2,7 +2,7 @@
 
 #include "RJGlobal.h"
 
-#define RJ_TIMER_MAX_TITLE_LENGTH 8
+#define TIMER_MAX_TITLE_LENGTH (RJ_TEMP_BUFFER_SIZE / 8)
 
 #pragma region typedefs
 
@@ -16,7 +16,7 @@ typedef struct TimePoint
 /// @brief Represents a timer that can be used for measuring elapsed time. Should be used with helper functions.
 typedef struct Timer
 {
-    char title[RJ_TIMER_MAX_TITLE_LENGTH];
+    char title[TIMER_MAX_TITLE_LENGTH];
     TimePoint startTime;
     TimePoint endTime;
     bool isRunning;

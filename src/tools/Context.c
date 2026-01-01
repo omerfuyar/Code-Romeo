@@ -16,26 +16,36 @@ static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 
 #pragma endregion Source Only
 
-ContextWindow *Context_Initialize(void)
+RJ_Return Context_Initialize(ContextWindow **retContext)
 {
     glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
-    RJ_DebugAssert(glfwInit(), "Failed to initialize GLFW");
+
+    if (!glfwInit())
+    {
+        RJ_DebugWarning("Failed to initialize GLFW.");
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    RJ_DebugInfo("ContextManager initialized successfully.");
 
     CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
     const char *errorLog = NULL;
-    RJ_DebugAssert(CONTEXT_MAIN_WINDOW.handle != NULL, "Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
+
+    if (CONTEXT_MAIN_WINDOW.handle == NULL)
+    {
+        RJ_DebugWarning("Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 
     CONTEXT_INITIALIZED = true;
     RJ_DebugInfo("Main window created successfully.");
 
-    return &CONTEXT_MAIN_WINDOW;
+    *retContext = &CONTEXT_MAIN_WINDOW;
+    return RJ_OK;
 }
 
 void Context_Terminate(void)

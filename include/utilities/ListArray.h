@@ -9,6 +9,8 @@
 /// @brief Whether remove functions should resize the list to be smaller or not.
 #define LIST_ARRAY_CUT_RESIZE false
 
+#define LIST_ARRAY_MAX_TITLE_LENGTH (RJ_TEMP_BUFFER_SIZE / 8)
+
 #pragma region Typedefs
 
 /// @brief A dynamic array list implementation. Can be used in any type. Copies passed items to its own property. Shouldn't be used without helper functions.
@@ -18,26 +20,22 @@ typedef struct ListArray
     RJ_Size capacity;
     RJ_Size count;
     RJ_Size sizeOfItem;
-    char *nameOfType;
+    char title[LIST_ARRAY_MAX_TITLE_LENGTH];
 } ListArray;
 
 #pragma endregion Typedefs
 
 /// @brief Creator function for ListArray.
-/// @param nameOfType Name of the type stored in the list.
+/// @param retList Pointer to the ListArray to initialize.
+/// @param title Name of the type stored in the list.
 /// @param sizeOfItem Size of the item type to store in.
 /// @param initialCapacity How many items can hold in this ListArray. Can be resized later on.
-/// @return The created ListArray struct
-ListArray ListArray_Create(const char *nameOfType, RJ_Size sizeOfItem, RJ_Size initialCapacity);
+/// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
+RJ_Return ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOfItem, RJ_Size initialCapacity);
 
 /// @brief Destroyer function for ListArray.
 /// @param list ListArray to destroy.
 void ListArray_Destroy(ListArray *list);
-
-/// @brief Creates a copy of the given ListArray with its own data.
-/// @param list Pointer to the ListArray to copy.
-/// @return The copied ListArray.
-ListArray ListArray_Copy(const ListArray *list);
 
 /// @brief Resize function for ListArray. Can enlarge or trunc the ListArray.
 /// @param list ListArray to resize.

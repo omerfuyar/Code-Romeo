@@ -2,6 +2,8 @@
 
 #include "RJGlobal.h"
 
+#define LIST_LINKED_MAX_TITLE_LENGTH (RJ_TEMP_BUFFER_SIZE / 8)
+
 #pragma region Typedefs
 
 /// @brief A dynamic linked list implementation. Can store any type of data. Copies passed items to its own property. Shouldn't be used without helper functions.
@@ -10,7 +12,7 @@ typedef struct ListLinked
     void *head;
     RJ_Size count;
     RJ_Size sizeOfItem;
-    char *nameOfType;
+    char title[LIST_LINKED_MAX_TITLE_LENGTH];
 } ListLinked;
 
 #pragma endregion Typedefs

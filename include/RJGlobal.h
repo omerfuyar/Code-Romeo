@@ -108,14 +108,15 @@
 /// @brief Size of the temporary buffer used in various operations.
 #define RJ_TEMP_BUFFER_SIZE (RJ_Size)128
 
+/// @brief Invalid index constant for RJ_Size type.
 #define RJ_INDEX_INVALID ((RJ_Size)UINT32_MAX)
 
 /// @brief Macro wrapper for file opening to use it in if statements.
-#define RJ_FileOpen(filePointer, fileName, mode) ((filePointer = fopen(fileName, mode)) != NULL)
+#define RJ_FileOpen(filePointer, fileName, mode) (((filePointer) = fopen(fileName, mode)) != NULL)
 /// @brief Macro wrapper for memory allocation operation. Pass char if the pointer type os void.
-#define RJ_Allocate(type, pointer, count) ((pointer = (type *)calloc((count), sizeof(type))) != NULL)
+#define RJ_Allocate(type, pointer, count) (((pointer) = (type *)calloc((count), sizeof(type))) != NULL)
 /// @brief Macro wrapper for memory reallocation operation. Pass char if the pointer type os void.
-#define RJ_Reallocate(type, pointer, newCount) ((pointer = (type *)realloc(pointer, sizeof(type) * (newCount))) != NULL)
+#define RJ_Reallocate(type, pointer, newCount) (((pointer) = (type *)realloc((pointer), sizeof(type) * (newCount))) != NULL)
 
 #pragma region Typedefs
 
@@ -130,6 +131,15 @@ typedef void (*RJ_VoidFunIntCharPtr)(int, char *);
 
 /// @brief Size type to use for entire project
 typedef uint32_t RJ_Size;
+
+typedef enum RJ_Return
+{
+    RJ_OK = 0,
+    RJ_ERROR_ALLOCATION,
+    RJ_ERROR_FILE,
+    RJ_ERROR_DEPENDENCY,
+    RJ_ERROR_NOT_FOUND,
+} RJ_Return;
 
 #pragma endregion Typedefs
 
