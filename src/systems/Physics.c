@@ -202,7 +202,7 @@ static void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, Physi
 
 #pragma endregion Source Only
 
-void Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
+RJ_Result Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
 
@@ -214,17 +214,21 @@ void Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, 
     PMS.properties.gravity = gravity;
     PMS.properties.elasticity = elasticity;
 
-    RJ_DebugAssertAllocationCheck(RJ_Size, PMS.data.entities, PMS.data.capacity);
-
-    RJ_DebugAssertAllocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
-
-    RJ_DebugAssertAllocationCheck(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
-    RJ_DebugAssertAllocationCheck(float, PMS.data.masses, PMS.data.capacity);
-    RJ_DebugAssertAllocationCheck(uint8_t, PMS.data.flags, PMS.data.capacity);
+    if (!RJ_Allocate(RJ_Size, PMS.data.entities, PMS.data.capacity) ||
+        !RJ_Allocate(Vector3, PMS.data.velocities, PMS.data.capacity) ||
+        !RJ_Allocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity) ||
+        !RJ_Allocate(float, PMS.data.masses, PMS.data.capacity) ||
+        !RJ_Allocate(uint8_t, PMS.data.flags, PMS.data.capacity))
+    {
+        RJ_DebugWarning("Failed to allocate data for physics module with size %zu.", PMS.data.capacity * (sizeof(RJ_Size) + sizeof(Vector3) * 2 + sizeof(float) + sizeof(uint8_t)));
+        return RJ_ERROR_ALLOCATION;
+    }
 
     PMS.data.positionReferences = positionReferences;
 
     RJ_DebugInfo("Physics initialized with component capacity %u.", PMS.data.capacity);
+
+    return RJ_OK;
 }
 
 void Physics_Terminate(void)
@@ -252,7 +256,7 @@ void Physics_Terminate(void)
     RJ_DebugInfo("Physics terminated successfully.");
 }
 
-void Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity)
+RJ_Result Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
     RJ_DebugAssert(newCapacity > PMS.data.count, "New component capacity must be greater than current physics component count.");
@@ -260,13 +264,18 @@ void Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacit
     PMS.data.positionReferences = positionReferences;
     PMS.data.capacity = newCapacity;
 
-    RJ_DebugAssertReallocationCheck(RJ_Size, PMS.data.entities, PMS.data.capacity);
-    RJ_DebugAssertReallocationCheck(Vector3, PMS.data.velocities, PMS.data.capacity);
-    RJ_DebugAssertReallocationCheck(Vector3, PMS.data.colliderSizes, PMS.data.capacity);
-    RJ_DebugAssertReallocationCheck(float, PMS.data.masses, PMS.data.capacity);
-    RJ_DebugAssertReallocationCheck(uint8_t, PMS.data.flags, PMS.data.capacity);
+    if (!RJ_Allocate(RJ_Size, PMS.data.entities, PMS.data.capacity) ||
+        !RJ_Allocate(Vector3, PMS.data.velocities, PMS.data.capacity) ||
+        !RJ_Allocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity) ||
+        !RJ_Allocate(float, PMS.data.masses, PMS.data.capacity) ||
+        !RJ_Allocate(uint8_t, PMS.data.flags, PMS.data.capacity))
+    {
+        RJ_DebugWarning("Failed to reallocate data for physics module with size %zu.", PMS.data.capacity * (sizeof(RJ_Size) + sizeof(Vector3) * 2 + sizeof(float) + sizeof(uint8_t)));
+        return RJ_ERROR_ALLOCATION;
+    }
 
     RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PMS.data.capacity);
+    return RJ_OK;
 }
 
 bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component2, Vector3 *overlapRet)
