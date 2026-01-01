@@ -132,14 +132,14 @@ typedef void (*RJ_VoidFunIntCharPtr)(int, char *);
 /// @brief Size type to use for entire project
 typedef uint32_t RJ_Size;
 
-typedef enum RJ_Return
+typedef enum RJ_Result
 {
     RJ_OK = 0,
     RJ_ERROR_ALLOCATION,
     RJ_ERROR_FILE,
     RJ_ERROR_DEPENDENCY,
     RJ_ERROR_NOT_FOUND,
-} RJ_Return;
+} RJ_Result;
 
 #pragma endregion Typedefs
 

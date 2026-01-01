@@ -21,7 +21,8 @@ typedef RJ_Size AudioComponent;
 /// @brief Initialize the audio system with the specified component capacity.
 /// @param initialComponentCapacity The initial capacity for audio components.
 /// @param positionReferences Reference to the array of position vectors for audio components.
-void Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences);
+/// @return RJ_OK on success or RJ_ERROR_DEPENDENCY if miniaudio fails or RJ_ERROR_ALLOCATION if internal allocation fails.
+RJ_Result Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences);
 
 /// @brief Terminate and free the necessary resources for audio system.
 void Audio_Terminate(void);
@@ -40,11 +41,12 @@ void Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponent
 void Audio_Update(void);
 
 /// @brief Creates an audio component and associates it with an entity.
+/// @param retComponent Pointer to store the created AudioComponent.
 /// @param entity The entity to associate the component with.
 /// @param audioFile The audio file to be used by the component.
 /// @param positionReference Reference to the position of the audio component.
-/// @return The created audio component.
-AudioComponent Audio_ComponentCreate(RJ_Size entity, StringView audioFile);
+/// @return RJ_OK on success or RJ_ERROR_DEPENDENCY if miniaudio fails.
+RJ_Result Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity, StringView audioFile);
 
 /// @brief Destroys an audio component and frees its resources.
 /// @param component Component to destroy.

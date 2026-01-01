@@ -72,12 +72,17 @@ struct AUDIO_MAIN_SCENE
 
 #pragma endregion Source Only
 
-void Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences)
+RJ_Result Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
 
     ma_result result = ma_engine_init(NULL, &AMS.engine);
-    RJ_DebugAssert(result == MA_SUCCESS, "Failed to initialize miniaudio : %zu", result);
+
+    if (result != MA_SUCCESS)
+    {
+        RJ_DebugWarning("Failed to initialize miniaudio : %zu", result);
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     AMS.data.capacity = initialComponentCapacity;
     AMS.data.count = 0;
@@ -86,11 +91,23 @@ void Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferen
 
     AMS.components.positionReferences = positionReferences;
 
-    RJ_DebugAssertAllocationCheck(RJ_Size, AMS.components.entities, initialComponentCapacity);
-    RJ_DebugAssertAllocationCheck(ma_sound, AMS.components.sounds, initialComponentCapacity);
-    RJ_DebugAssertAllocationCheck(uint8_t, AMS.components.flags, initialComponentCapacity);
+    if (!RJ_Allocate(RJ_Size, AMS.components.entities, initialComponentCapacity) == false ||
+        !RJ_Allocate(ma_sound, AMS.components.sounds, initialComponentCapacity) == false ||
+        !RJ_Allocate(uint8_t, AMS.components.flags, initialComponentCapacity) == false)
+    {
+        ma_engine_uninit(&AMS.engine);
+        ListArray_Destroy(&AMS.data.freeIndices);
+
+        AMS.data.capacity = 0;
+        AMS.data.count = 0;
+        AMS.components.positionReferences = NULL;
+
+        RJ_DebugWarning("Failed to allocate data for audio module with size %zu.", initialComponentCapacity * (sizeof(RJ_Size) + sizeof(ma_sound) + sizeof(uint8_t)));
+        return RJ_ERROR_ALLOCATION;
+    }
 
     RJ_DebugInfo("Audio system initialized with component capacity %u.", initialComponentCapacity);
+    return RJ_OK;
 }
 
 void Audio_Terminate(void)
@@ -133,9 +150,13 @@ void Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponent
     AMS.components.positionReferences = positionReferences;
     AMS.data.capacity = newComponentCapacity;
 
-    RJ_DebugAssertReallocationCheck(RJ_Size, AMS.components.entities, AMS.data.capacity);
-    RJ_DebugAssertReallocationCheck(ma_sound, AMS.components.sounds, AMS.data.capacity);
-    RJ_DebugAssertReallocationCheck(uint8_t, AMS.components.flags, AMS.data.capacity);
+    if (!RJ_Reallocate(RJ_Size, AMS.components.entities, AMS.data.capacity) ||
+        !RJ_Reallocate(ma_sound, AMS.components.sounds, AMS.data.capacity) ||
+        !RJ_Reallocate(uint8_t, AMS.components.flags, AMS.data.capacity))
+    {
+        RJ_DebugWarning("Failed to reallocate data for audio module with size %zu.", AMS.data.capacity * (sizeof(RJ_Size) + sizeof(ma_sound) + sizeof(uint8_t)));
+        return RJ_ERROR_ALLOCATION;
+    }
 
     RJ_DebugInfo("Audio position references reconfigured with new capacity %u.", AMS.data.capacity);
 }
@@ -156,7 +177,7 @@ void Audio_Update(void)
     ma_engine_listener_set_direction(&AMS.engine, 0, AMS.listener.rotationReference->x, AMS.listener.rotationReference->y, AMS.listener.rotationReference->z); // todo forward rotation
 }
 
-AudioComponent Audio_ComponentCreate(RJ_Size entity, StringView audioFile)
+RJ_Result Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity, StringView audioFile)
 {
     RJ_DebugAssert(AMS.data.count + AMS.data.freeIndices.count < AMS.data.capacity, "Maximum audio component capacity of %u reached.", AMS.data.capacity);
 
@@ -164,6 +185,8 @@ AudioComponent Audio_ComponentCreate(RJ_Size entity, StringView audioFile)
 
     amsEntity(newComponent) = entity;
     amsSetActive(newComponent, true);
+
+    *retComponent = newComponent;
 
     String fullPath = scc(audioFile);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
@@ -177,24 +200,30 @@ AudioComponent Audio_ComponentCreate(RJ_Size entity, StringView audioFile)
         NULL,
         (ma_sound *)&amsSound(newComponent));
 
-    RJ_DebugAssert(result == MA_SUCCESS, "Failed to create AudioComponent for '%s' : %d", fullPath.characters, result);
+    if (result != MA_SUCCESS)
+    {
+        ListArray_Add(&AMS.data.freeIndices, &newComponent);
+        amsEntity(newComponent) = RJ_INDEX_INVALID;
+        amsFlag(newComponent) = false;
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     String_Destroy(&fullPath);
 
     AMS.data.count++;
 
-    return newComponent;
+    return RJ_OK;
 }
 
 void Audio_ComponentDestroy(AudioComponent component)
 {
     amsAssertComponent(component);
 
+    ListArray_Add(&AMS.data.freeIndices, &component);
+
     amsEntity(component) = RJ_INDEX_INVALID;
     ma_sound_uninit((ma_sound *)&amsSound(component));
     amsFlag(component) = false;
-
-    ListArray_Add(&AMS.data.freeIndices, &component);
 
     AMS.data.count--;
 }

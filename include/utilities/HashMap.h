@@ -24,7 +24,7 @@ typedef struct HashMap
 /// @param sizeOfItem Size of the item type to store.
 /// @param capacity Initial capacity of the hash map.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation failsRJ_ERROR_.
-RJ_Return HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfItem, RJ_Size capacity);
+RJ_Result HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfItem, RJ_Size capacity);
 
 /// @brief Destroyer function for HashMap.
 /// @param hashMap Pointer to the HashMap to destroy.

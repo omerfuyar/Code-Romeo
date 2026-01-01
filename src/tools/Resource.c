@@ -36,7 +36,7 @@ ListLinked RESOURCE_TEXTURE_POOL = {0};
 
 #pragma region ResourceTexture
 
-static RJ_Return ResourceTexture_GetByNameOrCreate(ResourceTexture **retTexture, StringView name, StringView filePathInResources)
+static RJ_Result ResourceTexture_GetByNameOrCreate(ResourceTexture **retTexture, StringView name, StringView filePathInResources)
 {
     for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
@@ -58,7 +58,7 @@ static RJ_Return ResourceTexture_GetByNameOrCreate(ResourceTexture **retTexture,
     String tempFilePath = scc(filePathInResources);
     String_ConcatEnd(&tempFilePath, scv(texture->name));
 
-    RJ_Return result = ResourceImage_Create(&texture->image, scv(tempFilePath));
+    RJ_Result result = ResourceImage_Create(&texture->image, scv(tempFilePath));
     String_Destroy(&tempFilePath);
     if (result != RJ_OK)
     {
@@ -124,7 +124,7 @@ static void ResourceTexture_Destroy(ResourceTexture *texture)
 
 #pragma region ResourceMaterial
 
-static RJ_Return ResourceMaterial_GetByName(ResourceMaterial **retMaterial, StringView name)
+static RJ_Result ResourceMaterial_GetByName(ResourceMaterial **retMaterial, StringView name)
 {
     for (RJ_Size materialIndex = 0; materialIndex < RESOURCE_MATERIAL_POOL.count; materialIndex++)
     {
@@ -141,13 +141,13 @@ static RJ_Return ResourceMaterial_GetByName(ResourceMaterial **retMaterial, Stri
     return RJ_ERROR_NOT_FOUND;
 }
 
-static RJ_Return ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePathInResources)
+static RJ_Result ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePathInResources)
 {
     String tempFilePath = scc(resourcePathInResources);
     String_ConcatEnd(&tempFilePath, matFile);
 
     ResourceText *matFileResource = NULL;
-    RJ_Return result = ResourceText_Create(&matFileResource, scv(tempFilePath));
+    RJ_Result result = ResourceText_Create(&matFileResource, scv(tempFilePath));
     String_Destroy(&tempFilePath);
 
     if (result != RJ_OK)
@@ -287,11 +287,11 @@ static void ResourceMaterial_Destroy(ResourceMaterial *material)
 
 #pragma region ResourceMesh
 
-static RJ_Return ResourceMesh_Create(ResourceMesh **retMesh, ResourceModel *model, RJ_Size indexCount, ResourceMaterial *material)
+static RJ_Result ResourceMesh_Create(ResourceMesh **retMesh, ResourceModel *model, RJ_Size indexCount, ResourceMaterial *material)
 {
     ResourceMesh *mesh = (ResourceMesh *)ListArray_Add(&model->meshes, NULL);
 
-    RJ_Return result = ListArray_Create(&mesh->indices, "Resource Mesh Indices", sizeof(ResourceMeshIndex), indexCount);
+    RJ_Result result = ListArray_Create(&mesh->indices, "Resource Mesh Indices", sizeof(ResourceMeshIndex), indexCount);
     if (result != RJ_OK)
     {
         ListArray_Pop(&model->meshes);
@@ -318,7 +318,7 @@ static void ResourceMesh_Destroy(ResourceMesh *mesh)
 
 #pragma region ResourceText
 
-RJ_Return ResourceText_Create(ResourceText **retResource, StringView file)
+RJ_Result ResourceText_Create(ResourceText **retResource, StringView file)
 {
     ResourceText *resource = *retResource;
 
@@ -432,7 +432,7 @@ void ResourceText_Destroy(ResourceText *resource)
 
 #pragma region ResourceImage
 
-RJ_Return ResourceImage_Create(ResourceImage **retResourceImage, StringView file)
+RJ_Result ResourceImage_Create(ResourceImage **retResourceImage, StringView file)
 {
     ResourceImage *resourceImage = *retResourceImage;
 
@@ -518,7 +518,7 @@ static void ProcessFaceVertex(StringView faceToken, ResourceModel *model, Resour
     ListArray_Add(&currentMesh->indices, &positionIndex);
 }
 
-RJ_Return ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, Vector3 *transformOffset)
+RJ_Result ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, Vector3 *transformOffset)
 {
     if (RESOURCE_TEXTURE_POOL.head == NULL && RESOURCE_MATERIAL_POOL.head == NULL)
     {
@@ -570,7 +570,7 @@ RJ_Return ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView
     RJ_Size totalVertexUvCount = 0;
 
     ResourceText *mdlFileResource = NULL;
-    RJ_Return result = ResourceText_Create(&mdlFileResource, fileName);
+    RJ_Result result = ResourceText_Create(&mdlFileResource, fileName);
     if (result != RJ_OK)
     {
         RJ_DebugWarning("Failed to create resource text for model file '%.*s'.", (int)fileName.length, fileName.characters);
