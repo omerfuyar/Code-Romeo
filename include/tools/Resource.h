@@ -137,7 +137,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage);
 /// @param retResourceModel Pointer to the ResourceModel pointer to store the created resource model.
 /// @param fileName The file path of the resource model in resources folder. Including file name. (e.g. "models/model.mdl").
 /// @param transformOffset Transform offset to apply to the model's vertices. Should be in position, rotation, and scale order. Leave NULL if not needed.
-/// @return Pointer to the created resource model.
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if the file cannot be opened or RJ_ERROR_DEPENDENCY if the model loading fails.
 RJ_Result ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, Vector3 *transformOffset);
 
 /// @brief Destroys a resource model and frees all associated memory.

@@ -22,6 +22,9 @@ typedef struct ContextWindow
     bool fullScreen;
 } ContextWindow;
 
+/// @brief Function pointer type used for dynamic symbol loading
+typedef void *(*Context_VoidptrFunCcharptr)(const char *name);
+
 /// @brief Function pointer type used for window resize callback
 typedef void (*Context_VoidFunVoidptrIntInt)(void *, int, int);
 
@@ -72,3 +75,10 @@ void Context_ConfigureFullScreen(bool fullScreen);
 /// @brief Set the window resize callback function
 /// @param callback Function to call when window is resized, or NULL to remove callback
 void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback);
+
+/// @brief Get the dynamic symbol loader function pointer
+/// @return Function pointer to load dynamic symbols by name
+Context_VoidptrFunCcharptr Context_GetDynamicSymbolLoader(void);
+
+/// @brief Swap the front and back buffers of the main window
+void Context_SwapBuffers(void);

@@ -118,6 +118,42 @@
 /// @brief Macro wrapper for memory reallocation operation. Pass char if the pointer type os void.
 #define RJ_Reallocate(type, pointer, newCount) (((pointer) = (type *)realloc((pointer), sizeof(type) * (newCount))) != NULL)
 
+/// @brief Macro wrapper for returning error code directly for file open. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
+#define RJ_ReturnFileOpen(filePointer, fileName, mode, ...)                          \
+    do                                                                               \
+    {                                                                                \
+        if (!RJ_FileOpen(filePointer, fileName, mode))                               \
+        {                                                                            \
+            __VA_ARGS__                                                              \
+            RJ_DebugWarning("Failed to open file: %s with mode %s", fileName, mode); \
+            return RJ_ERROR_FILE;                                                    \
+        }                                                                            \
+    } while (0)
+
+/// @brief Macro wrapper for returning error code directly for memory allocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
+#define RJ_ReturnAllocate(type, pointer, count, ...)                                                                          \
+    do                                                                                                                        \
+    {                                                                                                                         \
+        if (!RJ_Allocate(type, pointer, count))                                                                               \
+        {                                                                                                                     \
+            __VA_ARGS__                                                                                                       \
+            RJ_DebugWarning("Memory allocation failed for %zu bytes for type '%s'.", (RJ_Size)(count) * sizeof(type), #type); \
+            return RJ_ERROR_ALLOCATION;                                                                                       \
+        }                                                                                                                     \
+    } while (0)
+
+/// @brief Macro wrapper for returning error code directly for memory reallocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
+#define RJ_ReturnReallocate(type, pointer, newCount, ...)                                                                          \
+    do                                                                                                                             \
+    {                                                                                                                              \
+        if (!RJ_Reallocate(type, pointer, newCount))                                                                               \
+        {                                                                                                                          \
+            __VA_ARGS__                                                                                                            \
+            RJ_DebugWarning("Memory reallocation failed for %zu bytes for type '%s'.", (RJ_Size)(newCount) * sizeof(type), #type); \
+            return RJ_ERROR_ALLOCATION;                                                                                            \
+        }                                                                                                                          \
+    } while (0)
+
 #pragma region Typedefs
 
 /// @brief Function pointer type used in setup callback function.
@@ -154,7 +190,7 @@ typedef enum RJ_Result
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
 /// @note The log message is written to a file named 'RJ_DEBUG_FILE_NAME' macro which is defined in the header. Directory and name can be changed by modifying the macro.
-void RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
+RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
@@ -295,9 +331,6 @@ void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 
 #define RJ_DebugAssert(condition, format, ...) (void)(condition)
 #define RJ_DebugAssertNullPointerCheck(ptr)
-#define RJ_DebugAssertFileOpenCheck(filePtr, fileName, mode) RJ_FileOpen(filePtr, fileName, mode)
-#define RJ_DebugAssertAllocationCheck(type, ptr, count) RJ_Allocate(type, ptr, count)
-#define RJ_DebugAssertReallocationCheck(type, ptr, count) RJ_Reallocate(type, ptr, count)
 
 #else
 
@@ -314,18 +347,6 @@ void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 /// @brief Asserts that the given pointer is not NULL. Logs and terminates on failure if configured.
 #define RJ_DebugAssertNullPointerCheck(pointer) \
     RJ_DebugAssert(pointer != NULL, "Pointer '%s' cannot be NULL.", #pointer)
-
-/// @brief Asserts that the file was opened successfully. Logs and terminates on failure if configured.
-#define RJ_DebugAssertFileOpenCheck(filePointer, fileName, mode) \
-    RJ_DebugAssert(RJ_FileOpen(filePointer, fileName, mode), "File open failed for %s", fileName)
-
-/// @brief Asserts that the memory allocation was successful. Logs and terminates on failure if configured.
-#define RJ_DebugAssertAllocationCheck(type, pointer, count) \
-    RJ_DebugAssert(RJ_Allocate(type, pointer, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
-
-/// @brief Asserts that the memory reallocation was successful. Logs and terminates on failure if configured.
-#define RJ_DebugAssertReallocationCheck(type, pointer, count) \
-    RJ_DebugAssert(RJ_Reallocate(type, pointer, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
 
 #endif
 

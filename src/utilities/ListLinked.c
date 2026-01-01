@@ -20,11 +20,13 @@ typedef struct ListLinkedNode
 /// @param sizeOfData Size of the data to be stored in the node.
 /// @param data Pointer to the data to store inside the node.
 /// @return The created ListLinkedNode struct.
-static ListLinkedNode *ListLinkedNode_Create(RJ_Size sizeOfData, const void *data)
+static RJ_Result ListLinkedNode_Create(ListLinkedNode **retNode, RJ_Size sizeOfData, const void *data)
 {
     ListLinkedNode *node = NULL;
-    RJ_DebugAssertAllocationCheck(ListLinkedNode, node, 1);
-    RJ_DebugAssertAllocationCheck(char, node->data, sizeOfData);
+    RJ_ReturnAllocate(ListLinkedNode, node, 1);
+    RJ_ReturnAllocate(char, node->data, sizeOfData);
+
+    *retNode = node;
 
     if (data != NULL)
     {
@@ -37,7 +39,7 @@ static ListLinkedNode *ListLinkedNode_Create(RJ_Size sizeOfData, const void *dat
 
     node->next = NULL;
 
-    return node;
+    return RJ_OK;
 }
 
 /// @brief Destroyer function for ListLinkedNode. Frees the data and the node itself.
@@ -194,7 +196,8 @@ void *ListLinked_Add(ListLinked *list, const void *item)
 {
     RJ_DebugAssertNullPointerCheck(list);
 
-    ListLinkedNode *newNode = ListLinkedNode_Create(list->sizeOfItem, item);
+    ListLinkedNode *newNode = NULL;
+    ListLinkedNode_Create(&newNode, list->sizeOfItem, item);
 
     if (list->head == NULL)
     {

@@ -47,7 +47,8 @@ typedef RJ_Size RendererBatch;
 /// @brief Initializes the renderer system.
 /// @param window The context window to render to.
 /// @param initialBatchCapacity The initial capacity for renderer batches.
-void Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity);
+/// @return RJ_OK on success, RJ_ERROR_DEPENDENCY if glad or GLFW fails or RJ_ERROR_ALLOCATION if internal allocation fails.
+RJ_Result Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
 void Renderer_Terminate(void);
@@ -78,7 +79,8 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth);
 
 /// @brief Resizes the renderer's batch capacity.
 /// @param newBatchCapacity The new capacity for renderer batches.
-void Renderer_Resize(RJ_Size newBatchCapacity);
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
+RJ_Result Renderer_Resize(RJ_Size newBatchCapacity);
 
 /// @brief Updates the renderer system. Call before using any renderer function in during the frame.
 void Renderer_Update(void);
@@ -87,14 +89,16 @@ void Renderer_Update(void);
 void Renderer_Render(void);
 
 /// @brief Creates a renderer batch.
+
 /// @param mdlFile The file path of the model.
+/// @param retBatch The handle to the created renderer batch.
 /// @param transformOffset The offset to apply to the model's transform.
 /// @param initialComponentCapacity The initial capacity for components in the batch.
 /// @param positionReferences The array of position references for components.
 /// @param rotationReferences The array of rotation references for components.
 /// @param scaleReferences The array of scale references for components.
-/// @return The handle to the created renderer batch.
-RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if model loading fails.
+RJ_Result Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
 
 /// @brief Destroys a renderer batch.
 /// @param batch The handle to the renderer batch to destroy.
@@ -106,7 +110,8 @@ void Renderer_BatchDestroy(RendererBatch batch);
 /// @param rotationReferences The array of rotation references for components.
 /// @param scaleReferences The array of scale references for components.
 /// @param newComponentCapacity The new capacity for components in the batch.
-void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity);
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
+RJ_Result Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.

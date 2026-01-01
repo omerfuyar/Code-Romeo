@@ -9,7 +9,6 @@
 #include "utilities/HashMap.h"
 
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
 
 #if RJ_COMPILER_CLANG
 #pragma clang diagnostic push
@@ -198,10 +197,10 @@ static void RENDERER_MAIN_WINDOW_RESIZE_CALLBACK(void *window, int width, int he
     RMS.window->size.x = width;
     RMS.window->size.y = height;
 
-    if (RMS.window->fullScreen)
-    {
-        glfwGetFramebufferSize(RMS.window->handle, &RMS.window->size.x, &RMS.window->size.y);
-    }
+    // if (RMS.window->fullScreen)
+    // {
+    //     glfwGetFramebufferSize(RMS.window->handle, &RMS.window->size.x, &RMS.window->size.y);
+    // }
 
     glViewport(0, 0, RMS.window->size.x, RMS.window->size.y);
 }
@@ -237,20 +236,19 @@ static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint
 
 #pragma region Renderer
 
-void Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
+RJ_Result Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
 {
     RJ_DebugAssertNullPointerCheck(window);
 
     RMS.window = window;
 
-    RJ_DebugAssertAllocationCheck(RENDERER_BATCH, RMS.data.batches, initialBatchCapacity);
+    RJ_ReturnAllocate(RENDERER_BATCH, RMS.data.batches, initialBatchCapacity);
 
     RMS.data.capacity = initialBatchCapacity;
     RMS.data.count = 0;
     ListArray_Create(&RMS.data.freeIndices, "Renderer Free Indices", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
-    // todo only glfw function in this file, make a wrapper in context
-    RJ_DebugAssert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "Failed to initialize GLAD");
+    RJ_DebugAssert(gladLoadGLLoader((GLADloadproc)Context_GetDynamicSymbolLoader()), "Failed to initialize GLAD");
 
     Context_ConfigureResizeCallback(RENDERER_MAIN_WINDOW_RESIZE_CALLBACK);
     glDebugMessageCallback((GLDEBUGPROC)RENDERER_MAIN_WINDOW_LOG_CALLBACK, NULL);
@@ -290,6 +288,7 @@ void Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
 
     RENDERER_INITIALIZED = true;
     RJ_DebugInfo("Renderer initialized successfully.");
+    return RJ_OK;
 }
 
 void Renderer_Terminate(void)
@@ -476,12 +475,12 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
     }
 }
 
-void Renderer_Resize(RJ_Size newBatchCapacity)
+RJ_Result Renderer_Resize(RJ_Size newBatchCapacity)
 {
     RJ_DebugAssert(newBatchCapacity > RMS.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RMS.data.count);
 
     RENDERER_BATCH *newBatches = NULL;
-    RJ_DebugAssertAllocationCheck(RENDERER_BATCH, newBatches, newBatchCapacity);
+    RJ_ReturnAllocate(RENDERER_BATCH, newBatches, newBatchCapacity);
 
     for (RJ_Size i = 0; i < RMS.data.count; i++)
     {
@@ -494,6 +493,7 @@ void Renderer_Resize(RJ_Size newBatchCapacity)
     RMS.data.capacity = newBatchCapacity;
 
     RJ_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
+    return RJ_OK;
 }
 
 /*
@@ -724,38 +724,41 @@ void Renderer_Render(void)
         }
     }
 
-    glfwSwapBuffers(RMS.window->handle);
+    Context_SwapBuffers();
     glFinish();
 }
 
-RendererBatch Renderer_BatchCreate(StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
+RJ_Result Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
 {
     RJ_DebugAssert(RMS.data.count + RMS.data.freeIndices.count < RMS.data.capacity, "Maximum renderer batch capacity of %u reached.", RMS.data.capacity); // todo expand capacity
 
-    RendererBatch newBatch = RJ_INDEX_INVALID;
+    RendererBatch newBatch = RMS.data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&RMS.data.freeIndices)) : RMS.data.count;
 
-    newBatch = RMS.data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&RMS.data.freeIndices)) : RMS.data.count;
+    *retBatch = newBatch;
 
-    // todo
-    ResourceModel_GetOrCreate(&rmsBatch(newBatch).data.model, mdlFile, transformOffset);
+    RJ_Result result = ResourceModel_GetOrCreate(&rmsBatch(newBatch).data.model, mdlFile, transformOffset);
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create renderer batch for model file '%s'.", mdlFile.characters);
+        return result;
+    }
 
     rmsBatch(newBatch).data.capacity = initialComponentCapacity;
     rmsBatch(newBatch).data.count = 0;
     ListArray_Create(&rmsBatch(newBatch).data.freeIndices, "RJ_Size", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
-    RJ_DebugAssertAllocationCheck(RJ_Size, rmsBatch(newBatch).components.entities, initialComponentCapacity);
-
-    RJ_DebugAssertAllocationCheck(Resource_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity);
+    RJ_ReturnAllocate(RJ_Size, rmsBatch(newBatch).components.entities, initialComponentCapacity,
+                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices););
+    RJ_ReturnAllocate(Resource_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity);
+    RJ_ReturnAllocate(uint8_t, rmsBatch(newBatch).components.flags, initialComponentCapacity);
 
     rmsBatch(newBatch).components.positionReferences = positionReferences;
     rmsBatch(newBatch).components.rotationReferences = rotationReferences;
     rmsBatch(newBatch).components.scaleReferences = scaleReferences;
 
-    RJ_DebugAssertAllocationCheck(uint8_t, rmsBatch(newBatch).components.flags, initialComponentCapacity);
-
     RMS.data.count++;
 
-    return newBatch;
+    return RJ_OK;
 }
 
 void Renderer_BatchDestroy(RendererBatch batch)
@@ -779,7 +782,7 @@ void Renderer_BatchDestroy(RendererBatch batch)
     RMS.data.count--;
 }
 
-void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity)
+RJ_Result Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity)
 {
     rmsAssertBatch(batch);
     RJ_DebugAssertNullPointerCheck(positionReferences);
@@ -793,15 +796,15 @@ void Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionRef
     rmsBatch(batch).components.rotationReferences = rotationReferences;
     rmsBatch(batch).components.scaleReferences = scaleReferences;
 
-    RJ_DebugAssertReallocationCheck(RJ_Size, rmsBatch(batch).components.entities, newComponentCapacity);
-
-    RJ_DebugAssertReallocationCheck(Resource_Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
+    RJ_ReturnReallocate(RJ_Size, rmsBatch(batch).components.entities, newComponentCapacity);
+    RJ_ReturnReallocate(Resource_Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
+    RJ_ReturnReallocate(uint8_t, rmsBatch(batch).components.flags, newComponentCapacity);
 
     rmsBatch(batch).components.positionReferences = positionReferences;
     rmsBatch(batch).components.rotationReferences = rotationReferences;
     rmsBatch(batch).components.scaleReferences = scaleReferences;
 
-    RJ_DebugAssertReallocationCheck(uint8_t, rmsBatch(batch).components.flags, newComponentCapacity);
+    return RJ_OK;
 }
 
 RendererComponent Renderer_ComponentCreate(RJ_Size entity, RendererBatch batch)

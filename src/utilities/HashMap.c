@@ -46,11 +46,8 @@ RJ_Result HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfI
     }
 
     retHashMap->count = 0;
-    if (!RJ_Allocate(char, retHashMap->data, capacity *sizeOfItem))
-    {
-        RJ_DebugWarning("Failed to allocate HashMap data for '%s'.", title);
-        return RJ_ERROR_ALLOCATION;
-    }
+
+    RJ_ReturnAllocate(char, retHashMap->data, capacity *sizeOfItem);
 
     RJ_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", title, capacity, sizeOfItem);
 

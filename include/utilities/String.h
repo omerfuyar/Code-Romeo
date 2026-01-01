@@ -5,9 +5,6 @@
 /// @brief Buffer size for numeric to string conversions.
 #define STRING_NUMERIC_CHAR_BUFFER (RJ_TEMP_BUFFER_SIZE / 4)
 
-/// @brief Buffer size for scb macro.
-#define STRING_TEMP_BUFFER_SIZE RJ_TEMP_BUFFER_SIZE
-
 #pragma region Typedefs
 
 /// @brief Standard string type for the entire project. Can be used with helper functions for heap or by itself for stack. Owner of its memory.
@@ -37,28 +34,27 @@ String String_CreateCopySafe(const char *string, RJ_Size length);
 #define scc(stringToCopy) \
     String_CreateCopySafe((stringToCopy).characters, (stringToCopy).length)
 
-/// @brief Create view from string literal.
-/// @param stringLiteral The literal string to create a view of.
-#define scl(stringLiteral) \
-    (StringView) { .characters = stringLiteral, .length = (RJ_Size)strlen(stringLiteral) }
-
-/// @brief Create a view of given string object.
-/// @param stringToCreateView String object to create a view of. Not a pointer.
-#define scv(stringToCreateView) \
-    (StringView) { .characters = (stringToCreateView).characters, .length = (stringToCreateView).length }
-
 /// @brief Create a view from char pointer and length.
 /// @param string Char pointer to create a view of.
 /// @param length Length of the string.
 #define scs(string, stringLength) \
     (StringView) { .characters = (string), .length = (stringLength) }
 
+/// @brief Create view from string literal.
+/// @param stringLiteral The literal string to create a view of.
+#define scl(stringLiteral) scs(stringLiteral, (RJ_Size)strlen(stringLiteral))
+
+/// @brief Create a view of given string object.
+/// @param stringToCreateView String object to create a view of. Not a pointer.
+#define scv(stringToCreateView) \
+    (StringView) { .characters = (stringToCreateView).characters, .length = (stringToCreateView).length }
+
 /// @brief Copies max STRING_TEMP_BUFFER_SIZE number of characters from string data to buffer. Adds a null terminator at the end of the buffer.
 /// @param string String object to create a buffer.
 /// @param buffer Buffer to use.
-#define scb(string, buffer)                                                                                                                   \
-    memcpy(buffer, (string).characters, ((STRING_TEMP_BUFFER_SIZE - 1) < (string).length ? (STRING_TEMP_BUFFER_SIZE - 1) : (string).length)); \
-    buffer[((STRING_TEMP_BUFFER_SIZE - 1) < (string).length ? (STRING_TEMP_BUFFER_SIZE - 1) : (string).length)] = '\0'
+#define scb(string, buffer, bufferSize)                                                                                 \
+    memcpy(buffer, (string).characters, (((bufferSize) - 1) < (string).length ? ((bufferSize) - 1) : (string).length)); \
+    buffer[(((bufferSize) - 1) < (string).length ? ((bufferSize) - 1) : (string).length)] = '\0'
 
 /// @brief Destroys a String object and frees its memory if it is a copy.
 /// @param string Pointer to the String object to destroy.

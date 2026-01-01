@@ -91,20 +91,29 @@ RJ_Result Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionRe
 
     AMS.components.positionReferences = positionReferences;
 
-    if (!RJ_Allocate(RJ_Size, AMS.components.entities, initialComponentCapacity) == false ||
-        !RJ_Allocate(ma_sound, AMS.components.sounds, initialComponentCapacity) == false ||
-        !RJ_Allocate(uint8_t, AMS.components.flags, initialComponentCapacity) == false)
-    {
-        ma_engine_uninit(&AMS.engine);
-        ListArray_Destroy(&AMS.data.freeIndices);
+    RJ_ReturnAllocate(RJ_Size, AMS.components.entities, initialComponentCapacity,
+                      ma_engine_uninit(&AMS.engine);
+                      ListArray_Destroy(&AMS.data.freeIndices);
 
-        AMS.data.capacity = 0;
-        AMS.data.count = 0;
-        AMS.components.positionReferences = NULL;
+                      AMS.data.capacity = 0;
+                      AMS.data.count = 0;
+                      AMS.components.positionReferences = NULL;);
 
-        RJ_DebugWarning("Failed to allocate data for audio module with size %zu.", initialComponentCapacity * (sizeof(RJ_Size) + sizeof(ma_sound) + sizeof(uint8_t)));
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(ma_sound, AMS.components.sounds, initialComponentCapacity,
+                      ma_engine_uninit(&AMS.engine);
+                      ListArray_Destroy(&AMS.data.freeIndices);
+
+                      AMS.data.capacity = 0;
+                      AMS.data.count = 0;
+                      AMS.components.positionReferences = NULL;);
+
+    RJ_ReturnAllocate(uint8_t, AMS.components.flags, initialComponentCapacity,
+                      ma_engine_uninit(&AMS.engine);
+                      ListArray_Destroy(&AMS.data.freeIndices);
+
+                      AMS.data.capacity = 0;
+                      AMS.data.count = 0;
+                      AMS.components.positionReferences = NULL;);
 
     RJ_DebugInfo("Audio system initialized with component capacity %u.", initialComponentCapacity);
     return RJ_OK;
@@ -150,13 +159,9 @@ void Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponent
     AMS.components.positionReferences = positionReferences;
     AMS.data.capacity = newComponentCapacity;
 
-    if (!RJ_Reallocate(RJ_Size, AMS.components.entities, AMS.data.capacity) ||
-        !RJ_Reallocate(ma_sound, AMS.components.sounds, AMS.data.capacity) ||
-        !RJ_Reallocate(uint8_t, AMS.components.flags, AMS.data.capacity))
-    {
-        RJ_DebugWarning("Failed to reallocate data for audio module with size %zu.", AMS.data.capacity * (sizeof(RJ_Size) + sizeof(ma_sound) + sizeof(uint8_t)));
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnReallocate(RJ_Size, AMS.components.entities, AMS.data.capacity);
+    RJ_ReturnReallocate(ma_sound, AMS.components.sounds, AMS.data.capacity);
+    RJ_ReturnReallocate(uint8_t, AMS.components.flags, AMS.data.capacity);
 
     RJ_DebugInfo("Audio position references reconfigured with new capacity %u.", AMS.data.capacity);
 }

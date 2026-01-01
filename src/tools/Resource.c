@@ -110,7 +110,7 @@ static void ResourceTexture_Destroy(ResourceTexture *texture)
     RJ_DebugAssertNullPointerCheck(texture);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    scb(texture->name, tempTitle);
+    scb(texture->name, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&texture->name);
     ResourceImage_Destroy(texture->image);
@@ -137,7 +137,7 @@ static RJ_Result ResourceMaterial_GetByName(ResourceMaterial **retMaterial, Stri
         }
     }
 
-    RJ_DebugWarning("Resource Material '%.*s' not found in the global material pool.", (int)name.length, name.characters);
+    // RJ_DebugWarning("Resource Material '%.*s' not found in the global material pool.", (int)name.length, name.characters);
     return RJ_ERROR_NOT_FOUND;
 }
 
@@ -159,12 +159,8 @@ static RJ_Result ResourceMaterial_AddFromFileIfNew(StringView matFile, StringVie
     RJ_Size matLineCount = 0;
 
     StringView *matLines = NULL;
-    if (!RJ_Allocate(StringView, matLines, matFileResource->lineCount))
-    {
-        ResourceText_Destroy(matFileResource);
-        RJ_DebugWarning("Failed to allocate material file lines for material file '%s'.", tempFilePath.characters);
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(StringView, matLines, matFileResource->lineCount,
+                      ResourceText_Destroy(matFileResource););
 
     RJ_Size matLineTokenCount = 0;
     StringView matLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
@@ -274,7 +270,7 @@ static void ResourceMaterial_Destroy(ResourceMaterial *material)
     RJ_DebugAssertNullPointerCheck(material);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    scb(material->name, tempTitle);
+    scb(material->name, tempTitle, sizeof(tempTitle));
 
     ResourceTexture_Destroy(material->diffuseMap);
     String_Destroy(&material->name);
@@ -292,12 +288,13 @@ static RJ_Result ResourceMesh_Create(ResourceMesh **retMesh, ResourceModel *mode
     ResourceMesh *mesh = (ResourceMesh *)ListArray_Add(&model->meshes, NULL);
 
     RJ_Result result = ListArray_Create(&mesh->indices, "Resource Mesh Indices", sizeof(ResourceMeshIndex), indexCount);
-    if (result != RJ_OK)
+    if (result != RJ_OK) // todo make this for all ListArray_Create calls or not
     {
         ListArray_Pop(&model->meshes);
         RJ_DebugWarning("Failed to create indices list for sub-mesh of model '%s'.", model->file.characters);
         return RJ_ERROR_ALLOCATION;
     }
+
     mesh->material = material;
 
     *retMesh = mesh;
@@ -322,11 +319,7 @@ RJ_Result ResourceText_Create(ResourceText **retResource, StringView file)
 {
     ResourceText *resource = *retResource;
 
-    if (!RJ_Allocate(ResourceText, resource, 1))
-    {
-        RJ_DebugWarning("Failed to allocate ResourceText for file '%.*s'.", (int)file.length, file.characters);
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(ResourceText, resource, 1);
 
     *retResource = resource;
 
@@ -353,13 +346,9 @@ RJ_Result ResourceText_Create(ResourceText **retResource, StringView file)
 
     FILE *fileHandle = NULL;
 
-    if (!RJ_FileOpen(fileHandle, fullPath.characters, "r"))
-    {
-        String_Destroy(&fullPath);
-        free(resource);
-        RJ_DebugWarning("Failed to open resource text file '%s'.", fullPath.characters);
-        return RJ_ERROR_FILE;
-    }
+    RJ_ReturnFileOpen(fileHandle, fullPath.characters, "r",
+                      String_Destroy(&fullPath);
+                      free(resource););
 
     while ((character = fgetc(fileHandle)) != EOF)
     {
@@ -373,13 +362,9 @@ RJ_Result ResourceText_Create(ResourceText **retResource, StringView file)
 
     // on heap because the buffer is too large for stack
     char *dataBuffer = NULL;
-    if (!RJ_Allocate(char, dataBuffer, resource->lineCount *RESOURCE_FILE_LINE_MAX_CHAR_COUNT) == false)
-    {
-        String_Destroy(&fullPath);
-        free(resource);
-        RJ_DebugWarning("Failed to allocate data buffer for resource text file '%s'.", fullPath.characters);
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(char, dataBuffer, resource->lineCount *RESOURCE_FILE_LINE_MAX_CHAR_COUNT,
+                      String_Destroy(&fullPath);
+                      free(resource););
     dataBuffer[0] = '\0';
 
     char lineBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT] = {0};
@@ -413,7 +398,7 @@ void ResourceText_Destroy(ResourceText *resource)
     RJ_DebugAssertNullPointerCheck(resource->file.characters);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    scb(resource->file, tempTitle);
+    scb(resource->file, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&resource->file);
     String_Destroy(&resource->data);
@@ -436,11 +421,7 @@ RJ_Result ResourceImage_Create(ResourceImage **retResourceImage, StringView file
 {
     ResourceImage *resourceImage = *retResourceImage;
 
-    if (!RJ_Allocate(ResourceImage, resourceImage, 1))
-    {
-        RJ_DebugWarning("Failed to allocate ResourceImage for file '%.*s'.", (int)file.length, file.characters);
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(ResourceImage, resourceImage, 1);
 
     *retResourceImage = resourceImage;
 
@@ -475,7 +456,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     RJ_DebugAssertNullPointerCheck(resourceImage);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    scb(resourceImage->file, tempTitle);
+    scb(resourceImage->file, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&resourceImage->file);
     resourceImage->channels = 0;
@@ -579,13 +560,10 @@ RJ_Result ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView
 
     RJ_Size mdlLineCount = 0;
     StringView *mdlLines = NULL;
-    if (!RJ_Allocate(StringView, mdlLines, mdlFileResource->lineCount))
-    {
-        ResourceText_Destroy(mdlFileResource);
-        free(model);
-        RJ_DebugWarning("Failed to allocate model lines for resource model '%.*s'.", (int)fileName.length, fileName.characters);
-        return RJ_ERROR_ALLOCATION;
-    }
+
+    RJ_ReturnAllocate(StringView, mdlLines, mdlFileResource->lineCount,
+                      ResourceText_Destroy(mdlFileResource);
+                      free(model););
 
     RJ_Size mdlLineTokenCount = 0;
     StringView mdlLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
@@ -627,14 +605,11 @@ RJ_Result ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView
     }
 
     RJ_Size *triangleCounts = NULL;
-    if (!RJ_Allocate(RJ_Size, triangleCounts, meshCount))
-    {
-        ResourceText_Destroy(mdlFileResource);
-        free(mdlLines);
-        free(model);
-        RJ_DebugWarning("Failed to allocate triangle counts for resource model '%.*s'.", (int)fileName.length, fileName.characters);
-        return RJ_ERROR_ALLOCATION;
-    }
+
+    RJ_ReturnAllocate(RJ_Size, triangleCounts, meshCount,
+                      ResourceText_Destroy(mdlFileResource);
+                      free(mdlLines);
+                      free(model););
 
     RJ_Size tempMeshIndex = 0;
     for (RJ_Size i = 0; i < mdlLineCount && tempMeshIndex < meshCount + 1; i++) // count faces per mesh
@@ -827,7 +802,7 @@ void ResourceModel_Destroy(ResourceModel *model)
     RJ_DebugAssertNullPointerCheck(model);
 
     char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
-    scb(model->file, tempTitle);
+    scb(model->file, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&model->file);
 

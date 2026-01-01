@@ -10,7 +10,7 @@ String String_CreateCopySafe(const char *string, RJ_Size length)
     String createdString = {0};
 
     createdString.length = length;
-    RJ_DebugAssertAllocationCheck(char, createdString.characters, createdString.length + 1);
+    RJ_DebugAssert(RJ_Allocate(char, createdString.characters, createdString.length + 1), "Failed to allocate memory for string with length %u", createdString.length + 1);
 
     memcpy(createdString.characters, string, createdString.length);
     createdString.characters[createdString.length] = '\0';
@@ -44,9 +44,9 @@ void String_Replace(String *string, StringView pattern, StringView replace)
 {
     RJ_DebugAssertNullPointerCheck(string);
 
-    StringView tokens[STRING_TEMP_BUFFER_SIZE] = {0};
+    StringView tokens[RJ_TEMP_BUFFER_SIZE] = {0};
     RJ_Size replaceCount = 0;
-    String_Tokenize(scv((*string)), pattern, &replaceCount, tokens, STRING_TEMP_BUFFER_SIZE);
+    String_Tokenize(scv((*string)), pattern, &replaceCount, tokens, RJ_TEMP_BUFFER_SIZE);
 
     if (replaceCount != 0)
     {

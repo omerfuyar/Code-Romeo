@@ -214,15 +214,26 @@ RJ_Result Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferen
     PMS.properties.gravity = gravity;
     PMS.properties.elasticity = elasticity;
 
-    if (!RJ_Allocate(RJ_Size, PMS.data.entities, PMS.data.capacity) ||
-        !RJ_Allocate(Vector3, PMS.data.velocities, PMS.data.capacity) ||
-        !RJ_Allocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity) ||
-        !RJ_Allocate(float, PMS.data.masses, PMS.data.capacity) ||
-        !RJ_Allocate(uint8_t, PMS.data.flags, PMS.data.capacity))
-    {
-        RJ_DebugWarning("Failed to allocate data for physics module with size %zu.", PMS.data.capacity * (sizeof(RJ_Size) + sizeof(Vector3) * 2 + sizeof(float) + sizeof(uint8_t)));
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(RJ_Size, PMS.data.entities, PMS.data.capacity,
+                      ListArray_Destroy(&PMS.data.freeIndices););
+    RJ_ReturnAllocate(Vector3, PMS.data.velocities, PMS.data.capacity,
+                      free(PMS.data.entities);
+                      ListArray_Destroy(&PMS.data.freeIndices););
+    RJ_ReturnAllocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity,
+                      free(PMS.data.velocities);
+                      free(PMS.data.entities);
+                      ListArray_Destroy(&PMS.data.freeIndices););
+    RJ_ReturnAllocate(float, PMS.data.masses, PMS.data.capacity,
+                      free(PMS.data.colliderSizes);
+                      free(PMS.data.velocities);
+                      free(PMS.data.entities);
+                      ListArray_Destroy(&PMS.data.freeIndices););
+    RJ_ReturnAllocate(uint8_t, PMS.data.flags, PMS.data.capacity,
+                      free(PMS.data.masses);
+                      free(PMS.data.colliderSizes);
+                      free(PMS.data.velocities);
+                      free(PMS.data.entities);
+                      ListArray_Destroy(&PMS.data.freeIndices););
 
     PMS.data.positionReferences = positionReferences;
 
@@ -264,15 +275,21 @@ RJ_Result Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCa
     PMS.data.positionReferences = positionReferences;
     PMS.data.capacity = newCapacity;
 
-    if (!RJ_Allocate(RJ_Size, PMS.data.entities, PMS.data.capacity) ||
-        !RJ_Allocate(Vector3, PMS.data.velocities, PMS.data.capacity) ||
-        !RJ_Allocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity) ||
-        !RJ_Allocate(float, PMS.data.masses, PMS.data.capacity) ||
-        !RJ_Allocate(uint8_t, PMS.data.flags, PMS.data.capacity))
-    {
-        RJ_DebugWarning("Failed to reallocate data for physics module with size %zu.", PMS.data.capacity * (sizeof(RJ_Size) + sizeof(Vector3) * 2 + sizeof(float) + sizeof(uint8_t)));
-        return RJ_ERROR_ALLOCATION;
-    }
+    RJ_ReturnAllocate(RJ_Size, PMS.data.entities, PMS.data.capacity);
+    RJ_ReturnAllocate(Vector3, PMS.data.velocities, PMS.data.capacity,
+                      free(PMS.data.entities););
+    RJ_ReturnAllocate(Vector3, PMS.data.colliderSizes, PMS.data.capacity,
+                      free(PMS.data.velocities);
+                      free(PMS.data.entities););
+    RJ_ReturnAllocate(float, PMS.data.masses, PMS.data.capacity,
+                      free(PMS.data.colliderSizes);
+                      free(PMS.data.velocities);
+                      free(PMS.data.entities););
+    RJ_ReturnAllocate(uint8_t, PMS.data.flags, PMS.data.capacity,
+                      free(PMS.data.masses);
+                      free(PMS.data.colliderSizes);
+                      free(PMS.data.velocities);
+                      free(PMS.data.entities););
 
     RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PMS.data.capacity);
     return RJ_OK;

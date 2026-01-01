@@ -26,11 +26,8 @@ RJ_Result ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOf
     }
 
     retList->count = 0;
-    if (!RJ_Allocate(char, retList->data, initialCapacity *sizeOfItem))
-    {
-        RJ_DebugWarning("Failed to allocate ListArray data for '%s'.", title);
-        return RJ_ERROR_ALLOCATION;
-    }
+
+    RJ_ReturnAllocate(char, retList->data, initialCapacity *sizeOfItem);
 
     RJ_DebugInfo("ListArray '%s' created with initial capacity: %u, size of item: %u", title, initialCapacity, sizeOfItem);
     return RJ_OK;

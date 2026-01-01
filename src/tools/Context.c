@@ -135,3 +135,13 @@ void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback)
 
     // Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
 }
+
+Context_VoidptrFunCcharptr Context_GetDynamicSymbolLoader(void)
+{
+    return (Context_VoidptrFunCcharptr)glfwGetProcAddress;
+}
+
+void Context_SwapBuffers(void)
+{
+    glfwSwapBuffers(CONTEXT_MAIN_WINDOW.handle);
+}

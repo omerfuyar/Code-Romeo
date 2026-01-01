@@ -19,9 +19,8 @@
 #pragma region Source Only
 
 FILE *RJ_DEBUG_FILE = NULL;
-char *RJ_DEBUG_FILE_NAME_STR = NULL;
-char *RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
-bool RJ_TERMINATE_BYPASS_CLEANUP = false;
+char RJ_DEBUG_FILE_NAME_STR[RJ_TEMP_BUFFER_SIZE * 2] = {0};
+char RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[RJ_TEMP_BUFFER_SIZE * 2] = {0};
 
 RJ_VoidFunIntCharPtrPtr RJ_SETUP_CALLBACK = NULL;
 RJ_VoidFunFloat RJ_LOOP_CALLBACK = NULL;
@@ -29,7 +28,7 @@ RJ_VoidFunIntCharPtr RJ_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
-void RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
+RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
@@ -41,8 +40,6 @@ void RJ_Log(bool terminate, const char *header, const char *file, int line, cons
 
     if (RJ_DEBUG_FILE == NULL)
     {
-        RJ_DebugAssertAllocationCheck(char, RJ_DEBUG_FILE_NAME_STR, strlen(RJ_GetExecutablePath()) + strlen(RJ_DEBUG_FILE_NAME) + 1);
-
         memcpy(RJ_DEBUG_FILE_NAME_STR, RJ_GetExecutablePath(), strlen(RJ_GetExecutablePath()));
         memcpy(RJ_DEBUG_FILE_NAME_STR + strlen(RJ_GetExecutablePath()), RJ_DEBUG_FILE_NAME, strlen(RJ_DEBUG_FILE_NAME));
 
@@ -50,25 +47,12 @@ void RJ_Log(bool terminate, const char *header, const char *file, int line, cons
 
         remove(RJ_DEBUG_FILE_NAME_STR);
 
-        if (!RJ_FileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a"))
-        {
-            char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
-            snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", RJ_DEBUG_FILE_NAME_STR);
-            fprintf(stderr, "%s", buffer);
-            RJ_TERMINATE_BYPASS_CLEANUP = true;
-            RJ_Terminate(EXIT_FAILURE, buffer);
-        }
+        RJ_ReturnFileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a");
 
         fprintf(RJ_DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
 #if RJ_DEBUG_SAFE_LOGGING
-    else if (!RJ_FileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a"))
-    {
-        char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
-        snprintf(buffer, sizeof(buffer), "Failed to open debug file: %s\n", RJ_DEBUG_FILE_NAME_STR);
-        fprintf(stderr, "%s", buffer);
-        RJ_Terminate(EXIT_FAILURE, buffer);
-    }
+    RJ_ReturnFileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a");
 #endif
 
     char messageBuffer[RJ_TEMP_BUFFER_SIZE * 4] = {0};
@@ -96,26 +80,24 @@ void RJ_Log(bool terminate, const char *header, const char *file, int line, cons
     {
         RJ_Terminate(EXIT_FAILURE, finalBuffer);
     }
+
+    return RJ_OK;
 }
 
 const char *RJ_GetExecutablePath(void)
 {
-    if (RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH == NULL)
+    if (RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[0] == '\0')
     {
-        char buffer[RJ_TEMP_BUFFER_SIZE] = {0};
-        RJ_GetExePath(buffer, sizeof(buffer));
+        RJ_GetExePath(RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH, sizeof(RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH));
 
-        RJ_Size currentIndex = (RJ_Size)strlen(buffer);
+        RJ_Size currentIndex = (RJ_Size)strlen(RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
 
-        while (buffer[--currentIndex] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
+        while (RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[--currentIndex] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
         {
-            buffer[currentIndex] = '\0';
+            RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
         }
         currentIndex++;
 
-        RJ_DebugAssertAllocationCheck(char, RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH, currentIndex + 1);
-
-        memcpy(RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH, buffer, currentIndex);
         RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
 
         RJ_DebugInfo("Executable path detected : '%s'", RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
@@ -163,12 +145,6 @@ void RJ_Run(int argc, char **argv)
 
 void RJ_Terminate(int exitCode, char *message)
 {
-    if (RJ_TERMINATE_BYPASS_CLEANUP)
-    {
-        fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
-        exit(exitCode);
-    }
-
     if (RJ_TERMINATE_CALLBACK != NULL)
     {
         RJ_TERMINATE_CALLBACK(exitCode, message);
@@ -182,18 +158,6 @@ void RJ_Terminate(int exitCode, char *message)
         RJ_DEBUG_FILE = NULL;
     }
 #endif
-
-    if (RJ_DEBUG_FILE_NAME_STR != NULL)
-    {
-        free(RJ_DEBUG_FILE_NAME_STR);
-        RJ_DEBUG_FILE_NAME_STR = NULL;
-    }
-
-    if (RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH != NULL)
-    {
-        free(RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
-        RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH = NULL;
-    }
 
     fprintf(stdout, "\nTerminating application with exit code: %d\nExit message : \n%s\n\n", exitCode, message);
     exit(exitCode);
