@@ -51,11 +51,13 @@ Timer Timer_Create(const char *title)
         title = "Timer";
     }
 
-    size_t titleLength = Timer_Min(TIMER_MAX_TITLE_LENGTH - 1, strlen(title));
+    size_t titleLength = strlen(title);
     if (titleLength >= TIMER_MAX_TITLE_LENGTH)
     {
         RJ_DebugWarning("Timer title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, TIMER_MAX_TITLE_LENGTH - 1);
     }
+
+    titleLength = Timer_Min(TIMER_MAX_TITLE_LENGTH - 1, titleLength);
 
     memcpy(timer.title, title, titleLength);
     timer.title[titleLength] = '\0';

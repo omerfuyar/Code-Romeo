@@ -39,11 +39,16 @@ RJ_Result HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfI
         title = "HashMap";
     }
 
-    size_t titleLength = HashMap_Min(HASH_MAP_MAX_TITLE_LENGTH - 1, strlen(title));
+    size_t titleLength = strlen(title);
     if (titleLength >= HASH_MAP_MAX_TITLE_LENGTH)
     {
         RJ_DebugWarning("HashMap title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, HASH_MAP_MAX_TITLE_LENGTH - 1);
     }
+
+    titleLength = HashMap_Min(HASH_MAP_MAX_TITLE_LENGTH - 1, titleLength);
+
+    memcpy(retHashMap->title, title, titleLength);
+    retHashMap->title[titleLength] = '\0';
 
     retHashMap->count = 0;
 

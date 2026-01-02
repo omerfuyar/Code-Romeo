@@ -136,11 +136,13 @@ ListLinked ListLinked_Create(const char *title, RJ_Size sizeOfItem)
         title = "ListLinked";
     }
 
-    size_t titleLength = ListLinked_Min(LIST_LINKED_MAX_TITLE_LENGTH - 1, strlen(title));
+    size_t titleLength = strlen(title);
     if (titleLength >= LIST_LINKED_MAX_TITLE_LENGTH)
     {
         RJ_DebugWarning("ListLinked title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, LIST_LINKED_MAX_TITLE_LENGTH - 1);
     }
+
+    titleLength = ListLinked_Min(LIST_LINKED_MAX_TITLE_LENGTH - 1, titleLength);
 
     memcpy(list.title, title, titleLength);
     list.title[titleLength] = '\0';

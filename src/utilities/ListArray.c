@@ -19,11 +19,16 @@ RJ_Result ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOf
         title = "ListArray";
     }
 
-    size_t titleLength = ListArray_Min(LIST_ARRAY_MAX_TITLE_LENGTH - 1, strlen(title));
+    size_t titleLength = strlen(title);
     if (titleLength >= LIST_ARRAY_MAX_TITLE_LENGTH)
     {
         RJ_DebugWarning("ListArray title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, LIST_ARRAY_MAX_TITLE_LENGTH - 1);
     }
+
+    titleLength = ListArray_Min(LIST_ARRAY_MAX_TITLE_LENGTH - 1, titleLength);
+
+    memcpy(retList->title, title, titleLength);
+    retList->title[titleLength] = '\0';
 
     retList->count = 0;
 
