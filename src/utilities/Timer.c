@@ -3,99 +3,11 @@
 #define Timer_Min(a, b) ((a) < (b) ? (a) : (b))
 #define Timer_Max(a, b) ((a) > (b) ? (a) : (b))
 
-void TimePoint_Update(TimePoint *timePoint)
+#pragma region Source Only
+
+static TimePoint Timer_GetElapsedTime(const Timer *timer)
 {
-    RJGlobal_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
-
-    struct timespec currentTime = {0, 0};
-    timespec_get(&currentTime, TIME_UTC);
-
-    timePoint->seconds = currentTime.tv_sec;
-    timePoint->nanoseconds = currentTime.tv_nsec;
-}
-
-float TimePoint_ToMilliseconds(const TimePoint *timePoint)
-{
-    RJGlobal_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
-
-    return ((float)timePoint->seconds * 1000.0f) + ((float)timePoint->nanoseconds / 1000000.0f);
-}
-
-Timer Timer_Create(const char *title)
-{
-    Timer timer;
-
-    RJGlobal_Size titleLength = RJGlobal_StringLength(title);
-
-    RJGlobal_DebugAssertAllocationCheck(char, timer.title, titleLength + 1);
-    RJGlobal_MemoryCopy(timer.title, titleLength + 1, title);
-    timer.title[titleLength] = '\0';
-
-    timer.isRunning = false;
-
-    timer.startTime = (TimePoint){0, 0};
-    timer.endTime = (TimePoint){0, 0};
-
-    return timer;
-}
-
-void Timer_Destroy(Timer *timer)
-{
-    RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
-    RJGlobal_Size titleLength = RJGlobal_StringLength(timer->title);
-
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength), timer->title);
-    tempTitle[Timer_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, titleLength)] = '\0';
-
-    free(timer->title);
-    timer->title = NULL;
-
-    RJGlobal_DebugInfo("Timer '%s' destroyed.", tempTitle);
-}
-
-void Timer_Start(Timer *timer)
-{
-    RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
-    if (timer->isRunning)
-    {
-        RJGlobal_DebugWarning("Timer '%s' is already running. Cannot start.", timer->title);
-        return;
-    }
-
-    timer->isRunning = true;
-
-    TimePoint_Update(&timer->startTime);
-}
-
-void Timer_Stop(Timer *timer)
-{
-    RJGlobal_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
-
-    if (!timer->isRunning)
-    {
-        RJGlobal_DebugWarning("Timer '%s' is not running. Cannot stop.", timer->title);
-        return;
-    }
-
-    TimePoint_Update(&timer->endTime);
-
-    timer->isRunning = false;
-}
-
-void Timer_Reset(Timer *timer)
-{
-    RJGlobal_DebugAssertNullPointerCheck(timer);
-
-    TimePoint_Update(&timer->endTime);
-    timer->startTime = timer->endTime;
-}
-
-TimePoint Timer_GetElapsedTime(const Timer *timer)
-{
-    RJGlobal_DebugAssertNullPointerCheck(timer);
+    RJ_DebugAssertNullPointerCheck(timer);
 
     TimePoint elapsedTime;
     elapsedTime.seconds = timer->endTime.seconds - timer->startTime.seconds;
@@ -110,9 +22,93 @@ TimePoint Timer_GetElapsedTime(const Timer *timer)
     return elapsedTime;
 }
 
+#pragma endregion Source Only
+
+void TimePoint_Update(TimePoint *timePoint)
+{
+    RJ_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
+
+    struct timespec currentTime = {0, 0};
+    timespec_get(&currentTime, TIME_UTC);
+
+    timePoint->seconds = currentTime.tv_sec;
+    timePoint->nanoseconds = currentTime.tv_nsec;
+}
+
+float TimePoint_ToMilliseconds(const TimePoint *timePoint)
+{
+    RJ_DebugAssert(timePoint != NULL, "Null pointer passed as parameter.");
+
+    return ((float)timePoint->seconds * 1000.0f) + ((float)timePoint->nanoseconds / 1000000.0f);
+}
+
+Timer Timer_Create(const char *title)
+{
+    Timer timer = {0};
+
+    if (title == NULL)
+    {
+        title = "Timer";
+    }
+
+    size_t titleLength = Timer_Min(TIMER_MAX_TITLE_LENGTH - 1, strlen(title));
+    if (titleLength >= TIMER_MAX_TITLE_LENGTH)
+    {
+        RJ_DebugWarning("Timer title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, TIMER_MAX_TITLE_LENGTH - 1);
+    }
+
+    memcpy(timer.title, title, titleLength);
+    timer.title[titleLength] = '\0';
+
+    timer.isRunning = false;
+
+    timer.startTime = (TimePoint){0, 0};
+    timer.endTime = (TimePoint){0, 0};
+
+    return timer;
+}
+
+void Timer_Start(Timer *timer)
+{
+    RJ_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+
+    if (timer->isRunning)
+    {
+        RJ_DebugWarning("Timer '%s' is already running. Cannot start.", timer->title);
+        return;
+    }
+
+    timer->isRunning = true;
+
+    TimePoint_Update(&timer->startTime);
+}
+
+void Timer_Stop(Timer *timer)
+{
+    RJ_DebugAssert(timer != NULL, "Null pointer passed as parameter.");
+
+    if (!timer->isRunning)
+    {
+        RJ_DebugWarning("Timer '%s' is not running. Cannot stop.", timer->title);
+        return;
+    }
+
+    TimePoint_Update(&timer->endTime);
+
+    timer->isRunning = false;
+}
+
+void Timer_Reset(Timer *timer)
+{
+    RJ_DebugAssertNullPointerCheck(timer);
+
+    TimePoint_Update(&timer->endTime);
+    timer->startTime = timer->endTime;
+}
+
 time_t Timer_GetElapsedNanoseconds(const Timer *timer)
 {
-    RJGlobal_DebugAssertNullPointerCheck(timer);
+    RJ_DebugAssertNullPointerCheck(timer);
 
     TimePoint elapsedTime = Timer_GetElapsedTime(timer);
     return elapsedTime.seconds * 1000000000 + elapsedTime.nanoseconds;
@@ -120,7 +116,7 @@ time_t Timer_GetElapsedNanoseconds(const Timer *timer)
 
 float Timer_GetElapsedMilliseconds(const Timer *timer)
 {
-    RJGlobal_DebugAssertNullPointerCheck(timer);
+    RJ_DebugAssertNullPointerCheck(timer);
 
     TimePoint elapsedTime = Timer_GetElapsedTime(timer);
     return TimePoint_ToMilliseconds(&elapsedTime);

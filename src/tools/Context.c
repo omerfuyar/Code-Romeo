@@ -11,31 +11,41 @@ Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLB
 
 static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 {
-    RJGlobal_DebugError("Context get error code '%d' : \n'%s'", error, description);
+    RJ_DebugError("Context get error code '%d' : \n'%s'", error, description);
 }
 
 #pragma endregion Source Only
 
-ContextWindow *Context_Initialize(void)
+RJ_Result Context_Initialize(ContextWindow **retContext)
 {
     glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
-    RJGlobal_DebugAssert(glfwInit(), "Failed to initialize GLFW");
+
+    if (!glfwInit())
+    {
+        RJ_DebugWarning("Failed to initialize GLFW.");
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    RJGlobal_DebugInfo("ContextManager initialized successfully.");
 
     CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
     const char *errorLog = NULL;
-    RJGlobal_DebugAssert(CONTEXT_MAIN_WINDOW.handle != NULL, "Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
+
+    if (CONTEXT_MAIN_WINDOW.handle == NULL)
+    {
+        RJ_DebugWarning("Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
 
     CONTEXT_INITIALIZED = true;
-    RJGlobal_DebugInfo("Main window created successfully.");
+    RJ_DebugInfo("Main window created successfully.");
 
-    return &CONTEXT_MAIN_WINDOW;
+    *retContext = &CONTEXT_MAIN_WINDOW;
+    return RJ_OK;
 }
 
 void Context_Terminate(void)
@@ -44,7 +54,7 @@ void Context_Terminate(void)
     glfwTerminate();
 
     CONTEXT_INITIALIZED = false;
-    RJGlobal_DebugInfo("Context terminated successfully.");
+    RJ_DebugInfo("Context terminated successfully.");
 }
 
 bool Context_IsInitialized(void)
@@ -58,8 +68,8 @@ void Context_Update(void)
 
     if (glfwWindowShouldClose(CONTEXT_MAIN_WINDOW.handle))
     {
-        RJGlobal_DebugInfo("Main window close input received");
-        RJGlobal_Terminate(EXIT_SUCCESS, "Main window close input received");
+        RJ_DebugInfo("Main window close input received");
+        RJ_Terminate(EXIT_SUCCESS, "Main window close input received");
     }
 }
 
@@ -89,7 +99,7 @@ void Context_ConfigureSize(Vector2Int size)
     }
     else
     {
-        RJGlobal_DebugWarning("The context resize callback function is NULL. Skipped without calling");
+        RJ_DebugWarning("The context resize callback function is NULL. Skipped without calling");
     }
 }
 
@@ -124,4 +134,14 @@ void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback)
     glfwSetFramebufferSizeCallback(CONTEXT_MAIN_WINDOW.handle, (GLFWframebuffersizefun)CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK);
 
     // Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
+}
+
+Context_VoidptrFunCcharptr Context_GetDynamicSymbolLoader(void)
+{
+    return (Context_VoidptrFunCcharptr)glfwGetProcAddress;
+}
+
+void Context_SwapBuffers(void)
+{
+    glfwSwapBuffers(CONTEXT_MAIN_WINDOW.handle);
 }

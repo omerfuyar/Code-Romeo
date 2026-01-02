@@ -1,124 +1,109 @@
 //! disable debug info for this file
-// #undef RJGLOBAL_DEBUG_INFO
-// #define RJGLOBAL_DEBUG_INFO false
+// #undef RJ_DEBUG_INFO
+// #define RJ_DEBUG_INFO false
 
 #include "utilities/ListArray.h"
 
 #define ListArray_Min(a, b) ((a) < (b) ? (a) : (b))
 #define ListArray_Max(a, b) ((a) > (b) ? (a) : (b))
 
-ListArray ListArray_Create(const char *nameOfType, RJGlobal_Size sizeOfItem, RJGlobal_Size initialCapacity)
+RJ_Result ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOfItem, RJ_Size initialCapacity)
 {
-    RJGlobal_DebugAssert(initialCapacity > 0, "Capacity of %s list can not be 0.", nameOfType);
+    RJ_DebugAssert(initialCapacity > 0, "Capacity of %s list can not be 0.", title);
 
-    ListArray list;
-    list.capacity = initialCapacity;
-    list.sizeOfItem = sizeOfItem;
+    retList->capacity = initialCapacity;
+    retList->sizeOfItem = sizeOfItem;
 
-    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(nameOfType);
+    if (title == NULL)
+    {
+        title = "ListArray";
+    }
 
-    RJGlobal_DebugAssertAllocationCheck(char, list.nameOfType, nameOfTypeLength + 1);
-    RJGlobal_MemoryCopy(list.nameOfType, nameOfTypeLength + 1, nameOfType);
-    list.nameOfType[nameOfTypeLength] = '\0';
+    size_t titleLength = ListArray_Min(LIST_ARRAY_MAX_TITLE_LENGTH - 1, strlen(title));
+    if (titleLength >= LIST_ARRAY_MAX_TITLE_LENGTH)
+    {
+        RJ_DebugWarning("ListArray title '%s' is longer than the maximum length of %d characters. It will be truncated.", title, LIST_ARRAY_MAX_TITLE_LENGTH - 1);
+    }
 
-    list.count = 0;
-    RJGlobal_DebugAssertAllocationCheck(char, list.data, initialCapacity *sizeOfItem);
+    retList->count = 0;
 
-    RJGlobal_DebugInfo("ListArray '%s' created with initial capacity: %u, size of item: %u", nameOfType, initialCapacity, sizeOfItem);
-    return list;
+    RJ_ReturnAllocate(char, retList->data, initialCapacity *sizeOfItem);
+
+    RJ_DebugInfo("ListArray '%s' created with initial capacity: %u, size of item: %u", title, initialCapacity, sizeOfItem);
+    return RJ_OK;
 }
 
 void ListArray_Destroy(ListArray *list)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(list->data);
-
-    RJGlobal_Size nameOfTypeLength = RJGlobal_StringLength(list->nameOfType);
-
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    RJGlobal_MemoryCopy(tempTitle, ListArray_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength), list->nameOfType);
-    tempTitle[ListArray_Min(RJGLOBAL_TEMP_BUFFER_SIZE - 1, nameOfTypeLength)] = '\0';
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list->data);
 
     free(list->data);
     list->data = NULL;
 
-    free(list->nameOfType);
-    list->nameOfType = NULL;
     list->capacity = 0;
     list->count = 0;
     list->sizeOfItem = 0;
 
-    RJGlobal_DebugInfo("ListArray '%s' destroyed.", tempTitle);
+    RJ_DebugInfo("ListArray '%s' destroyed.", list->title);
+    list->title[0] = '\0';
 }
 
-ListArray ListArray_Copy(const ListArray *list)
+void ListArray_Resize(ListArray *list, RJ_Size newCapacity)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-
-    ListArray copiedList = ListArray_Create(list->nameOfType, list->sizeOfItem, list->capacity);
-
-    ListArray_AddRange(&copiedList, list->data, list->count);
-
-    RJGlobal_DebugInfo("ListArray '%s' copied. count: %u, capacity: %u", list->nameOfType, list->count, list->capacity);
-
-    return copiedList;
-}
-
-void ListArray_Resize(ListArray *list, RJGlobal_Size newCapacity)
-{
-    RJGlobal_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list);
 
     if (newCapacity != 0)
     {
         list->data = realloc(list->data, newCapacity * list->sizeOfItem);
-        RJGlobal_DebugAssertNullPointerCheck(list->data);
+        RJ_DebugAssertNullPointerCheck(list->data);
     }
 
-    RJGlobal_DebugInfo("ListArray '%s' resized from %u to %u.", list->nameOfType, list->capacity, newCapacity);
+    RJ_DebugInfo("ListArray '%s' resized from %u to %u.", list->title, list->capacity, newCapacity);
 
     list->capacity = newCapacity;
     list->count = ListArray_Min(list->count, list->capacity);
 }
 
-void *ListArray_Get(const ListArray *list, RJGlobal_Size index)
+void *ListArray_Get(const ListArray *list, RJ_Size index)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index trying to access: %u", list->nameOfType, list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index trying to access: %u", list->title, list->count, index);
 
     void *itemLocation = (void *)((char *)list->data + index * list->sizeOfItem);
 
     return itemLocation;
 }
 
-void ListArray_Set(ListArray *list, RJGlobal_Size index, const void *item)
+void ListArray_Set(ListArray *list, RJ_Size index, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index: %u", list->nameOfType, list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index: %u", list->title, list->count, index);
 
     void *targetLocation = ListArray_Get(list, index);
 
-    RJGlobal_MemoryCopy(targetLocation, list->sizeOfItem, item);
+    memcpy(targetLocation, item, list->sizeOfItem);
 }
 
 void *ListArray_Add(ListArray *list, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list);
 
     while (list->count + 1 > list->capacity)
     {
-        RJGlobal_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->nameOfType, list->capacity, (RJGlobal_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
-        ListArray_Resize(list, (RJGlobal_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJ_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->title, list->capacity, (RJ_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (RJ_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 
     void *targetLocation = (void *)((char *)list->data + list->count * list->sizeOfItem);
 
     if (item == NULL)
     {
-        RJGlobal_MemorySet(targetLocation, list->sizeOfItem, 0);
+        memset(targetLocation, 0, list->sizeOfItem);
     }
     else
     {
-        RJGlobal_MemoryCopy(targetLocation, list->sizeOfItem, item);
+        memcpy(targetLocation, item, list->sizeOfItem);
     }
 
     list->count++;
@@ -126,26 +111,26 @@ void *ListArray_Add(ListArray *list, const void *item)
     return targetLocation;
 }
 
-void *ListArray_AddRange(ListArray *list, const void *item, RJGlobal_Size itemCount)
+void *ListArray_AddRange(ListArray *list, const void *item, RJ_Size itemCount)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(itemCount > 0, "Item count to add to ListArray '%s' must be greater than 0.", list->nameOfType);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(itemCount > 0, "Item count to add to ListArray '%s' must be greater than 0.", list->title);
 
     while (list->count + itemCount > list->capacity)
     {
-        RJGlobal_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->nameOfType, list->capacity, (RJGlobal_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
-        ListArray_Resize(list, (RJGlobal_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJ_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->title, list->capacity, (RJ_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (RJ_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 
     void *targetLocation = (void *)((char *)list->data + list->count * list->sizeOfItem);
 
-    if (item == NULL)
+    if (item == NULL) // todo inspect https://github.com/omerfuyar/Code-Romeo/issues/40
     {
-        RJGlobal_MemorySet(targetLocation, list->sizeOfItem * itemCount, 0);
+        memset(targetLocation, 0, list->sizeOfItem * itemCount);
     }
     else
     {
-        RJGlobal_MemoryCopy(targetLocation, list->sizeOfItem * itemCount, item);
+        memcpy(targetLocation, item, list->sizeOfItem * itemCount);
     }
 
     list->count += itemCount;
@@ -153,33 +138,33 @@ void *ListArray_AddRange(ListArray *list, const void *item, RJGlobal_Size itemCo
     return targetLocation;
 }
 
-void *ListArray_AddToIndex(ListArray *list, RJGlobal_Size index, const void *item)
+void *ListArray_AddToIndex(ListArray *list, RJ_Size index, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index trying to access: %u", list->nameOfType, list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index trying to access: %u", list->title, list->count, index);
 
     while (list->count + 1 > list->capacity)
     {
-        RJGlobal_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->nameOfType, list->capacity, (RJGlobal_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
-        ListArray_Resize(list, (RJGlobal_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJ_DebugWarning("ListArray '%s' is full. Resizing it from %u to %u.", list->title, list->capacity, (RJ_Size)((float)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (RJ_Size)((double)list->capacity * LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 
     void *targetLocation = (void *)((char *)list->data + index * list->sizeOfItem);
 
-    RJGlobal_Size bytesToMove = (list->count - index) * list->sizeOfItem;
+    RJ_Size bytesToMove = (list->count - index) * list->sizeOfItem;
 
     if (bytesToMove > 0)
     {
-        RJGlobal_MemoryMove((char *)targetLocation + list->sizeOfItem, bytesToMove, targetLocation);
+        memmove((char *)targetLocation + list->sizeOfItem, targetLocation, bytesToMove);
     }
 
     if (item == NULL)
     {
-        RJGlobal_MemorySet(targetLocation, list->sizeOfItem, 0);
+        memset(targetLocation, 0, list->sizeOfItem);
     }
     else
     {
-        RJGlobal_MemoryCopy(targetLocation, list->sizeOfItem, item);
+        memcpy(targetLocation, item, list->sizeOfItem);
     }
 
     list->count++;
@@ -187,51 +172,51 @@ void *ListArray_AddToIndex(ListArray *list, RJGlobal_Size index, const void *ite
     return targetLocation;
 }
 
-void ListArray_RemoveAtIndex(ListArray *list, RJGlobal_Size index)
+void ListArray_RemoveAtIndex(ListArray *list, RJ_Size index)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index: %u", list->nameOfType, list->count, index);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index < list->count, "Index out of range for ListArray '%s'. List size: %u, index: %u", list->title, list->count, index);
 
 #if LIST_ARRAY_CUT_RESIZE
-    if (list->count - 1 > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - 1 < (RJGlobal_Size)((double)list->capacity / LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT))
+    if (list->count - 1 > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - 1 < (RJ_Size)((double)list->capacity / LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT))
     {
-        RJGlobal_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %u to %u.", list->nameOfType, LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT, list->capacity, (RJGlobal_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
-        ListArray_Resize(list, (RJGlobal_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJ_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %u to %u.", list->title, LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT, list->capacity, (RJ_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (RJ_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 #endif
 
     void *targetLocation = ListArray_Get(list, index);
 
-    RJGlobal_Size bytesToMove = (list->count - index - 1) * list->sizeOfItem;
+    RJ_Size bytesToMove = (list->count - index - 1) * list->sizeOfItem;
 
     if (bytesToMove > 0)
     {
-        RJGlobal_MemoryMove(targetLocation, bytesToMove, (char *)targetLocation + list->sizeOfItem);
+        memmove(targetLocation, (char *)targetLocation + list->sizeOfItem, bytesToMove);
     }
 
     list->count--;
 }
 
-void ListArray_RemoveRange(ListArray *list, RJGlobal_Size index, RJGlobal_Size itemCount)
+void ListArray_RemoveRange(ListArray *list, RJ_Size index, RJ_Size itemCount)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(index + itemCount <= list->count, "Index out of range for ListArray '%s'. List size: %u, index: %u, count: %u", list->nameOfType, list->count, index, itemCount);
-    RJGlobal_DebugAssert(itemCount > 0, "Item count to remove from ListArray '%s' must be greater than 0.", list->nameOfType);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(index + itemCount <= list->count, "Index out of range for ListArray '%s'. List size: %u, index: %u, count: %u", list->title, list->count, index, itemCount);
+    RJ_DebugAssert(itemCount > 0, "Item count to remove from ListArray '%s' must be greater than 0.", list->title);
 
 #if LIST_ARRAY_CUT_RESIZE
-    if (list->count - itemCount > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - itemCount < (RJGlobal_Size)((double)list->capacity / LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT))
+    if (list->count - itemCount > 0 && (double)list->capacity > LIST_ARRAY_RESIZE_MULTIPLIER && list->count - itemCount < (RJ_Size)((double)list->capacity / LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT))
     {
-        RJGlobal_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %u to %u.", list->nameOfType, LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT, list->capacity, (RJGlobal_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
-        ListArray_Resize(list, (RJGlobal_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
+        RJ_DebugWarning("ListArray '%s' is less than 1/%d full. Resizing it from %u to %u.", list->title, LIST_ARRAY_ListArray_Min_DECIMAL_LIMIT, list->capacity, (RJ_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
+        ListArray_Resize(list, (RJ_Size)((double)list->capacity / LIST_ARRAY_RESIZE_MULTIPLIER));
     }
 #endif
 
     void *targetLocation = ListArray_Get(list, index);
-    RJGlobal_Size bytesToMove = (list->count - index - itemCount) * list->sizeOfItem;
+    RJ_Size bytesToMove = (list->count - index - itemCount) * list->sizeOfItem;
 
     if (bytesToMove > 0)
     {
-        RJGlobal_MemoryMove(targetLocation, bytesToMove, (char *)targetLocation + list->sizeOfItem * itemCount);
+        memmove(targetLocation, (char *)targetLocation + list->sizeOfItem * itemCount, bytesToMove);
     }
 
     list->count -= itemCount;
@@ -239,23 +224,23 @@ void ListArray_RemoveRange(ListArray *list, RJGlobal_Size index, RJGlobal_Size i
 
 void ListArray_RemoveItem(ListArray *list, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(item);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(item);
 
     long long iteListArray_Mindex = ListArray_IndexOf(list, item);
     if (iteListArray_Mindex == -1)
     {
-        RJGlobal_DebugWarning("Item not found in ListArray '%s'. Cannot remove.", list->nameOfType);
+        RJ_DebugWarning("Item not found in ListArray '%s'. Cannot remove.", list->title);
         return;
     }
 
-    ListArray_RemoveAtIndex(list, (RJGlobal_Size)iteListArray_Mindex);
+    ListArray_RemoveAtIndex(list, (RJ_Size)iteListArray_Mindex);
 }
 
 void *ListArray_Pop(ListArray *list)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssert(list->count > 0, "Cannot pop from an empty ListArray '%s'.", list->nameOfType);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssert(list->count > 0, "Cannot pop from an empty ListArray '%s'.", list->title);
 
     void *item = ListArray_Get(list, list->count - 1);
     ListArray_RemoveAtIndex(list, list->count - 1);
@@ -265,8 +250,8 @@ void *ListArray_Pop(ListArray *list)
 
 void ListArray_Clear(ListArray *list)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
-    RJGlobal_DebugAssertNullPointerCheck(list->data);
+    RJ_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list->data);
 
     list->count = 0;
 
@@ -275,9 +260,9 @@ void ListArray_Clear(ListArray *list)
 
 long long ListArray_IndexOf(const ListArray *list, const void *item)
 {
-    RJGlobal_DebugAssertNullPointerCheck(list);
+    RJ_DebugAssertNullPointerCheck(list);
 
-    for (RJGlobal_Size i = 0; i < list->count; i++)
+    for (RJ_Size i = 0; i < list->count; i++)
     {
         void *currentItem = (void *)((char *)list->data + i * list->sizeOfItem);
 
@@ -287,6 +272,6 @@ long long ListArray_IndexOf(const ListArray *list, const void *item)
         }
     }
 
-    RJGlobal_DebugWarning("Item not found in ListArray '%s'. Returning -1.", list->nameOfType);
+    RJ_DebugWarning("Item not found in ListArray '%s'. Returning -1.", list->title);
     return -1;
 }

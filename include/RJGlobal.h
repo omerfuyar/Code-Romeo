@@ -2,30 +2,30 @@
 
 #pragma region Platform Detection
 
-#define RJGLOBAL_PLATFORM_WINDOWS 0
-#define RJGLOBAL_PLATFORM_LINUX 1
-#define RJGLOBAL_PLATFORM_MACOS 2
+#define RJ_PLATFORM_WINDOWS 0
+#define RJ_PLATFORM_LINUX 1
+#define RJ_PLATFORM_MACOS 2
 
 #if defined(_WIN32)
 
-/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
-#define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_WINDOWS
+/// @brief Current platform specifier. Use it with RJ_PLATFORM_<...> macros.
+#define RJ_PLATFORM RJ_PLATFORM_WINDOWS
 /// @brief Platform name string.
-#define RJGLOBAL_PLATFORM_STRING "WINDOWS"
+#define RJ_PLATFORM_STRING "WINDOWS"
 
 #elif defined(__linux__)
 
-/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
-#define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_LINUX
+/// @brief Current platform specifier. Use it with RJ_PLATFORM_<...> macros.
+#define RJ_PLATFORM RJ_PLATFORM_LINUX
 /// @brief Platform name string.
-#define RJGLOBAL_PLATFORM_STRING "LINUX"
+#define RJ_PLATFORM_STRING "LINUX"
 
 #elif defined(__APPLE__) && defined(__MACH__)
 
-/// @brief Current platform specifier. Use it with RJGLOBAL_PLATFORM_<...> macros.
-#define RJGLOBAL_PLATFORM RJGLOBAL_PLATFORM_MACOS
+/// @brief Current platform specifier. Use it with RJ_PLATFORM_<...> macros.
+#define RJ_PLATFORM RJ_PLATFORM_MACOS
 /// @brief Platform name string.
-#define RJGLOBAL_PLATFORM_STRING "MACOS"
+#define RJ_PLATFORM_STRING "MACOS"
 
 #else
 
@@ -33,15 +33,15 @@
 
 #endif
 
-#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_LINUX || RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_MACOS
+#if RJ_PLATFORM == RJ_PLATFORM_LINUX || RJ_PLATFORM == RJ_PLATFORM_MACOS
 
 /// @brief Current platform is Unix-like.
-#define RJGLOBAL_PLATFORM_UNIX 1
+#define RJ_PLATFORM_UNIX 1
 
 #else
 
 /// @brief Current platform is not a Unix-like.
-#define RJGLOBAL_PLATFORM_UNIX 0
+#define RJ_PLATFORM_UNIX 0
 
 #endif
 
@@ -49,46 +49,36 @@
 
 #pragma region Compiler Detection
 
-#define RJGLOBAL_COMPILER_CLANG 0
-#define RJGLOBAL_COMPILER_GCC 1
-#define RJGLOBAL_COMPILER_MSVC 2
-#define RJGLOBAL_COMPILER_CLANGCL 3
+#define RJ_COMPILER_CLANG 0
+#define RJ_COMPILER_GCC 1
+#define RJ_COMPILER_MSVC 2
 
-#if defined(__clang__) && defined(_MSC_VER)
+#if defined(__clang__)
 
-/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
-#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_CLANGCL
+/// @brief Current compiler specifier. Use it with RJ_COMPILER_<...> macros.
+#define RJ_COMPILER RJ_COMPILER_CLANG
 /// @brief Current compiler version number.
-#define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
+#define RJ_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
 /// @brief Current compiler name string.
-#define RJGLOBAL_COMPILER_STRING "CLANG-CL"
-
-#elif defined(__clang__)
-
-/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
-#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_CLANG
-/// @brief Current compiler version number.
-#define RJGLOBAL_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
-/// @brief Current compiler name string.
-#define RJGLOBAL_COMPILER_STRING "CLANG"
-
-#elif defined(_MSC_VER)
-
-/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
-#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_MSVC
-/// @brief Current compiler version number.
-#define RJGLOBAL_COMPILER_VERSION _MSC_VER
-/// @brief Current compiler name string.
-#define RJGLOBAL_COMPILER_STRING "MSVC"
+#define RJ_COMPILER_STRING "CLANG"
 
 #elif defined(__GNUC__)
 
-/// @brief Current compiler specifier. Use it with RJGLOBAL_COMPILER_<...> macros.
-#define RJGLOBAL_COMPILER RJGLOBAL_COMPILER_GCC
+/// @brief Current compiler specifier. Use it with RJ_COMPILER_<...> macros.
+#define RJ_COMPILER RJ_COMPILER_GCC
 /// @brief Current compiler version number.
-#define RJGLOBAL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#define RJ_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 /// @brief Compiler name string.
-#define RJGLOBAL_COMPILER_NAME "GCC"
+#define RJ_COMPILER_NAME "GCC"
+
+#elif defined(_MSC_VER)
+
+/// @brief Current compiler specifier. Use it with RJ_COMPILER_<...> macros.
+#define RJ_COMPILER RJ_COMPILER_MSVC
+/// @brief Current compiler version number.
+#define RJ_COMPILER_VERSION _MSC_VER
+/// @brief Current compiler name string.
+#define RJ_COMPILER_STRING "MSVC"
 
 #else
 
@@ -115,58 +105,77 @@
 #include <time.h>
 #include <limits.h>
 
-#if RJGLOBAL_PLATFORM == RJGLOBAL_PLATFORM_WINDOWS
-
-// todo use '/' for all and convert when passing to OS functions
-/// @brief Character used for path delimiters.
-#define RJGLOBAL_PATH_DELIMETER_CHAR '\\'
-/// @brief String used for path delimiters.
-#define RJGLOBAL_PATH_DELIMETER_STR "\\"
-
-#else
-
-/// @brief Character used for path delimiters.
-#define RJGLOBAL_PATH_DELIMETER_CHAR '/'
-/// @brief String used for path delimiters.
-#define RJGLOBAL_PATH_DELIMETER_STR "/"
-
-#endif
-
 /// @brief Size of the temporary buffer used in various operations.
-#define RJGLOBAL_TEMP_BUFFER_SIZE (RJGlobal_Size)128
+#define RJ_TEMP_BUFFER_SIZE (RJ_Size)128
 
-#define RJGLOBAL_INDEX_INVALID ((RJGlobal_Size)UINT32_MAX)
+/// @brief Invalid index constant for RJ_Size type.
+#define RJ_INDEX_INVALID ((RJ_Size)UINT32_MAX)
 
 /// @brief Macro wrapper for file opening to use it in if statements.
-#define RJGlobal_FileOpen(filePointer, fileName, mode) ((filePointer = fopen(fileName, mode)) != NULL)
-/// @brief Macro wrapper for memory copy operation.
-#define RJGlobal_MemoryCopy(destination, size, source) memcpy(destination, source, size)
-/// @brief Macro wrapper for memory set operation.
-#define RJGlobal_MemorySet(destination, size, value) memset(destination, (int)value, size)
-/// @brief Macro wrapper for memory move operation.
-#define RJGlobal_MemoryMove(destination, size, source) memmove(destination, source, size)
-/// @brief Macro wrapper for memory compare operation.
-#define RJGlobal_MemoryCompare(ptr1, size, ptr2) memcmp(ptr1, ptr2, size)
-/// @brief Macro wrapper for string length operation.
-#define RJGlobal_StringLength(string) (RJGlobal_Size) strlen(string)
+#define RJ_FileOpen(filePointer, fileName, mode) (((filePointer) = fopen(fileName, mode)) != NULL)
 /// @brief Macro wrapper for memory allocation operation. Pass char if the pointer type os void.
-#define RJGlobal_Allocate(type, pointer, count) ((pointer = (type *)calloc((count), sizeof(type))) != NULL)
+#define RJ_Allocate(type, pointer, count) (((pointer) = (type *)calloc((count), sizeof(type))) != NULL)
 /// @brief Macro wrapper for memory reallocation operation. Pass char if the pointer type os void.
-#define RJGlobal_Reallocate(type, pointer, newCount) ((pointer = (type *)realloc(pointer, sizeof(type) * (newCount))) != NULL)
+#define RJ_Reallocate(type, pointer, newCount) (((pointer) = (type *)realloc((pointer), sizeof(type) * (newCount))) != NULL)
+
+/// @brief Macro wrapper for returning error code directly for file open. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
+#define RJ_ReturnFileOpen(filePointer, fileName, mode, ...)                          \
+    do                                                                               \
+    {                                                                                \
+        if (!RJ_FileOpen(filePointer, fileName, mode))                               \
+        {                                                                            \
+            __VA_ARGS__                                                              \
+            RJ_DebugWarning("Failed to open file: %s with mode %s", fileName, mode); \
+            return RJ_ERROR_FILE;                                                    \
+        }                                                                            \
+    } while (0)
+
+/// @brief Macro wrapper for returning error code directly for memory allocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
+#define RJ_ReturnAllocate(type, pointer, count, ...)                                                                          \
+    do                                                                                                                        \
+    {                                                                                                                         \
+        if (!RJ_Allocate(type, pointer, count))                                                                               \
+        {                                                                                                                     \
+            __VA_ARGS__                                                                                                       \
+            RJ_DebugWarning("Memory allocation failed for %zu bytes for type '%s'.", (RJ_Size)(count) * sizeof(type), #type); \
+            return RJ_ERROR_ALLOCATION;                                                                                       \
+        }                                                                                                                     \
+    } while (0)
+
+/// @brief Macro wrapper for returning error code directly for memory reallocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
+#define RJ_ReturnReallocate(type, pointer, newCount, ...)                                                                          \
+    do                                                                                                                             \
+    {                                                                                                                              \
+        if (!RJ_Reallocate(type, pointer, newCount))                                                                               \
+        {                                                                                                                          \
+            __VA_ARGS__                                                                                                            \
+            RJ_DebugWarning("Memory reallocation failed for %zu bytes for type '%s'.", (RJ_Size)(newCount) * sizeof(type), #type); \
+            return RJ_ERROR_ALLOCATION;                                                                                            \
+        }                                                                                                                          \
+    } while (0)
 
 #pragma region Typedefs
 
 /// @brief Function pointer type used in setup callback function.
-typedef void (*RJGlobal_VoidFunIntCharPtrPtr)(int, char **);
+typedef void (*RJ_VoidFunIntCharPtrPtr)(int, char **);
 
 /// @brief Function pointer type used in main loop callback function.
-typedef void (*RJGlobal_VoidFunFloat)(float);
+typedef void (*RJ_VoidFunFloat)(float);
 
 /// @brief Function pointer type used in terminate callback function.
-typedef void (*RJGlobal_VoidFunIntCharPtr)(int, char *);
+typedef void (*RJ_VoidFunIntCharPtr)(int, char *);
 
 /// @brief Size type to use for entire project
-typedef uint32_t RJGlobal_Size;
+typedef uint32_t RJ_Size;
+
+typedef enum RJ_Result
+{
+    RJ_OK = 0,
+    RJ_ERROR_ALLOCATION,
+    RJ_ERROR_FILE,
+    RJ_ERROR_DEPENDENCY,
+    RJ_ERROR_NOT_FOUND,
+} RJ_Result;
 
 #pragma endregion Typedefs
 
@@ -180,35 +189,35 @@ typedef uint32_t RJGlobal_Size;
 /// @param function The function name where the log is called from
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
-/// @note The log message is written to a file named 'RJGLOBAL_DEBUG_FILE_NAME' macro which is defined in the header. Directory and name can be changed by modifying the macro.
-void RJGlobal_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
+/// @note The log message is written to a file named 'RJ_DEBUG_FILE_NAME' macro which is defined in the header. Directory and name can be changed by modifying the macro.
+RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
-const char *RJGlobal_GetExecutablePath(void);
+const char *RJ_GetExecutablePath(void);
 
 /// @brief Runs the main application loop and calls the setup and loop callbacks.
 /// @param argc Command line argument count
 /// @param argv Command line argument values
 /// @note This function will run indefinitely until the loop callback is set to NULL. if the setup callback is NULL it returns normally.
-void RJGlobal_Run(int argc, char **argv);
+void RJ_Run(int argc, char **argv);
 
 /// @brief Terminates and cleans up the internals, terminates after calling the terminate callback .
 /// @param exitCode The code to pass to exit() call.
 /// @param message The message to show to the console before exiting.
-void RJGlobal_Terminate(int exitCode, char *message);
+void RJ_Terminate(int exitCode, char *message);
 
 /// @brief Sets the setup callback function that gets called once at application start
 /// @param setupCallback Function to call during application setup
-void RJGlobal_SetSetupCallback(RJGlobal_VoidFunIntCharPtrPtr setupCallback);
+void RJ_SetSetupCallback(RJ_VoidFunIntCharPtrPtr setupCallback);
 
 /// @brief Sets the main loop callback function that gets called every frame
 /// @param loopCallback Function to call every frame, receives deltatime in seconds as parameter
-void RJGlobal_SetLoopCallback(RJGlobal_VoidFunFloat loopCallback);
+void RJ_SetLoopCallback(RJ_VoidFunFloat loopCallback);
 
 /// @brief Sets the callback function for the global application terminate function. After setting, terminate function calls the callback function before its own instructions.
 /// @param terminateCallback Function to call when terminate is called. Should not exit the program. Receives exit code and exit message as parameters.
-void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback);
+void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 
 #pragma endregion Functions and Macros
 
@@ -217,142 +226,127 @@ void RJGlobal_SetTerminateCallback(RJGlobal_VoidFunIntCharPtr terminateCallback)
 #if defined(_DEBUG) || defined(DEBUG) || !defined(NDEBUG)
 
 /// @brief Build is debug build.
-#define RJGLOBAL_BUILD_DEBUG true
+#define RJ_BUILD_DEBUG true
 
 #else
 
 /// @brief Build is release build.
-#define RJGLOBAL_BUILD_DEBUG false
+#define RJ_BUILD_DEBUG false
 
 #endif
 
 /// @brief Safe logging is enabled. Controls internal file operations to prevent crashes during logging. Activating this may reduce performance of logging but increases stability.
-#define RJGLOBAL_DEBUG_SAFE_LOGGING RJGLOBAL_BUILD_DEBUG
+#define RJ_DEBUG_SAFE_LOGGING RJ_BUILD_DEBUG
 /// @brief Flush log file after every log entry. May reduce performance but ensures all logs are written to file immediately.
-#define RJGLOBAL_DEBUG_FLUSH_AFTER_LOG RJGLOBAL_DEBUG_SAFE_LOGGING
+#define RJ_DEBUG_FLUSH_AFTER_LOG RJ_DEBUG_SAFE_LOGGING
 
-#ifndef RJGLOBAL_DEBUG_INFO
+#ifndef RJ_DEBUG_INFO
 /// @brief Info level logging macros enabled.
-#define RJGLOBAL_DEBUG_INFO RJGLOBAL_BUILD_DEBUG
+#define RJ_DEBUG_INFO RJ_BUILD_DEBUG
 #endif
 
-#ifndef RJGLOBAL_DEBUG_WARNING
+#ifndef RJ_DEBUG_WARNING
 /// @brief Warning level logging macros enabled.
-#define RJGLOBAL_DEBUG_WARNING RJGLOBAL_BUILD_DEBUG
+#define RJ_DEBUG_WARNING RJ_BUILD_DEBUG
 #endif
 
-#ifndef RJGLOBAL_DEBUG_ERROR
+#ifndef RJ_DEBUG_ERROR
 /// @brief Error level logging macros enabled.
-#define RJGLOBAL_DEBUG_ERROR RJGLOBAL_BUILD_DEBUG
+#define RJ_DEBUG_ERROR RJ_BUILD_DEBUG
 #endif
 
-#ifndef RJGLOBAL_DEBUG_ASSERT
+#ifndef RJ_DEBUG_ASSERT
 /// @brief Assertion macros enabled.
-#define RJGLOBAL_DEBUG_ASSERT RJGLOBAL_BUILD_DEBUG
+#define RJ_DEBUG_ASSERT RJ_BUILD_DEBUG
 #endif
 
-#ifndef RJGLOBAL_DEBUG_TERMINATE_ON_ERROR
+#ifndef RJ_DEBUG_TERMINATE_ON_ERROR
 /// @brief Terminate application on error log.
-#define RJGLOBAL_DEBUG_TERMINATE_ON_ERROR RJGLOBAL_DEBUG_SAFE_LOGGING
+#define RJ_DEBUG_TERMINATE_ON_ERROR RJ_DEBUG_SAFE_LOGGING
 #endif
 
-#ifndef RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT
+#ifndef RJ_DEBUG_TERMINATE_ON_ASSERT
 /// @brief Terminate application on assertion failure.
-#define RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT RJGLOBAL_DEBUG_SAFE_LOGGING
+#define RJ_DEBUG_TERMINATE_ON_ASSERT RJ_DEBUG_SAFE_LOGGING
 #endif
 
 /// @brief Time format for debug log entries. Uses strftime format. Used when logging to the debug log file.
-#define RJGLOBAL_DEBUG_TIME_FORMAT "%H:%M:%S"
+#define RJ_DEBUG_TIME_FORMAT "%H:%M:%S"
 /// @brief Debug log file name. Can be changed to modify the log file location and name.
-#define RJGLOBAL_DEBUG_FILE_NAME "debug.log"
+#define RJ_DEBUG_FILE_NAME "debug.log"
 
-/// @brief Macro wrapper for RJGlobal_Log file to pass file, line and function automatically.
-#define RJGlobal_DebugLog(terminate, header, format, ...)                                     \
-    do                                                                                        \
-    {                                                                                         \
-        RJGlobal_Log(terminate, header, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+/// @brief Macro wrapper for RJ_Log file to pass file, line and function automatically.
+#define RJ_DebugLog(terminate, header, format, ...)                                     \
+    do                                                                                  \
+    {                                                                                   \
+        RJ_Log(terminate, header, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
     } while (false)
 
-#if RJGLOBAL_DEBUG_INFO == false
+#if RJ_DEBUG_INFO == false
 
-#define RJGlobal_DebugInfo(format, ...)
+#define RJ_DebugInfo(format, ...)
 
 #else
 
 /// @brief Logs an info level message to the debug log.
-#define RJGlobal_DebugInfo(format, ...)                          \
-    do                                                           \
-    {                                                            \
-        RJGlobal_DebugLog(false, "INFO", format, ##__VA_ARGS__); \
+#define RJ_DebugInfo(format, ...)                          \
+    do                                                     \
+    {                                                      \
+        RJ_DebugLog(false, "INFO", format, ##__VA_ARGS__); \
     } while (false)
 
 #endif
 
-#if RJGLOBAL_DEBUG_WARNING == false
+#if RJ_DEBUG_WARNING == false
 
-#define RJGlobal_DebugWarning(format, ...)
+#define RJ_DebugWarning(format, ...)
 
 #else
 
 /// @brief Logs a warning level message to the debug log.
-#define RJGlobal_DebugWarning(format, ...)                          \
-    do                                                              \
-    {                                                               \
-        RJGlobal_DebugLog(false, "WARNING", format, ##__VA_ARGS__); \
+#define RJ_DebugWarning(format, ...)                          \
+    do                                                        \
+    {                                                         \
+        RJ_DebugLog(false, "WARNING", format, ##__VA_ARGS__); \
     } while (false)
 
 #endif
 
-#if RJGLOBAL_DEBUG_ERROR == false
+#if RJ_DEBUG_ERROR == false
 
-#define RJGlobal_DebugError(format, ...)
+#define RJ_DebugError(format, ...)
 
 #else
 
 /// @brief Logs an error level message to the debug log and terminates the application if configured.
-#define RJGlobal_DebugError(format, ...)                                                      \
-    do                                                                                        \
-    {                                                                                         \
-        RJGlobal_DebugLog(RJGLOBAL_DEBUG_TERMINATE_ON_ERROR, "ERROR", format, ##__VA_ARGS__); \
+#define RJ_DebugError(format, ...)                                                \
+    do                                                                            \
+    {                                                                             \
+        RJ_DebugLog(RJ_DEBUG_TERMINATE_ON_ERROR, "ERROR", format, ##__VA_ARGS__); \
     } while (false)
 
 #endif
 
-#if RJGLOBAL_DEBUG_ASSERT == false
+#if RJ_DEBUG_ASSERT == false
 
-#define RJGlobal_DebugAssert(condition, format, ...) (void)(condition)
-#define RJGlobal_DebugAssertNullPointerCheck(ptr)
-#define RJGlobal_DebugAssertFileOpenCheck(filePtr, fileName, mode) RJGlobal_FileOpen(filePtr, fileName, mode)
-#define RJGlobal_DebugAssertAllocationCheck(type, ptr, count) RJGlobal_Allocate(type, ptr, count)
-#define RJGlobal_DebugAssertReallocationCheck(type, ptr, count) RJGlobal_Reallocate(type, ptr, count)
+#define RJ_DebugAssert(condition, format, ...) (void)(condition)
+#define RJ_DebugAssertNullPointerCheck(ptr)
 
 #else
 
 /// @brief Logs an assertion failure message to the debug log and terminates the application on failure if configured.
-#define RJGlobal_DebugAssert(condition, format, ...)                                                           \
-    do                                                                                                         \
-    {                                                                                                          \
-        if (!(condition))                                                                                      \
-        {                                                                                                      \
-            RJGlobal_DebugLog(RJGLOBAL_DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", format, ##__VA_ARGS__); \
-        }                                                                                                      \
+#define RJ_DebugAssert(condition, format, ...)                                                     \
+    do                                                                                             \
+    {                                                                                              \
+        if (!(condition))                                                                          \
+        {                                                                                          \
+            RJ_DebugLog(RJ_DEBUG_TERMINATE_ON_ASSERT, "ASSERTION FAILURE", format, ##__VA_ARGS__); \
+        }                                                                                          \
     } while (false)
 
 /// @brief Asserts that the given pointer is not NULL. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertNullPointerCheck(pointer) \
-    RJGlobal_DebugAssert(pointer != NULL, "Pointer '%s' cannot be NULL.", #pointer)
-
-/// @brief Asserts that the file was opened successfully. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertFileOpenCheck(filePointer, fileName, mode) \
-    RJGlobal_DebugAssert(RJGlobal_FileOpen(filePointer, fileName, mode), "File open failed for %s", fileName)
-
-/// @brief Asserts that the memory allocation was successful. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertAllocationCheck(type, pointer, count) \
-    RJGlobal_DebugAssert(RJGlobal_Allocate(type, pointer, count), "Memory allocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
-
-/// @brief Asserts that the memory reallocation was successful. Logs and terminates on failure if configured.
-#define RJGlobal_DebugAssertReallocationCheck(type, pointer, count) \
-    RJGlobal_DebugAssert(RJGlobal_Reallocate(type, pointer, count), "Memory reallocation failed for %zu bytes for type '%s'.", sizeof(type) * (count), #type)
+#define RJ_DebugAssertNullPointerCheck(pointer) \
+    RJ_DebugAssert(pointer != NULL, "Pointer '%s' cannot be NULL.", #pointer)
 
 #endif
 

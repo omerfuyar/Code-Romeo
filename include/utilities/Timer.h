@@ -2,6 +2,8 @@
 
 #include "RJGlobal.h"
 
+#define TIMER_MAX_TITLE_LENGTH (RJ_TEMP_BUFFER_SIZE / 8)
+
 #pragma region typedefs
 
 /// @brief Represents a point in time or interval with seconds and nanoseconds precision.
@@ -14,7 +16,7 @@ typedef struct TimePoint
 /// @brief Represents a timer that can be used for measuring elapsed time. Should be used with helper functions.
 typedef struct Timer
 {
-    char *title;
+    char title[TIMER_MAX_TITLE_LENGTH];
     TimePoint startTime;
     TimePoint endTime;
     bool isRunning;
@@ -35,10 +37,6 @@ float TimePoint_ToMilliseconds(const TimePoint *timePoint);
 /// @return Timer instance.
 Timer Timer_Create(const char *title);
 
-/// @brief Destroys the timer, freeing any allocated resources.
-/// @param timer Pointer to the timer to destroy.
-void Timer_Destroy(Timer *timer);
-
 /// @brief Starts the timer, updating its start time to the current time.
 /// @param timer Timer to start.
 void Timer_Start(Timer *timer);
@@ -50,11 +48,6 @@ void Timer_Stop(Timer *timer);
 /// @brief Updates the timers end time and resets the start time to the end time. Does not check if the timer is running.
 /// @param timer Timer to reset.
 void Timer_Reset(Timer *timer);
-
-/// @brief Gets the elapsed time of the timer. Does not stop the timer or update its end time. User must stop the timer before calling this.
-/// @param timer Pointer to the timer to get elapsed time from.
-/// @return Elapsed time of the timer.
-TimePoint Timer_GetElapsedTime(const Timer *timer);
 
 /// @brief Gets the elapsed time of the timer in nanoseconds. Does not stop the timer or update its end time. User must stop the timer before calling this.
 /// @param timer Pointer to the timer to get elapsed time from.

@@ -115,29 +115,30 @@ typedef struct Vector4Int
 #define Color_Gray Color_New(0.5f, 0.5f, 0.5f, 1.0f)
 #define Color_Clear Color_New(0.0f, 0.0f, 0.0f, 0.0f)
 
-#define Vector2_Compare(v1, v2) ((v1.x == v2.x) && (v1.y == v2.y))
-#define Vector3_Compare(v1, v2) ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z))
-#define Vector4_Compare(v1, v2) ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z) && (v1.w == v2.w))
+#define Vector2_Compare(v1, v2) (((v1).x == (v2).x) && ((v1).y == (v2).y))
+#define Vector3_Compare(v1, v2) (((v1).x == (v2).x) && ((v1).y == (v2).y) && ((v1).z == (v2).z))
+#define Vector4_Compare(v1, v2) (((v1).x == (v2).x) && ((v1).y == (v2).y) && ((v1).z == (v2).z) && ((v1).w == (v2).w))
 #define Color_Compare(c1, c2) Vector4_Compare(c1, c2)
 
+// Generic functions for both float and integer vectors
+
+#define Vector2_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y})
+#define Vector3_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y, (v1).z + (v2).z})
+#define Vector4_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y, (v1).z + (v2).z, (v1).w + (v2).w})
+
+#define Vector2_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s})
+#define Vector3_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s, v1.z * s})
+#define Vector4_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s, (v1).z * s, (v1).w * s})
+
+#define Vector2_ToInt(v) (Vector2Int_New((v).x, (v).y))
+#define Vector3_ToInt(v) (Vector3Int_New((v).x, (v).y, (v).z))
+#define Vector4_ToInt(v) (Vector4Int_New((v).x, (v).y, (v).z, (v).w))
+
+#define Vector2Int_ToFloat(v) (Vector2_New((v).x, (v).y))
+#define Vector3Int_ToFloat(v) (Vector3_New((v).x, (v).y, (v).z))
+#define Vector4Int_ToFloat(v) (Vector4_New((v).x, (v).y, (v).z, (v).w))
+
 #pragma region Vector2
-
-/// @brief Adds two 2D vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The resulting vector after addition.
-Vector2 Vector2_Add(Vector2 vector1, Vector2 vector2);
-
-/// @brief Multiplies a 2D vector by a scalar.
-/// @param vector The vector to multiply.
-/// @param scalar The scalar value.
-/// @return The resulting vector after multiplication.
-Vector2 Vector2_Scale(Vector2 vector, float scalar);
-
-/// @brief Converts a 2D float vector to a 2D integer vector.
-/// @param vector The vector to convert.
-/// @return The resulting integer vector.
-Vector2Int Vector2_ToInt(Vector2 vector);
 
 /// @brief Normalizes a 2D vector to have a magnitude of 1.
 /// @param vector The vector to normalize.
@@ -165,23 +166,6 @@ Vector2 Vector2_Lerp(Vector2 startVector, Vector2 endVector, float time);
 #pragma endregion Vector2
 
 #pragma region Vector3
-
-/// @brief Adds two 3D vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The resulting vector after addition.
-Vector3 Vector3_Add(Vector3 vector1, Vector3 vector2);
-
-/// @brief Multiplies a 3D vector by a scalar.
-/// @param vector The vector to multiply.
-/// @param scalar The scalar value.
-/// @return The resulting vector after multiplication.
-Vector3 Vector3_Scale(Vector3 vector, float scalar);
-
-/// @brief Converts a 3D float vector to a 3D integer vector.
-/// @param vector The vector to convert.
-/// @return The resulting integer vector.
-Vector3Int Vector3_ToInt(Vector3 vector);
 
 /// @brief Normalizes a 3D vector to have a magnitude of 1.
 /// @param vector The vector to normalize.
@@ -216,23 +200,6 @@ Vector3 Vector3_Lerp(Vector3 startVector, Vector3 endVector, float time);
 
 #pragma region Vector4
 
-/// @brief Adds two 4D vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The resulting vector after addition.
-Vector4 Vector4_Add(Vector4 vector1, Vector4 vector2);
-
-/// @brief Multiplies a 4D vector by a scalar.
-/// @param vector The vector to multiply.
-/// @param scalar The scalar value.
-/// @return The resulting vector after multiplication.
-Vector4 Vector4_Scale(Vector4 vector, float scalar);
-
-/// @brief Converts a 4D float vector to a 4D integer vector.
-/// @param vector The vector to convert.
-/// @return The resulting integer vector.
-Vector4Int Vector4_ToInt(Vector4 vector);
-
 /// @brief Normalizes a 4D vector to have a magnitude of 1.
 /// @param vector The vector to normalize.
 /// @return The normalized vector.
@@ -260,23 +227,6 @@ Vector4 Vector4_Lerp(Vector4 startVector, Vector4 endVector, float time);
 
 #pragma region Vector2Int
 
-/// @brief Adds two 2D integer vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The resulting vector after addition.
-Vector2Int Vector2Int_Add(Vector2Int vector1, Vector2Int vector2);
-
-/// @brief Multiplies a 2D integer vector by a scalar.
-/// @param vector The vector to multiply.
-/// @param scalar The scalar value.
-/// @return The resulting vector after multiplication.
-Vector2Int Vector2Int_Scale(Vector2Int vector, float scalar);
-
-/// @brief Converts a 2D integer vector to a 2D float vector.
-/// @param vector The vector to convert.
-/// @return The resulting float vector.
-Vector2 Vector2Int_ToFloat(Vector2Int vector);
-
 /// @brief Calculates the dot product of two 2D integer vectors.
 /// @param vector1 The first vector.
 /// @param vector2 The second vector.
@@ -292,23 +242,6 @@ float Vector2Int_Magnitude(Vector2Int vector);
 
 #pragma region Vector3Int
 
-/// @brief Adds two 3D integer vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The resulting vector after addition.
-Vector3Int Vector3Int_Add(Vector3Int vector1, Vector3Int vector2);
-
-/// @brief Multiplies a 3D integer vector by a scalar.
-/// @param vector The vector to multiply.
-/// @param scalar The scalar value.
-/// @return The resulting vector after multiplication.
-Vector3Int Vector3Int_Scale(Vector3Int vector, float scalar);
-
-/// @brief Converts a 3D integer vector to a 3D float vector.
-/// @param vector The vector to convert.
-/// @return The resulting float vector.
-Vector3 Vector3Int_ToFloat(Vector3Int vector);
-
 /// @brief Calculates the dot product of two 3D integer vectors.
 /// @param vector1 The first vector.
 /// @param vector2 The second vector.
@@ -323,23 +256,6 @@ float Vector3Int_Magnitude(Vector3Int vector);
 #pragma endregion Vector3Int
 
 #pragma region Vector4Int
-
-/// @brief Adds two 4D integer vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The resulting vector after addition.
-Vector4Int Vector4Int_Add(Vector4Int vector1, Vector4Int vector2);
-
-/// @brief Multiplies a 4D integer vector by a scalar.
-/// @param vector The vector to multiply.
-/// @param scalar The scalar value.
-/// @return The resulting vector after multiplication.
-Vector4Int Vector4Int_Scale(Vector4Int vector, float scalar);
-
-/// @brief Converts a 4D integer vector to a 4D float vector.
-/// @param vector The vector to convert.
-/// @return The resulting float vector.
-Vector4 Vector4Int_ToFloat(Vector4Int vector);
 
 /// @brief Calculates the dot product of two 4D integer vectors.
 /// @param vector1 The first vector.

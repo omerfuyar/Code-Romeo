@@ -6,13 +6,13 @@
 
 #include "glad/glad.h"
 
-#if RJGLOBAL_COMPILER_CLANG
+#if RJ_COMPILER_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
-#elif RJGLOBAL_COMPILER_GCC
+#elif RJ_COMPILER_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weverything"
-#elif RJGLOBAL_COMPILER_MSVC
+#elif RJ_COMPILER_MSVC
 #pragma warning(push, 0)
 #endif
 
@@ -20,11 +20,11 @@
 #include "stb/stb_image.h"
 #include "cglm/cglm.h"
 
-#if RJGLOBAL_COMPILER_CLANG
+#if RJ_COMPILER_CLANG
 #pragma clang diagnostic pop
-#elif RJGLOBAL_COMPILER_GCC
+#elif RJ_COMPILER_GCC
 #pragma GCC diagnostic pop
-#elif RJGLOBAL_COMPILER_MSVC
+#elif RJ_COMPILER_MSVC
 #pragma warning(pop)
 #endif
 
@@ -36,27 +36,37 @@ ListLinked RESOURCE_TEXTURE_POOL = {0};
 
 #pragma region ResourceTexture
 
-static ResourceTexture *ResourceTexture_GetByNameOrCreate(StringView name, StringView filePathInResources)
+static RJ_Result ResourceTexture_GetByNameOrCreate(ResourceTexture **retTexture, StringView name, StringView filePathInResources)
 {
-    for (RJGlobal_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
+    for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
         ResourceTexture *texture = (ResourceTexture *)ListLinked_Get(&RESOURCE_TEXTURE_POOL, textureIndex);
-        RJGlobal_DebugAssertNullPointerCheck(texture);
 
         if (String_AreSame(scv(texture->name), name))
         {
-            return texture;
+            *retTexture = texture;
+            return RJ_OK;
         }
     }
 
-    ResourceTexture *texture = (ResourceTexture *)ListLinked_Add(&RESOURCE_TEXTURE_POOL, NULL); // todo fix
+    ResourceTexture *texture = (ResourceTexture *)ListLinked_Add(&RESOURCE_TEXTURE_POOL, NULL);
+    *retTexture = texture;
+
     texture->index = RESOURCE_TEXTURE_POOL.count - 1;
     texture->name = scc(name);
 
     String tempFilePath = scc(filePathInResources);
     String_ConcatEnd(&tempFilePath, scv(texture->name));
-    texture->image = ResourceImage_Create(scv(tempFilePath));
+
+    RJ_Result result = ResourceImage_Create(&texture->image, scv(tempFilePath));
     String_Destroy(&tempFilePath);
+    if (result != RJ_OK)
+    {
+        ListLinked_RemoveAtIndex(&RESOURCE_TEXTURE_POOL, texture->index);
+        String_Destroy(&texture->name);
+        RJ_DebugWarning("Failed to create resource image for texture '%s'.", texture->name.characters);
+        return result;
+    }
 
     glGenTextures(1, &texture->handle);
     glBindTexture(GL_TEXTURE_2D, texture->handle);
@@ -83,66 +93,76 @@ static ResourceTexture *ResourceTexture_GetByNameOrCreate(StringView name, Strin
         format = GL_RED;
         break;
     default:
-        RJGlobal_DebugError("Unsupported number of channels (%d) for texture '%s'.", texture->image->channels, texture->name.characters);
+        RJ_DebugError("Unsupported number of channels (%d) for texture '%s'.", texture->image->channels, texture->name.characters);
         break;
     }
 
     glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, texture->image->size.x, texture->image->size.y, 0, format, GL_UNSIGNED_BYTE, texture->image->data);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    RJGlobal_DebugInfo("Texture '%s' created successfully.", texture->name.characters);
+    RJ_DebugInfo("Texture '%s' created successfully.", texture->name.characters);
 
-    return texture;
+    return RJ_OK;
 }
 
 static void ResourceTexture_Destroy(ResourceTexture *texture)
 {
-    RJGlobal_DebugAssertNullPointerCheck(texture);
+    RJ_DebugAssertNullPointerCheck(texture);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(texture->name, tempTitle);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
+    scb(texture->name, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&texture->name);
     ResourceImage_Destroy(texture->image);
     glDeleteTextures(1, &texture->handle);
     ListLinked_RemoveAtIndex(&RESOURCE_TEXTURE_POOL, texture->index);
 
-    RJGlobal_DebugInfo("Resource Texture '%s' destroyed successfully.", tempTitle);
+    RJ_DebugInfo("Resource Texture '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceTexture
 
 #pragma region ResourceMaterial
 
-static ResourceMaterial *ResourceMaterial_GetByName(StringView name)
+static RJ_Result ResourceMaterial_GetByName(ResourceMaterial **retMaterial, StringView name)
 {
-    for (RJGlobal_Size materialIndex = 0; materialIndex < RESOURCE_MATERIAL_POOL.count; materialIndex++)
+    for (RJ_Size materialIndex = 0; materialIndex < RESOURCE_MATERIAL_POOL.count; materialIndex++)
     {
         ResourceMaterial *material = (ResourceMaterial *)ListLinked_Get(&RESOURCE_MATERIAL_POOL, materialIndex);
-        RJGlobal_DebugAssertNullPointerCheck(material);
 
         if (String_AreSame(scv(material->name), name))
         {
-            return material;
+            *retMaterial = material;
+            return RJ_OK;
         }
     }
 
-    return NULL;
+    // RJ_DebugWarning("Resource Material '%.*s' not found in the global material pool.", (int)name.length, name.characters);
+    return RJ_ERROR_NOT_FOUND;
 }
 
-static void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePathInResources)
+static RJ_Result ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView resourcePathInResources)
 {
     String tempFilePath = scc(resourcePathInResources);
     String_ConcatEnd(&tempFilePath, matFile);
-    ResourceText *matFileResource = ResourceText_Create(scv(tempFilePath));
+
+    ResourceText *matFileResource = NULL;
+    RJ_Result result = ResourceText_Create(&matFileResource, scv(tempFilePath));
     String_Destroy(&tempFilePath);
 
-    RJGlobal_Size matLineCount = 0;
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create resource text for material file '%s'.", tempFilePath.characters);
+        return result;
+    }
+
+    RJ_Size matLineCount = 0;
 
     StringView *matLines = NULL;
-    RJGlobal_DebugAssertAllocationCheck(StringView, matLines, matFileResource->lineCount);
+    RJ_ReturnAllocate(StringView, matLines, matFileResource->lineCount,
+                      ResourceText_Destroy(matFileResource););
 
-    RJGlobal_Size matLineTokenCount = 0;
+    RJ_Size matLineTokenCount = 0;
     StringView matLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
 
     ResourceMaterial *currentMaterial = NULL;
@@ -162,7 +182,7 @@ static void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView res
 
     String_Tokenize(scv(matFileResource->data), strNewline, &matLineCount, matLines, matFileResource->lineCount);
 
-    for (RJGlobal_Size matLine = 0; matLine < matLineCount; matLine++)
+    for (RJ_Size matLine = 0; matLine < matLineCount; matLine++)
     {
         String_Tokenize(matLines[matLine], strSpace, &matLineTokenCount, matLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
@@ -170,14 +190,14 @@ static void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView res
 
         if (String_AreSame(matFirstToken, strNEWMTL))
         {
-            currentMaterial = ResourceMaterial_GetByName(matLineTokens[1]);
-            if (currentMaterial == NULL)
+            result = ResourceMaterial_GetByName(&currentMaterial, matLineTokens[1]);
+            if (result == RJ_ERROR_NOT_FOUND)
             {
                 currentMaterial = (ResourceMaterial *)ListLinked_Add(&RESOURCE_MATERIAL_POOL, NULL);
                 currentMaterial->index = RESOURCE_MATERIAL_POOL.count - 1;
                 currentMaterial->name = scc(matLineTokens[1]);
 
-                RJGlobal_DebugInfo("Resource Material '%s' created successfully.", currentMaterial->name.characters);
+                RJ_DebugInfo("Resource Material '%s' created successfully.", currentMaterial->name.characters);
             }
         }
         else if (String_AreSame(matFirstToken, strNS))
@@ -226,45 +246,64 @@ static void ResourceMaterial_AddFromFileIfNew(StringView matFile, StringView res
         }
         else if (String_AreSame(matFirstToken, strMAP_KD))
         {
-            currentMaterial->diffuseMap = ResourceTexture_GetByNameOrCreate(matLineTokens[1], resourcePathInResources);
+            result = ResourceTexture_GetByNameOrCreate(&currentMaterial->diffuseMap, matLineTokens[1], resourcePathInResources);
+            if (result != RJ_OK)
+            {
+                // todo maybe set a default texture
+                RJ_DebugWarning("Failed to load diffuse map '%.*s' for material '%s'.",
+                                (int)matLineTokens[1].length,
+                                matLineTokens[1].characters,
+                                currentMaterial->name.characters);
+                return result;
+            }
         }
     }
 
     free(matLines);
     ResourceText_Destroy(matFileResource);
+
+    return RJ_OK;
 }
 
 static void ResourceMaterial_Destroy(ResourceMaterial *material)
 {
-    RJGlobal_DebugAssertNullPointerCheck(material);
+    RJ_DebugAssertNullPointerCheck(material);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(material->name, tempTitle);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
+    scb(material->name, tempTitle, sizeof(tempTitle));
 
     ResourceTexture_Destroy(material->diffuseMap);
     String_Destroy(&material->name);
     ListLinked_RemoveAtIndex(&RESOURCE_MATERIAL_POOL, material->index);
 
-    RJGlobal_DebugInfo("Resource Material '%s' destroyed successfully.", tempTitle);
+    RJ_DebugInfo("Resource Material '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceMaterial
 
 #pragma region ResourceMesh
 
-static ResourceMesh *ResourceMesh_Create(ResourceModel *model, RJGlobal_Size indexCount, ResourceMaterial *material)
+static RJ_Result ResourceMesh_Create(ResourceMesh **retMesh, ResourceModel *model, RJ_Size indexCount, ResourceMaterial *material)
 {
     ResourceMesh *mesh = (ResourceMesh *)ListArray_Add(&model->meshes, NULL);
 
-    mesh->indices = ListArray_Create("Resource Mesh Indices", sizeof(ResourceMeshIndex), indexCount);
+    RJ_Result result = ListArray_Create(&mesh->indices, "Resource Mesh Indices", sizeof(ResourceMeshIndex), indexCount);
+    if (result != RJ_OK) // todo make this for all ListArray_Create calls or not
+    {
+        ListArray_Pop(&model->meshes);
+        RJ_DebugWarning("Failed to create indices list for sub-mesh of model '%s'.", model->file.characters);
+        return RJ_ERROR_ALLOCATION;
+    }
+
     mesh->material = material;
 
-    return mesh;
+    *retMesh = mesh;
+    return RJ_OK;
 }
 
 static void ResourceMesh_Destroy(ResourceMesh *mesh)
 {
-    RJGlobal_DebugAssertNullPointerCheck(mesh);
+    RJ_DebugAssertNullPointerCheck(mesh);
 
     ListArray_Destroy(&mesh->indices);
     mesh->material = NULL;
@@ -276,31 +315,41 @@ static void ResourceMesh_Destroy(ResourceMesh *mesh)
 
 #pragma region ResourceText
 
-ResourceText *ResourceText_Create(StringView file)
+RJ_Result ResourceText_Create(ResourceText **retResource, StringView file)
 {
-    ResourceText *resource = NULL;
-    RJGlobal_DebugAssertAllocationCheck(ResourceText, resource, 1);
+    ResourceText *resource = *retResource;
+
+    RJ_ReturnAllocate(ResourceText, resource, 1);
+
+    *retResource = resource;
 
     resource->file = scc(file);
 
-    // RJGlobal_Size pathCount = 0;
-    // String pathBuffer[RJGLOBAL_TEMP_BUFFER_SIZE / 32];
-    // String_Tokenize(relativePath, scl(RJGLOBAL_PATH_DELIMETER_STR), &pathCount, pathBuffer, RJGLOBAL_TEMP_BUFFER_SIZE / 32);
+    // RJ_Size pathCount = 0;
+    // String pathBuffer[RJ_TEMP_BUFFER_SIZE / 32];
+    // String_Tokenize(relativePath, scl(RJ_PATH_DELIMETER_STR), &pathCount, pathBuffer, RJ_TEMP_BUFFER_SIZE / 32);
     //
-    // for (RJGlobal_Size i = 0; i < pathCount - 1; i++)
+    // for (RJ_Size i = 0; i < pathCount - 1; i++)
     //{
     //    String_ConcatEnd(&resource->path, pathBuffer[i]);
     //}
 
     String fullPath = scc(resource->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
-    String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
+    String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
+#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
+    String_Replace(&fullPath, scv("\\"), scv("/"));
+#endif
 
-    RJGlobal_Size lineCount = 0;
+    RJ_Size lineCount = 0;
     int character = 0;
 
     FILE *fileHandle = NULL;
-    RJGlobal_DebugAssertFileOpenCheck(fileHandle, fullPath.characters, "r");
+
+    RJ_ReturnFileOpen(fileHandle, fullPath.characters, "r",
+                      String_Destroy(&fullPath);
+                      free(resource););
+
     while ((character = fgetc(fileHandle)) != EOF)
     {
         if (character == '\n')
@@ -308,25 +357,24 @@ ResourceText *ResourceText_Create(StringView file)
             lineCount++;
         }
     }
-    fclose(fileHandle);
 
     resource->lineCount = lineCount;
 
     // on heap because the buffer is too large for stack
     char *dataBuffer = NULL;
-    RJGlobal_DebugAssertAllocationCheck(char, dataBuffer, resource->lineCount *RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
-    char *lineBuffer = NULL;
-    RJGlobal_DebugAssertAllocationCheck(char, lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT);
-
+    RJ_ReturnAllocate(char, dataBuffer, resource->lineCount *RESOURCE_FILE_LINE_MAX_CHAR_COUNT,
+                      String_Destroy(&fullPath);
+                      free(resource););
     dataBuffer[0] = '\0';
-    lineBuffer[0] = '\0';
-    RJGlobal_Size dataIndex = 0;
 
-    RJGlobal_DebugAssertFileOpenCheck(fileHandle, fullPath.characters, "r");
+    char lineBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT] = {0};
+
+    RJ_Size dataIndex = 0;
+
     while (fgets(lineBuffer, RESOURCE_FILE_LINE_MAX_CHAR_COUNT, fileHandle))
     {
-        RJGlobal_Size lineLength = RJGlobal_StringLength(lineBuffer);
-        RJGlobal_MemoryCopy(dataBuffer + dataIndex, lineLength, lineBuffer);
+        RJ_Size lineLength = (RJ_Size)strlen(lineBuffer);
+        memcpy(dataBuffer + dataIndex, lineBuffer, lineLength);
         dataIndex += lineLength;
     }
     fclose(fileHandle);
@@ -336,22 +384,21 @@ ResourceText *ResourceText_Create(StringView file)
     resource->data = String_CreateCopySafe(dataBuffer, dataIndex);
 
     free(dataBuffer);
-    free(lineBuffer);
 
     String_Destroy(&fullPath);
 
-    RJGlobal_DebugInfo("Resource text '%s' loaded successfully.", resource->file.characters);
+    RJ_DebugInfo("Resource text '%s' loaded successfully.", resource->file.characters);
 
-    return resource;
+    return RJ_OK;
 }
 
 void ResourceText_Destroy(ResourceText *resource)
 {
-    RJGlobal_DebugAssertNullPointerCheck(resource);
-    RJGlobal_DebugAssertNullPointerCheck(resource->file.characters);
+    RJ_DebugAssertNullPointerCheck(resource);
+    RJ_DebugAssertNullPointerCheck(resource->file.characters);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(resource->file, tempTitle);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
+    scb(resource->file, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&resource->file);
     String_Destroy(&resource->data);
@@ -363,41 +410,53 @@ void ResourceText_Destroy(ResourceText *resource)
         resource = NULL;
     }
 
-    RJGlobal_DebugInfo("Resource Text '%s' destroyed successfully.", tempTitle);
+    RJ_DebugInfo("Resource Text '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceText
 
 #pragma region ResourceImage
 
-ResourceImage *ResourceImage_Create(StringView file)
+RJ_Result ResourceImage_Create(ResourceImage **retResourceImage, StringView file)
 {
-    ResourceImage *resourceImage = NULL;
-    RJGlobal_DebugAssertAllocationCheck(ResourceImage, resourceImage, 1);
+    ResourceImage *resourceImage = *retResourceImage;
+
+    RJ_ReturnAllocate(ResourceImage, resourceImage, 1);
+
+    *retResourceImage = resourceImage;
 
     resourceImage->file = scc(file);
 
     String fullPath = scc(resourceImage->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
-    String_ConcatBegin(&fullPath, scl(RJGlobal_GetExecutablePath()));
+    String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
+#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
+    String_Replace(&fullPath, scv("\\"), scv("/"));
+#endif
 
     stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 4);
-    RJGlobal_DebugAssertNullPointerCheck(resourceImage->data);
+    if (resourceImage->data == NULL)
+    {
+        String_Destroy(&fullPath);
+        free(resourceImage);
+        RJ_DebugWarning("Failed to load image data from file '%s'. STB Error: %s", fullPath.characters, stbi_failure_reason());
+        return RJ_ERROR_DEPENDENCY;
+    }
 
     String_Destroy(&fullPath);
 
-    RJGlobal_DebugInfo("Resource Image '%s' loaded successfully.", resourceImage->file.characters);
+    RJ_DebugInfo("Resource Image '%s' loaded successfully.", resourceImage->file.characters);
 
-    return resourceImage;
+    return RJ_OK;
 }
 
 void ResourceImage_Destroy(ResourceImage *resourceImage)
 {
-    RJGlobal_DebugAssertNullPointerCheck(resourceImage);
+    RJ_DebugAssertNullPointerCheck(resourceImage);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(resourceImage->file, tempTitle);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
+    scb(resourceImage->file, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&resourceImage->file);
     resourceImage->channels = 0;
@@ -409,7 +468,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
     free(resourceImage);
     resourceImage = NULL;
 
-    RJGlobal_DebugInfo("Resource Image '%s' destroyed successfully.", tempTitle);
+    RJ_DebugInfo("Resource Image '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceImage
@@ -418,29 +477,29 @@ void ResourceImage_Destroy(ResourceImage *resourceImage)
 
 static void ProcessFaceVertex(StringView faceToken, ResourceModel *model, ResourceMesh *currentMesh, ListArray *globalVertexUvPool, ListArray *globalVertexNormalPool)
 {
-    StringView faceData[3]; // v/vt/vn
-    RJGlobal_Size faceDataCount;
+    StringView faceData[3] = {0}; // v/vt/vn
+    RJ_Size faceDataCount;
     String_Tokenize(faceToken, scl("/"), &faceDataCount, faceData, 3);
 
-    RJGlobal_DebugAssert(faceDataCount == 3, "Face vertex data '%.*s' is invalid. Expected format 'v/vt/vn'.", (int)faceToken.length, faceToken.characters);
+    RJ_DebugAssert(faceDataCount == 3, "Face vertex data '%.*s' is invalid. Expected format 'v/vt/vn'.", (int)faceToken.length, faceToken.characters);
 
     int createdPositionIndex = String_ToInt(faceData[0]);
-    RJGlobal_Size positionIndex = createdPositionIndex < 0 ? (RJGlobal_Size)((int)model->vertices.count + createdPositionIndex) : (RJGlobal_Size)createdPositionIndex - 1;
+    RJ_Size positionIndex = createdPositionIndex < 0 ? (RJ_Size)((int)model->vertices.count + createdPositionIndex) : (RJ_Size)createdPositionIndex - 1;
 
-    ResourceMeshVertex *vertex = (ResourceMeshVertex *)ListArray_Get(&model->vertices, (RJGlobal_Size)positionIndex);
+    ResourceMeshVertex *vertex = (ResourceMeshVertex *)ListArray_Get(&model->vertices, (RJ_Size)positionIndex);
 
     int createdUVIndex = String_ToInt(faceData[1]);
-    RJGlobal_Size uvIndex = createdUVIndex < 0 ? (RJGlobal_Size)((int)globalVertexUvPool->count + createdUVIndex) : (RJGlobal_Size)createdUVIndex - 1;
-    vertex->uv = *(Vector2 *)ListArray_Get(globalVertexUvPool, (RJGlobal_Size)uvIndex);
+    RJ_Size uvIndex = createdUVIndex < 0 ? (RJ_Size)((int)globalVertexUvPool->count + createdUVIndex) : (RJ_Size)createdUVIndex - 1;
+    vertex->uv = *(Vector2 *)ListArray_Get(globalVertexUvPool, (RJ_Size)uvIndex);
 
     int createdNormalIndex = String_ToInt(faceData[2]);
-    RJGlobal_Size normalIndex = createdNormalIndex < 0 ? (RJGlobal_Size)((int)globalVertexNormalPool->count + createdNormalIndex) : (RJGlobal_Size)createdNormalIndex - 1;
-    vertex->normal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (RJGlobal_Size)normalIndex);
+    RJ_Size normalIndex = createdNormalIndex < 0 ? (RJ_Size)((int)globalVertexNormalPool->count + createdNormalIndex) : (RJ_Size)createdNormalIndex - 1;
+    vertex->normal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (RJ_Size)normalIndex);
 
     ListArray_Add(&currentMesh->indices, &positionIndex);
 }
 
-ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transformOffset)
+RJ_Result ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, Vector3 *transformOffset)
 {
     if (RESOURCE_TEXTURE_POOL.head == NULL && RESOURCE_MATERIAL_POOL.head == NULL)
     {
@@ -449,18 +508,21 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         RESOURCE_MATERIAL_POOL = ListLinked_Create("Resource Material", sizeof(ResourceMaterial));
     }
 
-    for (RJGlobal_Size modelIndex = 0; modelIndex < RESOURCE_MODEL_POOL.count; modelIndex++)
+    for (RJ_Size modelIndex = 0; modelIndex < RESOURCE_MODEL_POOL.count; modelIndex++)
     {
         ResourceModel *model = (ResourceModel *)ListLinked_Get(&RESOURCE_MODEL_POOL, modelIndex);
-        RJGlobal_DebugAssertNullPointerCheck(model);
 
         if (String_AreSame(scv(model->file), fileName))
         {
-            return model;
+            *retResourceModel = model;
+            return RJ_OK;
         }
     }
 
     ResourceModel *model = (ResourceModel *)ListLinked_Add(&RESOURCE_MODEL_POOL, NULL);
+
+    *retResourceModel = model;
+
     model->file = scc(fileName);
     model->index = RESOURCE_MODEL_POOL.count - 1;
 
@@ -483,18 +545,27 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         glm_scale((vec4 *)offsetMatrix.m, (float *)&(vec3){scaleOffset->x, scaleOffset->y, scaleOffset->z});
     }
 
-    RJGlobal_Size meshCount = 0;
-    RJGlobal_Size totalVertexPositionCount = 0;
-    RJGlobal_Size totalVertexNormalCount = 0;
-    RJGlobal_Size totalVertexUvCount = 0;
+    RJ_Size meshCount = 0;
+    RJ_Size totalVertexPositionCount = 0;
+    RJ_Size totalVertexNormalCount = 0;
+    RJ_Size totalVertexUvCount = 0;
 
-    ResourceText *mdlFileResource = ResourceText_Create(fileName);
+    ResourceText *mdlFileResource = NULL;
+    RJ_Result result = ResourceText_Create(&mdlFileResource, fileName);
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create resource text for model file '%.*s'.", (int)fileName.length, fileName.characters);
+        return result;
+    }
 
-    RJGlobal_Size mdlLineCount = 0;
+    RJ_Size mdlLineCount = 0;
     StringView *mdlLines = NULL;
-    RJGlobal_DebugAssertAllocationCheck(StringView, mdlLines, mdlFileResource->lineCount);
 
-    RJGlobal_Size mdlLineTokenCount = 0;
+    RJ_ReturnAllocate(StringView, mdlLines, mdlFileResource->lineCount,
+                      ResourceText_Destroy(mdlFileResource);
+                      free(model););
+
+    RJ_Size mdlLineTokenCount = 0;
     StringView mdlLineTokens[RESOURCE_FILE_LINE_MAX_TOKEN_COUNT] = {0};
 
     StringView strNewline = scl("\n");
@@ -509,7 +580,7 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
 
     String_Tokenize(scv(mdlFileResource->data), strNewline, &mdlLineCount, mdlLines, mdlFileResource->lineCount);
 
-    for (RJGlobal_Size i = 0; i < mdlLineCount; i++) // count
+    for (RJ_Size i = 0; i < mdlLineCount; i++) // count
     {
         String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
@@ -533,11 +604,15 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         }
     }
 
-    RJGlobal_Size *triangleCounts = NULL;
-    RJGlobal_DebugAssertAllocationCheck(RJGlobal_Size, triangleCounts, meshCount);
+    RJ_Size *triangleCounts = NULL;
 
-    RJGlobal_Size tempMeshIndex = 0;
-    for (RJGlobal_Size i = 0; i < mdlLineCount && tempMeshIndex < meshCount + 1; i++) // count faces per mesh
+    RJ_ReturnAllocate(RJ_Size, triangleCounts, meshCount,
+                      ResourceText_Destroy(mdlFileResource);
+                      free(mdlLines);
+                      free(model););
+
+    RJ_Size tempMeshIndex = 0;
+    for (RJ_Size i = 0; i < mdlLineCount && tempMeshIndex < meshCount + 1; i++) // count faces per mesh
     {
         String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
@@ -555,37 +630,46 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         {
             String tempFilePath = scc(fileName);
 
-            while (tempFilePath.length > 0 && tempFilePath.characters[tempFilePath.length - 1] != RJGLOBAL_PATH_DELIMETER_CHAR)
+            while (tempFilePath.length > 0 && tempFilePath.characters[tempFilePath.length - 1] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
             {
                 tempFilePath.length--;
             }
 
-            RJGlobal_DebugAssert(tempFilePath.length > 0, "Resource model file path '%s' is invalid.", fileName.characters);
+            RJ_DebugAssert(tempFilePath.length > 0, "Resource model file path '%s' is empty.", fileName.characters);
 
-            ResourceMaterial_AddFromFileIfNew(mdlLineTokens[1], scv(tempFilePath));
+            result = ResourceMaterial_AddFromFileIfNew(mdlLineTokens[1], scv(tempFilePath));
+            if (result != RJ_OK)
+            {
+                // todo maybe set a default material
+                RJ_DebugWarning("Failed to load material file '%.*s' for resource model '%s'.",
+                                (int)mdlLineTokens[1].length,
+                                mdlLineTokens[1].characters,
+                                fileName.characters);
+                return result;
+            }
 
             String_Destroy(&tempFilePath);
         }
     }
 
-    model->vertices = ListArray_Create("Resource Model Vertices", sizeof(ResourceMeshVertex), totalVertexPositionCount);
-    model->meshes = ListArray_Create("Resource Model Meshes", sizeof(ResourceMesh), meshCount);
+    ListArray_Create(&model->vertices, "Resource Model Vertices", sizeof(ResourceMeshVertex), totalVertexPositionCount);
+    ListArray_Create(&model->meshes, "Resource Model Meshes", sizeof(ResourceMesh), meshCount);
 
     ListArray globalVertexNormalPool = {0};
 
     if (totalVertexNormalCount != 0)
     {
-        globalVertexNormalPool = ListArray_Create("Vector3", sizeof(Vector3), totalVertexNormalCount);
+        ListArray_Create(&globalVertexNormalPool, "Vector3", sizeof(Vector3), totalVertexNormalCount);
     }
 
     ListArray globalVertexUvPool = {0};
 
     if (totalVertexUvCount != 0)
     {
-        globalVertexUvPool = ListArray_Create("Vector2", sizeof(Vector2), totalVertexUvCount);
+        ListArray_Create(&globalVertexUvPool, "Vector2", sizeof(Vector2), totalVertexUvCount);
     }
 
-    for (RJGlobal_Size i = 0; i < mdlLineCount; i++) // create global pools
+    for (RJ_Size i = 0; i < mdlLineCount; i++) // create global pools
     {
         String_Tokenize(mdlLines[i], strSpace, &mdlLineTokenCount, mdlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
@@ -651,7 +735,7 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
     ResourceMesh *currentMesh = NULL;
     ResourceMaterial *currentMaterial = NULL;
 
-    for (RJGlobal_Size i = 0; i < mdlLineCount; i++) // create meshes and fill them with indices
+    for (RJ_Size i = 0; i < mdlLineCount; i++) // create meshes and fill them with indices
     {
         String_Tokenize(mdlLines[i], scl(" "), &mdlLineTokenCount, mdlLineTokens, RESOURCE_FILE_LINE_MAX_TOKEN_COUNT);
 
@@ -659,7 +743,7 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
 
         if (String_AreSame(firstToken, strF))
         {
-            for (RJGlobal_Size j = 3; j < mdlLineTokenCount; j++)
+            for (RJ_Size j = 3; j < mdlLineTokenCount; j++)
             {
                 ProcessFaceVertex(mdlLineTokens[1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
                 ProcessFaceVertex(mdlLineTokens[j - 1], model, currentMesh, &globalVertexUvPool, &globalVertexNormalPool);
@@ -668,13 +752,29 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
         }
         else if (String_AreSame(firstToken, strO))
         {
-            currentMesh = ResourceMesh_Create(model, triangleCounts[model->meshes.count] * 3, currentMaterial);
+            result = ResourceMesh_Create(&currentMesh, model, triangleCounts[model->meshes.count] * 3, currentMaterial);
+            if (result != RJ_OK)
+            {
+                RJ_DebugWarning("Failed to create mesh '%.*s' for model '%s'.",
+                                (int)mdlLineTokens[1].length,
+                                mdlLineTokens[1].characters,
+                                fileName.characters);
+                return result;
+            }
         }
         else if (String_AreSame(firstToken, strUSEMTL)) // use material and create object
         {
-            currentMaterial = ResourceMaterial_GetByName(mdlLineTokens[1]);
+            result = ResourceMaterial_GetByName(&currentMaterial, mdlLineTokens[1]);
 
-            RJGlobal_DebugAssert(currentMaterial != NULL, "Material could not be found in material pool.");
+            if (result != RJ_OK)
+            {
+                // todo maybe set a default material
+                RJ_DebugWarning("Material '%.*s' not found for model '%s'.",
+                                (int)mdlLineTokens[1].length,
+                                mdlLineTokens[1].characters,
+                                fileName.characters);
+                return result;
+            }
         }
     }
 
@@ -692,23 +792,23 @@ ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transform
     free(triangleCounts);
     ResourceText_Destroy(mdlFileResource);
 
-    RJGlobal_DebugInfo("Resource Model '%s' loaded successfully with %u meshes.", fileName.characters, model->meshes.count);
+    RJ_DebugInfo("Resource Model '%s' loaded successfully with %u meshes.", fileName.characters, model->meshes.count);
 
-    return model;
+    return RJ_OK;
 }
 
 void ResourceModel_Destroy(ResourceModel *model)
 {
-    RJGlobal_DebugAssertNullPointerCheck(model);
+    RJ_DebugAssertNullPointerCheck(model);
 
-    char tempTitle[RJGLOBAL_TEMP_BUFFER_SIZE];
-    scb(model->file, tempTitle);
+    char tempTitle[RJ_TEMP_BUFFER_SIZE] = {0};
+    scb(model->file, tempTitle, sizeof(tempTitle));
 
     String_Destroy(&model->file);
 
     ListArray_Destroy(&model->vertices);
 
-    for (RJGlobal_Size i = model->meshes.count - 1; i > 0; i--)
+    for (RJ_Size i = model->meshes.count - 1; i > 0; i--)
     {
         ResourceMesh *mesh = (ResourceMesh *)ListArray_Get(&model->meshes, i);
         ResourceMesh_Destroy(mesh);
@@ -718,7 +818,7 @@ void ResourceModel_Destroy(ResourceModel *model)
 
     ListLinked_RemoveAtIndex(&RESOURCE_MODEL_POOL, model->index);
 
-    RJGlobal_DebugInfo("Resource Model '%s' destroyed successfully.", tempTitle);
+    RJ_DebugInfo("Resource Model '%s' destroyed successfully.", tempTitle);
 }
 
 #pragma endregion ResourceModel

@@ -17,10 +17,13 @@ typedef struct ContextWindow
 {
     String title;
     Vector2Int size;
-    void *handle;
+    void *handle; // user should not use this variable
     bool vSync;
     bool fullScreen;
 } ContextWindow;
+
+/// @brief Function pointer type used for dynamic symbol loading
+typedef void *(*Context_VoidptrFunCcharptr)(const char *name);
 
 /// @brief Function pointer type used for window resize callback
 typedef void (*Context_VoidFunVoidptrIntInt)(void *, int, int);
@@ -31,8 +34,9 @@ typedef void (*Context_VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int,
 #pragma endregion Typedefs
 
 /// @brief Initialize the context system and create the main window
-/// @return Pointer to the main window context structure
-ContextWindow *Context_Initialize(void);
+/// @param retContext Pointer to store the address of the main window context structure
+/// @return RJ_OK on success, or RJ_ERROR_DEPENDENCY if GLFW fails. Analyze the logs for more information.
+RJ_Result Context_Initialize(ContextWindow **retContext);
 
 /// @brief Clean up and terminate the context system
 void Context_Terminate(void);
@@ -71,3 +75,10 @@ void Context_ConfigureFullScreen(bool fullScreen);
 /// @brief Set the window resize callback function
 /// @param callback Function to call when window is resized, or NULL to remove callback
 void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback);
+
+/// @brief Get the dynamic symbol loader function pointer
+/// @return Function pointer to load dynamic symbols by name
+Context_VoidptrFunCcharptr Context_GetDynamicSymbolLoader(void);
+
+/// @brief Swap the front and back buffers of the main window
+void Context_SwapBuffers(void);

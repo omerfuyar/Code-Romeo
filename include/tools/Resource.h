@@ -11,7 +11,7 @@
 /// @brief Maximum token count for a single line in a resource file.
 #define RESOURCE_FILE_LINE_MAX_TOKEN_COUNT 8
 /// @brief Path to the resources folder relative to the executable.
-#define RESOURCE_PATH "resources" RJGLOBAL_PATH_DELIMETER_STR
+#define RESOURCE_PATH "resources/"
 
 #pragma region Typedefs
 
@@ -20,7 +20,7 @@ typedef struct ResourceText
 {
     String file;
     String data;
-    RJGlobal_Size lineCount;
+    RJ_Size lineCount;
 } ResourceText;
 
 /// @brief Resource representation for image files.
@@ -42,13 +42,13 @@ typedef struct Resource_Matrix4
 } Resource_Matrix4;
 
 /// @brief Should not be used by user.
-typedef RJGlobal_Size ResourceTextureHandle;
+typedef RJ_Size ResourceTextureHandle;
 
 /// @brief Should not be used by user.
 typedef struct ResourceTexture
 {
     String name;
-    RJGlobal_Size index;
+    RJ_Size index;
 
     ResourceTextureHandle handle;
     ResourceImage *image;
@@ -58,7 +58,7 @@ typedef struct ResourceTexture
 typedef struct ResourceMaterial
 {
     String name;
-    RJGlobal_Size index;
+    RJ_Size index;
 
     Vector3 ambientColor;
     Vector3 diffuseColor;
@@ -72,7 +72,7 @@ typedef struct ResourceMaterial
 } ResourceMaterial;
 
 /// @brief Should not be used by user.
-typedef RJGlobal_Size ResourceMeshIndex;
+typedef RJ_Size ResourceMeshIndex;
 
 /// @brief Should not be used by user.
 typedef struct ResourceMeshVertex
@@ -95,7 +95,7 @@ typedef struct ResourceMesh
 typedef struct ResourceModel
 {
     String file;
-    RJGlobal_Size index;
+    RJ_Size index;
 
     ListArray vertices; // ResourceMeshVertex
     ListArray meshes;   // ResourceMesh
@@ -106,9 +106,10 @@ typedef struct ResourceModel
 #pragma region ResourceText
 
 /// @brief Creates a new resource.
+/// @param retResource Pointer to the ResourceText pointer to store the created resource.
 /// @param file The file path of the resource in resources folder. Including file name. (e.g. "shaders/vertex.glsl").
-/// @return Pointer to the created resource.
-ResourceText *ResourceText_Create(StringView file);
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, or RJ_ERROR_FILE if the file cannot be opened.
+RJ_Result ResourceText_Create(ResourceText **retResource, StringView file);
 
 /// @brief Destroys a resource.
 /// @param resource The resource to destroy.
@@ -119,9 +120,10 @@ void ResourceText_Destroy(ResourceText *resource);
 #pragma region ResourceImage
 
 /// @brief Creates a new resource image. Looks for a resources folder in executable directory.
+/// @param retResourceImage Pointer to the ResourceImage pointer to store the created resource image.
 /// @param file The file path of the resource image in resources folder. Including file name. (e.g. "images/texture.png").
-/// @return Pointer to the created resource image.
-ResourceImage *ResourceImage_Create(StringView file);
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if the file cannot be opened or RJ_ERROR_DEPENDENCY if STB fails.
+RJ_Result ResourceImage_Create(ResourceImage **retResourceImage, StringView file);
 
 /// @brief Destroys a resource image.
 /// @param resourceImage The resource image to destroy.
@@ -132,10 +134,11 @@ void ResourceImage_Destroy(ResourceImage *resourceImage);
 #pragma region ResourceModel
 
 /// @brief Creates a new resource model. Looks for a resources folder in executable directory.
+/// @param retResourceModel Pointer to the ResourceModel pointer to store the created resource model.
 /// @param fileName The file path of the resource model in resources folder. Including file name. (e.g. "models/model.mdl").
 /// @param transformOffset Transform offset to apply to the model's vertices. Should be in position, rotation, and scale order. Leave NULL if not needed.
-/// @return Pointer to the created resource model.
-ResourceModel *ResourceModel_GetOrCreate(StringView fileName, Vector3 *transformOffset);
+/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if the file cannot be opened or RJ_ERROR_DEPENDENCY if the model loading fails.
+RJ_Result ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, Vector3 *transformOffset);
 
 /// @brief Destroys a resource model and frees all associated memory.
 /// @param model The resource model to destroy.

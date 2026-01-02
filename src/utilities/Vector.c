@@ -4,21 +4,6 @@
 
 #pragma region Vector2
 
-Vector2 Vector2_Add(Vector2 vector1, Vector2 vector2)
-{
-    return Vector2_New(vector1.x + vector2.x, vector1.y + vector2.y);
-}
-
-Vector2 Vector2_Scale(Vector2 vector, float scalar)
-{
-    return Vector2_New(vector.x * scalar, vector.y * scalar);
-}
-
-Vector2Int Vector2_ToInt(Vector2 vector)
-{
-    return Vector2Int_New((int)vector.x, (int)vector.y);
-}
-
 Vector2 Vector2_Normalized(Vector2 vector)
 {
     float magnitude = Vector2_Magnitude(vector);
@@ -47,21 +32,6 @@ Vector2 Vector2_Lerp(Vector2 startVector, Vector2 endVector, float time)
 #pragma endregion Vector2
 
 #pragma region Vector3
-
-Vector3 Vector3_Add(Vector3 vector1, Vector3 vector2)
-{
-    return Vector3_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z);
-}
-
-Vector3 Vector3_Scale(Vector3 vector, float scalar)
-{
-    return Vector3_New(vector.x * scalar, vector.y * scalar, vector.z * scalar);
-}
-
-Vector3Int Vector3_ToInt(Vector3 vector)
-{
-    return Vector3Int_New((int)vector.x, (int)vector.y, (int)vector.z);
-}
 
 Vector3 Vector3_Normalized(Vector3 vector)
 {
@@ -99,21 +69,6 @@ Vector3 Vector3_Lerp(Vector3 startVector, Vector3 endVector, float time)
 
 #pragma region Vector4
 
-Vector4 Vector4_Add(Vector4 vector1, Vector4 vector2)
-{
-    return Vector4_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w);
-}
-
-Vector4 Vector4_Scale(Vector4 vector, float scalar)
-{
-    return Vector4_New(vector.x * scalar, vector.y * scalar, vector.z * scalar, vector.w * scalar);
-}
-
-Vector4Int Vector4_ToInt(Vector4 vector)
-{
-    return Vector4Int_New((int)vector.x, (int)vector.y, (int)vector.z, (int)vector.w);
-}
-
 Vector4 Vector4_Normalized(Vector4 vector)
 {
     float magnitude = Vector4_Magnitude(vector);
@@ -145,16 +100,6 @@ Vector4 Vector4_Lerp(Vector4 startVector, Vector4 endVector, float time)
 
 #pragma region Vector2Int
 
-Vector2Int Vector2Int_Add(Vector2Int vector1, Vector2Int vector2)
-{
-    return Vector2Int_New(vector1.x + vector2.x, vector1.y + vector2.y);
-}
-
-Vector2Int Vector2Int_Scale(Vector2Int vector, float scalar)
-{
-    return Vector2Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar));
-}
-
 float Vector2Int_Magnitude(Vector2Int vector)
 {
     return sqrtf((float)(vector.x * vector.x + vector.y * vector.y));
@@ -169,21 +114,6 @@ float Vector2Int_Dot(Vector2Int vector1, Vector2Int vector2)
 
 #pragma region Vector3Int
 
-Vector3Int Vector3Int_Add(Vector3Int vector1, Vector3Int vector2)
-{
-    return Vector3Int_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z);
-}
-
-Vector3Int Vector3Int_Scale(Vector3Int vector, float scalar)
-{
-    return Vector3Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar));
-}
-
-Vector3 Vector3Int_ToFloat(Vector3Int vector)
-{
-    return Vector3_New((float)vector.x, (float)vector.y, (float)vector.z);
-}
-
 float Vector3Int_Magnitude(Vector3Int vector)
 {
     return sqrtf((float)(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z));
@@ -197,21 +127,6 @@ float Vector3Int_Dot(Vector3Int vector1, Vector3Int vector2)
 #pragma endregion Vector3Int
 
 #pragma region Vector4Int
-
-Vector4Int Vector4Int_Add(Vector4Int vector1, Vector4Int vector2)
-{
-    return Vector4Int_New(vector1.x + vector2.x, vector1.y + vector2.y, vector1.z + vector2.z, vector1.w + vector2.w);
-}
-
-Vector4Int Vector4Int_Scale(Vector4Int vector, float scalar)
-{
-    return Vector4Int_New((int)((float)vector.x * scalar), (int)((float)vector.y * scalar), (int)((float)vector.z * scalar), (int)((float)vector.w * scalar));
-}
-
-Vector4 Vector4Int_ToFloat(Vector4Int vector)
-{
-    return Vector4_New((float)vector.x, (float)vector.y, (float)vector.z, (float)vector.w);
-}
 
 float Vector4Int_Magnitude(Vector4Int vector)
 {

@@ -36,7 +36,7 @@ static void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int ac
     (void)scanCode;
     (void)mods;
 
-    // RJGlobal_DebugInfo("Key %d action %s", key, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : action == GLFW_REPEAT ? "repeated" : "unknown");
+    // RJ_DebugInfo("Key %d action %s", key, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : action == GLFW_REPEAT ? "repeated" : "unknown");
 
     if (key >= InputKeyCode_Num0 && key <= InputKeyCode_Num9)
     {
@@ -124,7 +124,7 @@ static void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int ac
     }
     else
     {
-        RJGlobal_DebugWarning("Unhandled key input: %d", key);
+        RJ_DebugWarning("Unhandled key input: %d", key);
     }
 }
 
@@ -136,7 +136,7 @@ static void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, 
 {
     (void)window;
 
-    // RJGlobal_DebugInfo("Mouse position updated to (%.2f, %.2f)", positionX, positionY);
+    // RJ_DebugInfo("Mouse position updated to (%.2f, %.2f)", positionX, positionY);
 
     INPUT_MOUSE_POSITION.x = (int)positionX;
     INPUT_MOUSE_POSITION.y = (int)positionY;
@@ -152,7 +152,7 @@ static void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int acti
     (void)window;
     (void)mods;
 
-    // RJGlobal_DebugInfo("Mouse button %d action %s", button, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : "unknown");
+    // RJ_DebugInfo("Mouse button %d action %s", button, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : "unknown");
 
     if (button >= InputMouseButtonCode_Left && button <= InputMouseButtonCode_Fn5)
     {
@@ -170,7 +170,7 @@ static void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int acti
     }
     else
     {
-        RJGlobal_DebugWarning("Unhandled mouse button input: %d", button);
+        RJ_DebugWarning("Unhandled mouse button input: %d", button);
     }
 }
 
@@ -183,7 +183,7 @@ static void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, doub
     (void)window;
     (void)offsetX;
 
-    // RJGlobal_DebugInfo("Mouse scrolled with offset (%.2f, %.2f)", offsetX, offsetY);
+    // RJ_DebugInfo("Mouse scrolled with offset (%.2f, %.2f)", offsetX, offsetY);
 
     INPUT_MOUSE_SCROLL = (float)offsetY;
 }
@@ -192,7 +192,7 @@ static void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, doub
 
 void Input_Initialize(ContextWindow *window)
 {
-    RJGlobal_DebugAssertNullPointerCheck(window);
+    RJ_DebugAssertNullPointerCheck(window);
 
     INPUT_MAIN_WINDOW = window;
 
@@ -207,12 +207,12 @@ void Input_Initialize(ContextWindow *window)
     glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_BUTTON_CALLBACK);
     glfwSetScrollCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_SCROLL_CALLBACK);
 
-    RJGlobal_DebugInfo("Input system initialized successfully");
+    RJ_DebugInfo("Input system initialized successfully");
 }
 
 void Input_ConfigureMouseMode(InputMouseMode mode)
 {
-    RJGlobal_DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
+    RJ_DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
 
     glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, (int)mode);
 }
@@ -234,7 +234,7 @@ void Input_Update(void)
         break;
     }
 
-    for (RJGlobal_Size i = 0; i < INPUT_KEY_NUMBERS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_KEY_NUMBERS_COUNT; i++)
     {
         switch (INPUT_KEY_NUMBERS[i])
         {
@@ -249,7 +249,7 @@ void Input_Update(void)
         }
     }
 
-    for (RJGlobal_Size i = 0; i < INPUT_KEY_ALPHABETS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_KEY_ALPHABETS_COUNT; i++)
     {
         switch (INPUT_KEY_ALPHABETS[i])
         {
@@ -264,7 +264,7 @@ void Input_Update(void)
         }
     }
 
-    for (RJGlobal_Size i = 0; i < INPUT_KEY_SPECIALS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_KEY_SPECIALS_COUNT; i++)
     {
         switch (INPUT_KEY_SPECIALS[i])
         {
@@ -279,7 +279,7 @@ void Input_Update(void)
         }
     }
 
-    for (RJGlobal_Size i = 0; i < INPUT_KEY_FUNCTIONS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_KEY_FUNCTIONS_COUNT; i++)
     {
         switch (INPUT_KEY_FUNCTIONS[i])
         {
@@ -294,7 +294,7 @@ void Input_Update(void)
         }
     }
 
-    for (RJGlobal_Size i = 0; i < INPUT_KEY_CONTROLS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_KEY_CONTROLS_COUNT; i++)
     {
         switch (INPUT_KEY_CONTROLS[i])
         {
@@ -309,7 +309,7 @@ void Input_Update(void)
         }
     }
 
-    for (RJGlobal_Size i = 0; i < INPUT_KEY_MOUSE_BUTTONS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_KEY_MOUSE_BUTTONS_COUNT; i++)
     {
         switch (INPUT_KEY_MOUSE_BUTTONS[i])
         {
@@ -363,7 +363,7 @@ InputState Input_GetKeyState(InputKeyCode key)
     }
     else
     {
-        RJGlobal_DebugWarning("Unhandled key input: %d", key);
+        RJ_DebugWarning("Unhandled key input: %d", key);
         return InputState_Released;
     }
 }
@@ -376,7 +376,7 @@ InputState Input_GetMouseButtonState(InputMouseButtonCode button)
     }
     else
     {
-        RJGlobal_DebugWarning("Unhandled mouse button input: %d", button);
+        RJ_DebugWarning("Unhandled mouse button input: %d", button);
         return InputState_Released;
     }
 }
@@ -393,7 +393,7 @@ Vector2Int Input_GetMousePosition(void)
 
 Vector2Int Input_GetMousePositionDelta(void)
 {
-    return Vector2Int_Add(INPUT_MOUSE_POSITION, Vector2Int_Scale(INPUT_PREVIOUS_MOUSE_POSITION, -1.0f));
+    return Vector2_Sum(INPUT_MOUSE_POSITION, Vector2_Scale(INPUT_PREVIOUS_MOUSE_POSITION, -1));
 }
 
 Vector3 Input_GetMovementVector(void)
