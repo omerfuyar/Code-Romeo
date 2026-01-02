@@ -34,7 +34,7 @@ RJ_Result ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOf
 
     RJ_ReturnAllocate(char, retList->data, initialCapacity *sizeOfItem);
 
-    RJ_DebugInfo("ListArray '%s' created with initial capacity: %u, size of item: %u", title, initialCapacity, sizeOfItem);
+    RJ_DebugInfo("ListArray '%s' created with initial capacity: %u, size of item: %u", retList->title, initialCapacity, sizeOfItem);
     return RJ_OK;
 }
 

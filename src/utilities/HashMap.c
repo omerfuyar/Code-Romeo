@@ -54,7 +54,7 @@ RJ_Result HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfI
 
     RJ_ReturnAllocate(char, retHashMap->data, capacity *sizeOfItem);
 
-    RJ_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", title, capacity, sizeOfItem);
+    RJ_DebugInfo("HashMap '%s' created with initial capacity: %u, size of item: %u", retHashMap->title, capacity, sizeOfItem);
 
     return RJ_OK;
 }

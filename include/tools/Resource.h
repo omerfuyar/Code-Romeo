@@ -35,6 +35,7 @@ typedef struct ResourceImage
 
 #pragma region Helpers
 
+// todo move to maths
 /// @brief Should not be used by user.
 typedef struct Resource_Matrix4
 {

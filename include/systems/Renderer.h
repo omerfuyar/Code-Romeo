@@ -60,7 +60,8 @@ bool Renderer_IsInitialized(void);
 /// @brief Configures the shaders used by the renderer.
 /// @param vertexShaderFile The file path of the vertex shader.
 /// @param fragmentShaderFile The file path of the fragment shader.
-void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
+/// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
+RJ_Result Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
 /// @brief Configures the camera parameters for the renderer.
 /// @param positionReference The reference to the camera's position vector.
@@ -144,7 +145,8 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 /// @param vertexShaderFile The source file for debug vertex shader.
 /// @param fragmentShaderFile The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity);
+/// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
+RJ_Result RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate(void);

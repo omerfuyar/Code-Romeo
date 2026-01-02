@@ -358,15 +358,26 @@ bool Renderer_IsInitialized(void)
     return RENDERER_INITIALIZED;
 }
 
-void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
+RJ_Result Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
 {
     RJ_DebugAssert(RMS.shader.programHandle != 0, "Initialize the renderer before configuring shaders.");
 
     ResourceText *rscVertexShader = NULL;
-    ResourceText_Create(&rscVertexShader, vertexShaderFile);
-    // todo check return value in systems
+    RJ_Result result = ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create renderer vertex shader from file '%s'.", vertexShaderFile.characters);
+        return result;
+    }
+
     ResourceText *rscFragmentShader = NULL;
-    ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    result = ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    if (result != RJ_OK)
+    {
+        ResourceText_Destroy(rscVertexShader);
+        RJ_DebugWarning("Failed to create renderer fragment shader from file '%s'.", fragmentShaderFile.characters);
+        return result;
+    }
 
     GLint glslHasCompiled = 0;
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
@@ -429,6 +440,7 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
     // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
 
     RJ_DebugInfo("Shader program linked and created successfully.");
+    return RJ_OK;
 }
 
 void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference)
@@ -856,10 +868,8 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 
 #pragma region RendererDebug
 
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
+RJ_Result RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
 {
-    ListArray_Create(&RMS.debugShader.vertices, "Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
-
     glGenVertexArrays(1, &RMS.debugShader.vao);
     glGenBuffers(1, &RMS.debugShader.vbo);
 
@@ -867,9 +877,23 @@ void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentSh
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
 
     ResourceText *rscVertexShader = NULL;
-    ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    RJ_Result result = ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create debug renderer vertex shader from file '%s'.", vertexShaderFile.characters);
+        return result;
+    }
+
     ResourceText *rscFragmentShader = NULL;
-    ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    result = ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    if (result != RJ_OK)
+    {
+        ResourceText_Destroy(rscVertexShader);
+        RJ_DebugWarning("Failed to create debug renderer fragment shader from file '%s'.", fragmentShaderFile.characters);
+        return result;
+    }
+
+    ListArray_Create(&RMS.debugShader.vertices, "Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
@@ -928,6 +952,7 @@ void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentSh
     glBindVertexArray(0);
 
     RJ_DebugInfo("Debug Renderer initialized successfully.");
+    return RJ_OK;
 }
 
 void RendererDebug_Terminate(void)

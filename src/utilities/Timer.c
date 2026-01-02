@@ -67,6 +67,7 @@ Timer Timer_Create(const char *title)
     timer.startTime = (TimePoint){0, 0};
     timer.endTime = (TimePoint){0, 0};
 
+    RJ_DebugInfo("Timer '%s' created.", timer.title);
     return timer;
 }
 

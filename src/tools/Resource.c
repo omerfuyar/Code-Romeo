@@ -358,7 +358,9 @@ RJ_Result ResourceText_Create(ResourceText **retResource, StringView file)
         }
     }
 
-    resource->lineCount = lineCount;
+    resource->lineCount = lineCount + 1;
+
+    rewind(fileHandle);
 
     // on heap because the buffer is too large for stack
     char *dataBuffer = NULL;
