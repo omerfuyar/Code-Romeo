@@ -36,7 +36,7 @@ typedef void (*Context_VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int,
 /// @brief Initialize the context system and create the main window
 /// @param retContext Pointer to store the address of the main window context structure
 /// @return RJ_OK on success, or RJ_ERROR_DEPENDENCY if GLFW fails. Analyze the logs for more information.
-RJ_ResultDef Context_Initialize(ContextWindow **retContext);
+RJ_ResultWarn Context_Initialize(ContextWindow **retContext);
 
 /// @brief Clean up and terminate the context system
 void Context_Terminate(void);

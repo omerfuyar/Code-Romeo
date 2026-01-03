@@ -72,7 +72,7 @@ struct AUDIO_MAIN_SCENE
 
 #pragma endregion Source Only
 
-RJ_ResultDef Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences)
+RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
 
@@ -182,7 +182,7 @@ void Audio_Update(void)
     ma_engine_listener_set_direction(&AMS.engine, 0, AMS.listener.rotationReference->x, AMS.listener.rotationReference->y, AMS.listener.rotationReference->z); // todo forward rotation
 }
 
-RJ_ResultDef Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity, StringView audioFile)
+RJ_ResultWarn Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity, StringView audioFile)
 {
     RJ_DebugAssert(AMS.data.count + AMS.data.freeIndices.count < AMS.data.capacity, "Maximum audio component capacity of %u reached.", AMS.data.capacity);
 

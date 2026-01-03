@@ -236,7 +236,7 @@ static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint
 
 #pragma region Renderer
 
-RJ_ResultDef Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
+RJ_ResultWarn Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
 {
     RJ_DebugAssertNullPointerCheck(window);
 
@@ -358,7 +358,7 @@ bool Renderer_IsInitialized(void)
     return RENDERER_INITIALIZED;
 }
 
-RJ_ResultDef Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
+RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
 {
     RJ_DebugAssert(RMS.shader.programHandle != 0, "Initialize the renderer before configuring shaders.");
 
@@ -487,7 +487,7 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
     }
 }
 
-RJ_ResultDef Renderer_Resize(RJ_Size newBatchCapacity)
+RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
 {
     RJ_DebugAssert(newBatchCapacity > RMS.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RMS.data.count);
 
@@ -740,7 +740,7 @@ void Renderer_Render(void)
     glFinish();
 }
 
-RJ_ResultDef Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
+RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
 {
     RJ_DebugAssert(RMS.data.count + RMS.data.freeIndices.count < RMS.data.capacity, "Maximum renderer batch capacity of %u reached.", RMS.data.capacity); // todo expand capacity
 
@@ -802,7 +802,7 @@ void Renderer_BatchDestroy(RendererBatch batch)
     RMS.data.count--;
 }
 
-RJ_ResultDef Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity)
+RJ_ResultWarn Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity)
 {
     rmsAssertBatch(batch);
     RJ_DebugAssertNullPointerCheck(positionReferences);
@@ -876,7 +876,7 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 
 #pragma region RendererDebug
 
-RJ_ResultDef RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
+RJ_ResultWarn RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
 {
     glGenVertexArrays(1, &RMS.debugShader.vao);
     glGenBuffers(1, &RMS.debugShader.vbo);

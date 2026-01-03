@@ -24,7 +24,7 @@ typedef RJ_Size PhysicsComponent;
 /// @param gravity The gravity to be applied to components.
 /// @param elasticity The elasticity to be applied to components (0-1).
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultDef Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity);
+RJ_ResultWarn Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity);
 
 /// @brief Destroys a physics scene and all its components.
 void Physics_Terminate(void);
@@ -33,7 +33,7 @@ void Physics_Terminate(void);
 /// @param positionReferences A pointer to the start of the new position vector references.
 /// @param newCapacity The maximum number of position vectors available.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultDef Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity);
+RJ_ResultWarn Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity);
 
 /// @brief Checks for collision between two AABB colliders.
 /// @param component1 The first component.

@@ -20,7 +20,7 @@ typedef struct ListLinkedNode
 /// @param sizeOfData Size of the data to be stored in the node.
 /// @param data Pointer to the data to store inside the node.
 /// @return The created ListLinkedNode struct.
-static RJ_ResultDef ListLinkedNode_Create(ListLinkedNode **retNode, RJ_Size sizeOfData, const void *data)
+static RJ_Result ListLinkedNode_Create(ListLinkedNode **retNode, RJ_Size sizeOfData, const void *data)
 {
     ListLinkedNode *node = NULL;
     RJ_ReturnAllocate(ListLinkedNode, node, 1);
@@ -128,8 +128,6 @@ ListLinked ListLinked_Create(const char *title, RJ_Size sizeOfItem)
     list.count = 0;
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
-
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(title);
 
     if (title == NULL)
     {

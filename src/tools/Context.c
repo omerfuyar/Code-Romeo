@@ -16,7 +16,7 @@ static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 
 #pragma endregion Source Only
 
-RJ_ResultDef Context_Initialize(ContextWindow **retContext)
+RJ_ResultWarn Context_Initialize(ContextWindow **retContext)
 {
     glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
 

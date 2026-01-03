@@ -27,12 +27,10 @@ static RJ_Size HashMap_Hash(const HashMap *map, const char *key)
 
 #pragma endregion Source Only
 
-RJ_ResultDef HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfItem, RJ_Size capacity)
+RJ_Result HashMap_Create(HashMap *retHashMap, const char *title, RJ_Size sizeOfItem, RJ_Size capacity)
 {
     retHashMap->capacity = capacity;
     retHashMap->sizeOfItem = sizeOfItem;
-
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(title);
 
     if (title == NULL)
     {

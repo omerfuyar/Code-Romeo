@@ -202,7 +202,7 @@ static void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, Physi
 
 #pragma endregion Source Only
 
-RJ_ResultDef Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
+RJ_ResultWarn Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
 
@@ -267,7 +267,7 @@ void Physics_Terminate(void)
     RJ_DebugInfo("Physics terminated successfully.");
 }
 
-RJ_ResultDef Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity)
+RJ_ResultWarn Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
     RJ_DebugAssert(newCapacity > PMS.data.count, "New component capacity must be greater than current physics component count.");

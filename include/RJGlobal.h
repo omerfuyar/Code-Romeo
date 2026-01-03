@@ -178,11 +178,11 @@ typedef enum RJ_Result
 } RJ_Result;
 
 #if RJ_COMPILER == RJ_COMPILER_GCC || RJ_COMPILER == RJ_COMPILER_CLANG
-#define RJ_ResultDef __attribute__((warn_unused_result)) RJ_Result
+#define RJ_ResultWarn __attribute__((warn_unused_result)) RJ_Result
 #elif RJ_COMPILER == RJ_COMPILER_MSVC
-#define RJ_ResultDef _Check_return_ RJ_Result
+#define RJ_ResultWarn _Check_return_ RJ_Result
 #else
-#define RJ_ResultDef RJ_Result
+#define RJ_ResultWarn RJ_Result
 #endif
 
 #pragma endregion Typedefs
@@ -198,7 +198,7 @@ typedef enum RJ_Result
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
 /// @note The log message is written to a file named 'RJ_DEBUG_FILE_NAME' macro which is defined in the header. Directory and name can be changed by modifying the macro.
-RJ_ResultDef RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
+RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"

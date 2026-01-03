@@ -31,7 +31,7 @@ typedef struct ListArray
 /// @param sizeOfItem Size of the item type to store in.
 /// @param initialCapacity How many items can hold in this ListArray. Can be resized later on.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultDef ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOfItem, RJ_Size initialCapacity);
+RJ_Result ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOfItem, RJ_Size initialCapacity);
 
 /// @brief Destroyer function for ListArray.
 /// @param list ListArray to destroy.
