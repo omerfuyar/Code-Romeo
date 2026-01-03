@@ -129,8 +129,6 @@ ListLinked ListLinked_Create(const char *title, RJ_Size sizeOfItem)
     list.sizeOfItem = sizeOfItem;
     list.head = NULL;
 
-    RJ_Size nameOfTypeLength = (RJ_Size)strlen(title);
-
     if (title == NULL)
     {
         title = "ListLinked";
@@ -147,7 +145,7 @@ ListLinked ListLinked_Create(const char *title, RJ_Size sizeOfItem)
     memcpy(list.title, title, titleLength);
     list.title[titleLength] = '\0';
 
-    RJ_DebugInfo("ListLinked '%s' created with size of item: %u", title, sizeOfItem);
+    RJ_DebugInfo("ListLinked '%s' created with capacity: %u, size of item: %u", list.title, list.count, sizeOfItem);
 
     return list;
 }

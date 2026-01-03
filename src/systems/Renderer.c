@@ -236,7 +236,7 @@ static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint
 
 #pragma region Renderer
 
-RJ_Result Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
+RJ_ResultWarn Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity)
 {
     RJ_DebugAssertNullPointerCheck(window);
 
@@ -295,9 +295,9 @@ void Renderer_Terminate(void)
 {
     RMS.window = NULL;
 
-    for (RJ_Size batch = 0; batch < RMS.data.count; batch++)
+    for (RJ_Size batch = RMS.data.count; batch > 0; batch--)
     {
-        Renderer_BatchDestroy(batch);
+        Renderer_BatchDestroy(batch - 1);
     }
 
     free(RMS.data.batches);
@@ -358,15 +358,26 @@ bool Renderer_IsInitialized(void)
     return RENDERER_INITIALIZED;
 }
 
-void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
+RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
 {
     RJ_DebugAssert(RMS.shader.programHandle != 0, "Initialize the renderer before configuring shaders.");
 
     ResourceText *rscVertexShader = NULL;
-    ResourceText_Create(&rscVertexShader, vertexShaderFile);
-    // todo check return value in systems
+    RJ_Result result = ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create renderer vertex shader from file '%s'.", vertexShaderFile.characters);
+        return result;
+    }
+
     ResourceText *rscFragmentShader = NULL;
-    ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    result = ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    if (result != RJ_OK)
+    {
+        ResourceText_Destroy(rscVertexShader);
+        RJ_DebugWarning("Failed to create renderer fragment shader from file '%s'.", fragmentShaderFile.characters);
+        return result;
+    }
 
     GLint glslHasCompiled = 0;
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
@@ -429,6 +440,7 @@ void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentS
     // glBindBufferRange(GL_UNIFORM_BUFFER, RENDERER_UBO_MATRICES_BINDING, scene.uboModelMatrices, 0, RENDERER_SCENE_MAX_OBJECT_COUNT);
 
     RJ_DebugInfo("Shader program linked and created successfully.");
+    return RJ_OK;
 }
 
 void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference)
@@ -475,7 +487,7 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
     }
 }
 
-RJ_Result Renderer_Resize(RJ_Size newBatchCapacity)
+RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
 {
     RJ_DebugAssert(newBatchCapacity > RMS.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RMS.data.count);
 
@@ -728,7 +740,7 @@ void Renderer_Render(void)
     glFinish();
 }
 
-RJ_Result Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
+RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences)
 {
     RJ_DebugAssert(RMS.data.count + RMS.data.freeIndices.count < RMS.data.capacity, "Maximum renderer batch capacity of %u reached.", RMS.data.capacity); // todo expand capacity
 
@@ -748,9 +760,17 @@ RJ_Result Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vect
     ListArray_Create(&rmsBatch(newBatch).data.freeIndices, "RJ_Size", sizeof(RJ_Size), RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
     RJ_ReturnAllocate(RJ_Size, rmsBatch(newBatch).components.entities, initialComponentCapacity,
-                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices););
-    RJ_ReturnAllocate(Resource_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity);
-    RJ_ReturnAllocate(uint8_t, rmsBatch(newBatch).components.flags, initialComponentCapacity);
+                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
+                      ListArray_Add(&RMS.data.freeIndices, &newBatch););
+    RJ_ReturnAllocate(Resource_Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity,
+                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
+                      ListArray_Add(&RMS.data.freeIndices, &newBatch);
+                      free(rmsBatch(newBatch).components.entities););
+    RJ_ReturnAllocate(uint8_t, rmsBatch(newBatch).components.flags, initialComponentCapacity,
+                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
+                      ListArray_Add(&RMS.data.freeIndices, &newBatch);
+                      free(rmsBatch(newBatch).components.entities);
+                      free(rmsBatch(newBatch).components.objectMatrices););
 
     rmsBatch(newBatch).components.positionReferences = positionReferences;
     rmsBatch(newBatch).components.rotationReferences = rotationReferences;
@@ -782,7 +802,7 @@ void Renderer_BatchDestroy(RendererBatch batch)
     RMS.data.count--;
 }
 
-RJ_Result Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity)
+RJ_ResultWarn Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity)
 {
     rmsAssertBatch(batch);
     RJ_DebugAssertNullPointerCheck(positionReferences);
@@ -856,10 +876,8 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 
 #pragma region RendererDebug
 
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
+RJ_ResultWarn RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity)
 {
-    ListArray_Create(&RMS.debugShader.vertices, "Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
-
     glGenVertexArrays(1, &RMS.debugShader.vao);
     glGenBuffers(1, &RMS.debugShader.vbo);
 
@@ -867,9 +885,23 @@ void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentSh
     char glslInfoLog[RENDERER_OPENGL_INFO_LOG_BUFFER] = {0};
 
     ResourceText *rscVertexShader = NULL;
-    ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    RJ_Result result = ResourceText_Create(&rscVertexShader, vertexShaderFile);
+    if (result != RJ_OK)
+    {
+        RJ_DebugWarning("Failed to create debug renderer vertex shader from file '%s'.", vertexShaderFile.characters);
+        return result;
+    }
+
     ResourceText *rscFragmentShader = NULL;
-    ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    result = ResourceText_Create(&rscFragmentShader, fragmentShaderFile);
+    if (result != RJ_OK)
+    {
+        ResourceText_Destroy(rscVertexShader);
+        RJ_DebugWarning("Failed to create debug renderer fragment shader from file '%s'.", fragmentShaderFile.characters);
+        return result;
+    }
+
+    ListArray_Create(&RMS.debugShader.vertices, "Renderer Debug Vertex", sizeof(RendererDebugVertex), initialVertexCapacity);
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const GLchar *const *)&rscVertexShader->data.characters, NULL);
@@ -928,6 +960,7 @@ void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentSh
     glBindVertexArray(0);
 
     RJ_DebugInfo("Debug Renderer initialized successfully.");
+    return RJ_OK;
 }
 
 void RendererDebug_Terminate(void)

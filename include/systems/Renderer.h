@@ -48,7 +48,7 @@ typedef RJ_Size RendererBatch;
 /// @param window The context window to render to.
 /// @param initialBatchCapacity The initial capacity for renderer batches.
 /// @return RJ_OK on success, RJ_ERROR_DEPENDENCY if glad or GLFW fails or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_Result Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity);
+RJ_ResultWarn Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
 void Renderer_Terminate(void);
@@ -60,7 +60,8 @@ bool Renderer_IsInitialized(void);
 /// @brief Configures the shaders used by the renderer.
 /// @param vertexShaderFile The file path of the vertex shader.
 /// @param fragmentShaderFile The file path of the fragment shader.
-void Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
+/// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
+RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
 /// @brief Configures the camera parameters for the renderer.
 /// @param positionReference The reference to the camera's position vector.
@@ -80,7 +81,7 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth);
 /// @brief Resizes the renderer's batch capacity.
 /// @param newBatchCapacity The new capacity for renderer batches.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_Result Renderer_Resize(RJ_Size newBatchCapacity);
+RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity);
 
 /// @brief Updates the renderer system. Call before using any renderer function in during the frame.
 void Renderer_Update(void);
@@ -98,7 +99,7 @@ void Renderer_Render(void);
 /// @param rotationReferences The array of rotation references for components.
 /// @param scaleReferences The array of scale references for components.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if model loading fails.
-RJ_Result Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
+RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
 
 /// @brief Destroys a renderer batch.
 /// @param batch The handle to the renderer batch to destroy.
@@ -111,7 +112,7 @@ void Renderer_BatchDestroy(RendererBatch batch);
 /// @param scaleReferences The array of scale references for components.
 /// @param newComponentCapacity The new capacity for components in the batch.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_Result Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity);
+RJ_ResultWarn Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.
@@ -144,7 +145,8 @@ void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent componen
 /// @param vertexShaderFile The source file for debug vertex shader.
 /// @param fragmentShaderFile The source file for debug fragment shader.
 /// @param initialVertexCapacity The initial capacity for the vertex buffer.
-void RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity);
+/// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
+RJ_ResultWarn RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity);
 
 /// @brief Terminator for renderer debug functions.
 void RendererDebug_Terminate(void);

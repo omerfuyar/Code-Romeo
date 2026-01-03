@@ -177,6 +177,14 @@ typedef enum RJ_Result
     RJ_ERROR_NOT_FOUND,
 } RJ_Result;
 
+#if RJ_COMPILER == RJ_COMPILER_GCC || RJ_COMPILER == RJ_COMPILER_CLANG
+#define RJ_ResultWarn __attribute__((warn_unused_result)) RJ_Result
+#elif RJ_COMPILER == RJ_COMPILER_MSVC
+#define RJ_ResultWarn _Check_return_ RJ_Result
+#else
+#define RJ_ResultWarn RJ_Result
+#endif
+
 #pragma endregion Typedefs
 
 #pragma region Functions and Macros
