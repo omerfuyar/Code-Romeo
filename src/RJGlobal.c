@@ -28,7 +28,7 @@ RJ_VoidFunIntCharPtr RJ_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
-RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
+RJ_ResultDef RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
     struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
     struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};

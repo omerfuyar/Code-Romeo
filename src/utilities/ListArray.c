@@ -7,7 +7,7 @@
 #define ListArray_Min(a, b) ((a) < (b) ? (a) : (b))
 #define ListArray_Max(a, b) ((a) > (b) ? (a) : (b))
 
-RJ_Result ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOfItem, RJ_Size initialCapacity)
+RJ_ResultDef ListArray_Create(ListArray *retList, const char *title, RJ_Size sizeOfItem, RJ_Size initialCapacity)
 {
     RJ_DebugAssert(initialCapacity > 0, "Capacity of %s list can not be 0.", title);
 
