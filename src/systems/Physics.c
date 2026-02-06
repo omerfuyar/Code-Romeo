@@ -45,12 +45,12 @@ struct PHYSICS_MAIN_SCENE
 #define pmsPositionReference(component) (PMS.data.positionReferences[pmsEntity(component)])
 
 #define pmsIsActive(component) (pmsFlag(component) & PHYSICS_FLAG_ACTIVE)
-#define pmsSetActive(component, isActive) (pmsFlag(component) = isActive ? (pmsFlag(component) | PHYSICS_FLAG_ACTIVE) : (pmsFlag(component) & ~PHYSICS_FLAG_ACTIVE))
+#define pmsSetActive(component, isActive) (pmsFlag(component) = ((isActive) ? (pmsFlag(component) | PHYSICS_FLAG_ACTIVE) : (pmsFlag(component) & ~PHYSICS_FLAG_ACTIVE)))
 
 #define pmsIsStatic(component) (pmsFlag(component) & PHYSICS_FLAG_STATIC)
-#define pmsSetStatic(component, isStatic) (pmsFlag(component) = isStatic ? (pmsFlag(component) | PHYSICS_FLAG_STATIC) : (pmsFlag(component) & ~PHYSICS_FLAG_STATIC))
+#define pmsSetStatic(component, isStatic) (pmsFlag(component) = ((isStatic) ? (pmsFlag(component) | PHYSICS_FLAG_STATIC) : (pmsFlag(component) & ~PHYSICS_FLAG_STATIC)))
 
-#define pmsAssertComponent(component) RJ_DebugAssert(component < PMS.data.count + PMS.data.freeIndices.count && pmsEntity(component) != RJ_INDEX_INVALID && pmsIsActive(component), "Physics component %u either exceeds maximum possible index %u, invalid or inactive.", component, PMS.data.count + PMS.data.freeIndices.count)
+#define pmsAssertComponent(component) RJ_DebugAssert((component) < PMS.data.count + PMS.data.freeIndices.count && pmsEntity(component) != RJ_INDEX_INVALID && pmsIsActive(component), "Physics component %u either exceeds maximum possible index %u, invalid or inactive.", (component), PMS.data.count + PMS.data.freeIndices.count)
 
 /// @brief Resolve a collision between a static and dynamic physics component.
 /// @param staticComponent Static physics component.

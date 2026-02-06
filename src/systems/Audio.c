@@ -5,28 +5,7 @@
 
 #include "tools/Resource.h"
 
-#define MINIAUDIO_IMPLEMENTATION
-
-#if RJ_COMPILER_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-#elif RJ_COMPILER_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weverything"
-#elif RJ_COMPILER_MSVC
-#pragma warning(push, 0)
-#endif
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "miniaudio/miniaudio.h"
-
-#if RJ_COMPILER_CLANG
-#pragma clang diagnostic pop
-#elif RJ_COMPILER_GCC
-#pragma GCC diagnostic pop
-#elif RJ_COMPILER_MSVC
-#pragma warning(pop)
-#endif
 
 #define AUDIO_FLAG_ACTIVE (1 << 0)
 
@@ -66,7 +45,7 @@ struct AUDIO_MAIN_SCENE
 #define amsFlag(component) (AMS.components.flags[component])
 
 #define amsIsActive(component) (amsFlag(component) & AUDIO_FLAG_ACTIVE)
-#define amsSetActive(component, isActive) (amsFlag(component) = isActive ? (amsFlag(component) | AUDIO_FLAG_ACTIVE) : (amsFlag(component) & ~AUDIO_FLAG_ACTIVE))
+#define amsSetActive(component, isActive) (amsFlag(component) = ((isActive) ? (amsFlag(component) | AUDIO_FLAG_ACTIVE) : (amsFlag(component) & ~AUDIO_FLAG_ACTIVE)))
 
 #define amsAssertComponent(component) RJ_DebugAssert(component < AMS.data.count + AMS.data.freeIndices.count && amsEntity(component) != RJ_INDEX_INVALID && amsIsActive(component), "Audio component %u either exceeds maximum possible index %u, invalid or inactive.", component, AMS.data.count + AMS.data.freeIndices.count)
 
@@ -151,7 +130,7 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
     AMS.listener.rotationReference = rotationReference;
 }
 
-void Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponentCapacity)
+RJ_Result Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponentCapacity)
 {
     RJ_DebugAssertNullPointerCheck(positionReferences);
     RJ_DebugAssert(newComponentCapacity > AMS.data.count, "New component capacity must be greater than current audio component count");
@@ -164,6 +143,7 @@ void Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponent
     RJ_ReturnReallocate(uint8_t, AMS.components.flags, AMS.data.capacity);
 
     RJ_DebugInfo("Audio position references reconfigured with new capacity %u.", AMS.data.capacity);
+    return RJ_OK;
 }
 
 void Audio_Update(void)
@@ -244,7 +224,7 @@ void Audio_ComponentSetActive(AudioComponent component, bool isActive)
 {
     amsAssertComponent(component);
 
-    amsSetActive(component, isActive);
+    amsSetActive(component, (uint8_t)isActive);
 }
 
 bool Audio_ComponentIsPlaying(AudioComponent component)
@@ -276,7 +256,7 @@ void Audio_ComponentRewind(AudioComponent component, float interval)
 
     ma_sound_get_length_in_pcm_frames((ma_sound *)&amsSound(component), &totalFrames);
 
-    ma_uint64 targetFrame = (ma_uint64)(totalFrames * Maths_Clamp(interval, 0.0f, 1.0f));
+    ma_uint64 targetFrame = (ma_uint64)((float)totalFrames * Maths_Clamp(interval, 0.0f, 1.0f));
 
     ma_sound_seek_to_pcm_frame((ma_sound *)&amsSound(component), targetFrame);
 }

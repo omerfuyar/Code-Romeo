@@ -10,25 +10,7 @@
 
 #include "glad/glad.h"
 
-#if RJ_COMPILER_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-#elif RJ_COMPILER_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weverything"
-#elif RJ_COMPILER_MSVC
-#pragma warning(push, 0)
-#endif
-
 #include "cglm/cglm.h"
-
-#if RJ_COMPILER_CLANG
-#pragma clang diagnostic pop
-#elif RJ_COMPILER_GCC
-#pragma GCC diagnostic pop
-#elif RJ_COMPILER_MSVC
-#pragma warning(pop)
-#endif
 
 #define RENDERER_OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
 #define RENDERER_FLAG_ACTIVE (1 << 0)
@@ -181,7 +163,7 @@ struct RENDERER_MAIN_SCENE
 #define rmsFlag(batch, component) (rmsBatch(batch).components.flags[component])
 
 #define rmsIsActive(batch, component) (rmsFlag(batch, component) & RENDERER_FLAG_ACTIVE)
-#define rmsSetActive(batch, component, isActive) (rmsFlag(batch, component) = isActive ? (rmsFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsFlag(batch, component) & ~RENDERER_FLAG_ACTIVE))
+#define rmsSetActive(batch, component, isActive) (rmsFlag(batch, component) = ((isActive) ? (rmsFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsFlag(batch, component) & ~RENDERER_FLAG_ACTIVE)))
 
 #define rmsAssertBatch(batch) RJ_DebugAssert(batch < RMS.data.count + RMS.data.freeIndices.count, "Renderer batch %u exceeds maximum batch count %u.", batch, RMS.data.count)
 #define rmsAssertComponent(batch, component) RJ_DebugAssert(component < rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count && rmsEntity(batch, component) != RJ_INDEX_INVALID && rmsIsActive(batch, component), "Renderer component %u either exceeds maximum possible index %u, invalid or inactive.", component, rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count)

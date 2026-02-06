@@ -1,5 +1,6 @@
 #define SHUC_NO_RUN_LOG
 #define SHUC_MAX_COMMAND_BUFFER_SIZE 8192
+#define SHUC_ENABLE_INCREMENTAL
 #define SHUILD_IMPLEMENTATION
 #include "dependencies/shuild/shuild.h"
 
@@ -18,7 +19,7 @@ int main(int argc, char **argv)
 {
     if (argc < 3)
     {
-        goto usageError;
+        SHU_LogError(1, "Usage is <compiler> <d/r> [clean]");
     }
 
     char isDebug = -1;
@@ -37,7 +38,7 @@ int main(int argc, char **argv)
     }
 
     SHU_CompilerTryConfigure(argv[1]);
-    SHU_Automate(argc, argv);
+    SHU_UtilAutomate(argc, argv);
 
     SHU_CompilerSetFlags("-w -DCGLM_STATIC");
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
@@ -50,35 +51,48 @@ int main(int argc, char **argv)
 
     if (argc > 3)
     {
-        SHU_CompilerOptimization(SHUM_COMPILER_OPTIMIZATION_HIGH);
-
-        ShowBuildConfig(SHUM_COLOR_BLUE("Romeo Dependencies"), argv[1], isDebug);
-
-        SHU_ModuleBegin("cglm");
-        SHU_ModuleAddIncludeDirectory("dependencies/cglm/include/");
-        SHU_ModuleAddSourceDirectory("dependencies/cglm/src/");
-        SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
-
-        SHU_ModuleBegin("glfw");
-        SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
-        SHU_ModuleAddSourceDirectory("dependencies/glfw/src/");
-        SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+        SHU_LogWarning("Performing clean build...");
+        SHU_CacheClearAll();
     }
+
+    SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH);
+
+    ShowBuildConfig(SHUM_COLOR_BLUE("Romeo Dependencies"), argv[1], isDebug);
+
+    SHU_ModuleBegin("cglm", "dependencies/cglm/");
+    SHU_ModuleAddIncludeDirectory("include/");
+    SHU_ModuleAddSourceDirectory("src/");
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+
+    SHU_ModuleBegin("glfw", "dependencies/glfw/");
+    SHU_ModuleAddIncludeDirectory("include/");
+    SHU_ModuleAddSourceDirectory("src/");
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+
+    SHU_ModuleBegin("glad", "dependencies/glad/");
+    SHU_ModuleAddIncludeDirectory("include/");
+    SHU_ModuleAddSourceFile("src/glad.c");
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+
+    SHU_ModuleBegin("miniaudio", "dependencies/miniaudio/");
+    SHU_ModuleAddSourceFile("miniaudio.c");
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
+
+    SHU_ModuleBegin("stb", "dependencies/stb/");
+    SHU_ModuleAddSourceFile("stb.c");
+    SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     SHU_CompilerClearFlags();
 
     if (isDebug)
     {
-        SHU_CompilerDebug();
-        SHU_CompilerWarning(SHUM_COMPILER_WARNING_HIGH, 1);
-        if (!strcmp(argv[1], "clang") || !strcmp(argv[1], "gcc"))
-        {
-            SHU_CompilerAddFlags("-Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -Wno-format-nonliteral -Wno-language-extension-token");
-        }
+        SHU_CompilerAddFlags(SHUM_FLAGS_DEBUG);
+        SHU_CompilerAddFlags(SHUM_FLAGS_WARNING_HIGH SHUM_FLAGS_WARNING_ERROR);
+        SHU_CompilerAddFlags("-Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -Wno-format-nonliteral -Wno-language-extension-token");
     }
     else
     {
-        SHU_CompilerOptimization(SHUM_COMPILER_OPTIMIZATION_HIGH);
+        SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH);
     }
 
     SHU_CompilerAddFlags("-DCGLM_STATIC");
@@ -90,7 +104,7 @@ int main(int argc, char **argv)
 
     ShowBuildConfig(SHUM_COLOR_BLUE("Romeo"), argv[1], isDebug);
 
-    SHU_ModuleBegin("Code-Romeo");
+    SHU_ModuleBegin("Code-Romeo", "");
 
     SHU_ModuleAddIncludeDirectory("include/");
     SHU_ModuleAddIncludeDirectory("dependencies/");
@@ -99,12 +113,11 @@ int main(int argc, char **argv)
     SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
 
     SHU_ModuleAddSourceDirectory("src/");
-    SHU_ModuleAddSourceFile("dependencies/glad/src/glad.c");
 
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     return 0;
 
 usageError:
-    SHU_LogError(1, "Usage is <compiler> <d/r> [all]");
+    SHU_LogError(1, "Usage is <compiler> <d/r> [all] [clean]");
 }
