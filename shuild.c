@@ -40,14 +40,9 @@ int main(int argc, char **argv)
     SHU_CompilerTryConfigure(argv[1]);
     SHU_UtilAutomate(argc, argv);
 
-    SHU_CompilerSetFlags("-w -DCGLM_STATIC");
-#if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
-    SHU_CompilerAddFlags("-D_GLFW_WIN32");
-#elif SHUM_HOST_PLATFORM == SHUM_PLATFORM_LINUX
-    SHU_CompilerAddFlags("-D_GLFW_X11");
-#endif
-
     char *arcOutputDirectory = isDebug ? "build/debug/" : "build/release/";
+
+    SHU_CacheConfigure(isDebug ? ".shu/debug/" : ".shu/release/");
 
     if (argc > 3)
     {
@@ -56,17 +51,24 @@ int main(int argc, char **argv)
     }
 
     SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH);
+    SHU_CompilerSetFlags("-w -DCGLM_STATIC");
+
+#if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
+    SHU_CompilerAddFlags("-D_GLFW_WIN32");
+#elif SHUM_HOST_PLATFORM == SHUM_PLATFORM_LINUX
+    SHU_CompilerAddFlags("-D_GLFW_X11");
+#endif
 
     ShowBuildConfig(SHUM_COLOR_BLUE("Romeo Dependencies"), argv[1], isDebug);
 
     SHU_ModuleBegin("cglm", "dependencies/cglm/");
     SHU_ModuleAddIncludeDirectory("include/");
-    SHU_ModuleAddSourceDirectory("src/");
+    SHU_ModuleAddSourceFile("src/");
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     SHU_ModuleBegin("glfw", "dependencies/glfw/");
     SHU_ModuleAddIncludeDirectory("include/");
-    SHU_ModuleAddSourceDirectory("src/");
+    SHU_ModuleAddSourceFile("src/");
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     SHU_ModuleBegin("glad", "dependencies/glad/");
@@ -83,6 +85,8 @@ int main(int argc, char **argv)
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     SHU_CompilerClearFlags();
+
+    SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C23);
 
     if (isDebug)
     {
@@ -112,12 +116,9 @@ int main(int argc, char **argv)
     SHU_ModuleAddIncludeDirectory("dependencies/glad/include/");
     SHU_ModuleAddIncludeDirectory("dependencies/glfw/include/");
 
-    SHU_ModuleAddSourceDirectory("src/");
+    SHU_ModuleAddSourceFile("src/");
 
     SHU_ModuleCompile(arcOutputDirectory, SHUM_MODULE_LIBRARY_STATIC);
 
     return 0;
-
-usageError:
-    SHU_LogError(1, "Usage is <compiler> <d/r> [all] [clean]");
 }
