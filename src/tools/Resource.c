@@ -5,28 +5,8 @@
 #include "utilities/ListLinked.h"
 
 #include "glad/glad.h"
-
-#if RJ_COMPILER_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-#elif RJ_COMPILER_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weverything"
-#elif RJ_COMPILER_MSVC
-#pragma warning(push, 0)
-#endif
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 #include "cglm/cglm.h"
-
-#if RJ_COMPILER_CLANG
-#pragma clang diagnostic pop
-#elif RJ_COMPILER_GCC
-#pragma GCC diagnostic pop
-#elif RJ_COMPILER_MSVC
-#pragma warning(pop)
-#endif
 
 #pragma region Source Only
 
@@ -338,7 +318,7 @@ RJ_ResultWarn ResourceText_Create(ResourceText **retResource, StringView file)
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
 #if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
-    String_Replace(&fullPath, scv("\\"), scv("/"));
+    String_Replace(&fullPath, scv(scl("\\")), scv(scl("/")));
 #endif
 
     RJ_Size lineCount = 0;
@@ -433,7 +413,7 @@ RJ_ResultWarn ResourceImage_Create(ResourceImage **retResourceImage, StringView 
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
 #if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
-    String_Replace(&fullPath, scv("\\"), scv("/"));
+    String_Replace(&fullPath, scv(scl("\\")), scv(scl("/")));
 #endif
 
     stbi_set_flip_vertically_on_load(true);

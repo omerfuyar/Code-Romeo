@@ -2,6 +2,7 @@
 #define SHUC_MAX_COMMAND_BUFFER_SIZE 8192
 #define SHUC_ENABLE_INCREMENTAL
 #define SHUILD_IMPLEMENTATION
+#define SHUC_SHORT_LOG
 #include "dependencies/shuild/shuild.h"
 
 void ShowBuildConfig(const char *header, const char *compiler, char isDebug)
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        return 2;
+        SHU_LogError(2, "Specify debug or release with second parameter <d/r>.");
     }
 
     SHU_CompilerTryConfigure(argv[1]);
@@ -50,8 +51,8 @@ int main(int argc, char **argv)
         SHU_CacheClearAll();
     }
 
-    SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH);
-    SHU_CompilerSetFlags("-w -DCGLM_STATIC");
+    SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH SHUM_FLAGS_STANDARD_C99);
+    SHU_CompilerAddFlags("-w -DCGLM_STATIC");
 
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
     {
         SHU_CompilerAddFlags(SHUM_FLAGS_DEBUG);
         SHU_CompilerAddFlags(SHUM_FLAGS_WARNING_HIGH SHUM_FLAGS_WARNING_ERROR);
-        SHU_CompilerAddFlags("-Wno-unused-function -Wno-gnu-zero-variadic-macro-arguments -Wno-format-nonliteral -Wno-language-extension-token");
+        SHU_CompilerAddFlags("-Wno-format-nonliteral -Wno-language-extension-token");
     }
     else
     {

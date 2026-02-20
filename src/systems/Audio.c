@@ -45,7 +45,7 @@ struct AUDIO_MAIN_SCENE
 #define amsFlag(component) (AMS.components.flags[component])
 
 #define amsIsActive(component) (amsFlag(component) & AUDIO_FLAG_ACTIVE)
-#define amsSetActive(component, isActive) (amsFlag(component) = ((isActive) ? (amsFlag(component) | AUDIO_FLAG_ACTIVE) : (amsFlag(component) & ~AUDIO_FLAG_ACTIVE)))
+#define amsSetActive(component, isActive) (amsFlag(component) = ((isActive) ? (amsFlag(component) | AUDIO_FLAG_ACTIVE) : (amsFlag(component) & (uint8_t)~AUDIO_FLAG_ACTIVE)))
 
 #define amsAssertComponent(component) RJ_DebugAssert(component < AMS.data.count + AMS.data.freeIndices.count && amsEntity(component) != RJ_INDEX_INVALID && amsIsActive(component), "Audio component %u either exceeds maximum possible index %u, invalid or inactive.", component, AMS.data.count + AMS.data.freeIndices.count)
 

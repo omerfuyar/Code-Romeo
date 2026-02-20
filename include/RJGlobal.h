@@ -51,7 +51,6 @@
 
 #define RJ_COMPILER_CLANG 0
 #define RJ_COMPILER_GCC 1
-#define RJ_COMPILER_MSVC 2
 
 #if defined(__clang__)
 
@@ -71,18 +70,9 @@
 /// @brief Compiler name string.
 #define RJ_COMPILER_NAME "GCC"
 
-#elif defined(_MSC_VER)
-
-/// @brief Current compiler specifier. Use it with RJ_COMPILER_<...> macros.
-#define RJ_COMPILER RJ_COMPILER_MSVC
-/// @brief Current compiler version number.
-#define RJ_COMPILER_VERSION _MSC_VER
-/// @brief Current compiler name string.
-#define RJ_COMPILER_STRING "MSVC"
-
 #else
 
-#pragma error("Unsupported compiler.")
+#pragma warning("Unsupported compiler.")
 
 #endif
 
@@ -119,39 +109,39 @@
 #define RJ_Reallocate(type, pointer, newCount) (((pointer) = (type *)realloc((pointer), sizeof(type) * (newCount))) != NULL)
 
 /// @brief Macro wrapper for returning error code directly for file open. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
-#define RJ_ReturnFileOpen(filePointer, fileName, mode, ...)                          \
-    do                                                                               \
-    {                                                                                \
-        if (!RJ_FileOpen(filePointer, fileName, mode))                               \
-        {                                                                            \
-            __VA_ARGS__                                                              \
-            RJ_DebugWarning("Failed to open file: %s with mode %s", fileName, mode); \
-            return RJ_ERROR_FILE;                                                    \
-        }                                                                            \
+#define RJ_ReturnFileOpen(filePointer, fileName, mode, ...)                              \
+    do                                                                                   \
+    {                                                                                    \
+        if (!RJ_FileOpen(filePointer, fileName, mode))                                   \
+        {                                                                                \
+            ##__VA_ARGS__                                                                \
+                RJ_DebugWarning("Failed to open file: %s with mode %s", fileName, mode); \
+            return RJ_ERROR_FILE;                                                        \
+        }                                                                                \
     } while (0)
 
 /// @brief Macro wrapper for returning error code directly for memory allocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
-#define RJ_ReturnAllocate(type, pointer, count, ...)                                                                          \
-    do                                                                                                                        \
-    {                                                                                                                         \
-        if (!RJ_Allocate(type, pointer, count))                                                                               \
-        {                                                                                                                     \
-            __VA_ARGS__                                                                                                       \
-            RJ_DebugWarning("Memory allocation failed for %zu bytes for type '%s'.", (RJ_Size)(count) * sizeof(type), #type); \
-            return RJ_ERROR_ALLOCATION;                                                                                       \
-        }                                                                                                                     \
+#define RJ_ReturnAllocate(type, pointer, count, ...)                                                                              \
+    do                                                                                                                            \
+    {                                                                                                                             \
+        if (!RJ_Allocate(type, pointer, count))                                                                                   \
+        {                                                                                                                         \
+            ##__VA_ARGS__                                                                                                         \
+                RJ_DebugWarning("Memory allocation failed for %zu bytes for type '%s'.", (RJ_Size)(count) * sizeof(type), #type); \
+            return RJ_ERROR_ALLOCATION;                                                                                           \
+        }                                                                                                                         \
     } while (0)
 
 /// @brief Macro wrapper for returning error code directly for memory reallocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
-#define RJ_ReturnReallocate(type, pointer, newCount, ...)                                                                          \
-    do                                                                                                                             \
-    {                                                                                                                              \
-        if (!RJ_Reallocate(type, pointer, newCount))                                                                               \
-        {                                                                                                                          \
-            __VA_ARGS__                                                                                                            \
-            RJ_DebugWarning("Memory reallocation failed for %zu bytes for type '%s'.", (RJ_Size)(newCount) * sizeof(type), #type); \
-            return RJ_ERROR_ALLOCATION;                                                                                            \
-        }                                                                                                                          \
+#define RJ_ReturnReallocate(type, pointer, newCount, ...)                                                                              \
+    do                                                                                                                                 \
+    {                                                                                                                                  \
+        if (!RJ_Reallocate(type, pointer, newCount))                                                                                   \
+        {                                                                                                                              \
+            ##__VA_ARGS__                                                                                                              \
+                RJ_DebugWarning("Memory reallocation failed for %zu bytes for type '%s'.", (RJ_Size)(newCount) * sizeof(type), #type); \
+            return RJ_ERROR_ALLOCATION;                                                                                                \
+        }                                                                                                                              \
     } while (0)
 
 #pragma region Typedefs
@@ -179,8 +169,6 @@ typedef enum RJ_Result
 
 #if RJ_COMPILER == RJ_COMPILER_GCC || RJ_COMPILER == RJ_COMPILER_CLANG
 #define RJ_ResultWarn __attribute__((warn_unused_result)) RJ_Result
-#elif RJ_COMPILER == RJ_COMPILER_MSVC
-#define RJ_ResultWarn _Check_return_ RJ_Result
 #else
 #define RJ_ResultWarn RJ_Result
 #endif

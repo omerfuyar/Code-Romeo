@@ -6,8 +6,6 @@
 #include "utilities/Vector.h"
 #include "utilities/ListArray.h"
 
-// typedef uint32_t AudioComponent;
-
 /// @brief Capacity of free indices array of the audio system.
 #define AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE 4
 

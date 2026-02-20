@@ -9,7 +9,6 @@
 #include "utilities/HashMap.h"
 
 #include "glad/glad.h"
-
 #include "cglm/cglm.h"
 
 #define RENDERER_OPENGL_DRAW_TYPE GL_DYNAMIC_DRAW
@@ -163,7 +162,7 @@ struct RENDERER_MAIN_SCENE
 #define rmsFlag(batch, component) (rmsBatch(batch).components.flags[component])
 
 #define rmsIsActive(batch, component) (rmsFlag(batch, component) & RENDERER_FLAG_ACTIVE)
-#define rmsSetActive(batch, component, isActive) (rmsFlag(batch, component) = ((isActive) ? (rmsFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsFlag(batch, component) & ~RENDERER_FLAG_ACTIVE)))
+#define rmsSetActive(batch, component, isActive) (rmsFlag(batch, component) = ((isActive) ? (rmsFlag(batch, component) | RENDERER_FLAG_ACTIVE) : (rmsFlag(batch, component) & (uint8_t)~RENDERER_FLAG_ACTIVE)))
 
 #define rmsAssertBatch(batch) RJ_DebugAssert(batch < RMS.data.count + RMS.data.freeIndices.count, "Renderer batch %u exceeds maximum batch count %u.", batch, RMS.data.count)
 #define rmsAssertComponent(batch, component) RJ_DebugAssert(component < rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count && rmsEntity(batch, component) != RJ_INDEX_INVALID && rmsIsActive(batch, component), "Renderer component %u either exceeds maximum possible index %u, invalid or inactive.", component, rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count)

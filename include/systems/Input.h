@@ -1,7 +1,9 @@
 #pragma once
 
 #include "RJGlobal.h"
+
 #include "utilities/Vector.h"
+
 #include "tools/Context.h"
 
 /// @brief Key codes for input handling.
