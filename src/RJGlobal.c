@@ -28,10 +28,10 @@ RJ_VoidFunIntCharPtr RJ_TERMINATE_CALLBACK = NULL;
 
 #pragma endregion Source Only
 
-RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
+RJ_Result RJ_Log(RJ_Result terminate, const char *header, const char *file, int line, const char *function, const char *format, ...)
 {
-    struct timespec tempSpec = {.tv_nsec = 0, .tv_sec = 0};
-    struct tm timer = {.tm_sec = 0, .tm_min = 0, .tm_hour = 0, .tm_mday = 0, .tm_mon = 0, .tm_year = 0, .tm_wday = 0, .tm_yday = 0, .tm_isdst = 0};
+    struct timespec tempSpec = {0};
+    struct tm timer = {0};
     char timeBuffer[RJ_TEMP_BUFFER_SIZE / 4] = {0};
 
     timespec_get(&tempSpec, TIME_UTC);
@@ -47,12 +47,15 @@ RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line,
 
         remove(RJ_DEBUG_FILE_NAME_STR);
 
-        RJ_ReturnFileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a");
+        RJ_ReturnFileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "w+");
 
         fprintf(RJ_DEBUG_FILE, "[%s:%03ld] : [INFO] :\nLog file created successfully.\n", timeBuffer, tempSpec.tv_nsec / 1000000);
     }
 #if RJ_DEBUG_SAFE_LOGGING
-    RJ_ReturnFileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a");
+    else
+    {
+        RJ_ReturnFileOpen(RJ_DEBUG_FILE, RJ_DEBUG_FILE_NAME_STR, "a");
+    }
 #endif
 
     char messageBuffer[RJ_TEMP_BUFFER_SIZE * 4] = {0};
@@ -66,11 +69,7 @@ RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line,
     snprintf(finalBuffer, sizeof(finalBuffer), "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n",
              timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
 
-    fprintf(RJ_DEBUG_FILE, "[%s:%03ld] : [%s] : [%s:%d:%s] :\n%s\n", timeBuffer, tempSpec.tv_nsec / 1000000, header, file, line, function, messageBuffer);
-
-#if RJ_DEBUG_FLUSH_AFTER_LOG
-    fflush(RJ_DEBUG_FILE);
-#endif
+    fprintf(RJ_DEBUG_FILE, "%s", finalBuffer);
 
 #if RJ_DEBUG_SAFE_LOGGING
     fclose(RJ_DEBUG_FILE);
@@ -92,7 +91,7 @@ const char *RJ_GetExecutablePath(void)
 
         RJ_Size currentIndex = (RJ_Size)strlen(RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH);
 
-        while (RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[--currentIndex] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
+        while (RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[--currentIndex] != RJ_PATH_SEPARATOR)
         {
             RJ_GLOBAL_EXECUTABLE_DIRECTORY_PATH[currentIndex] = '\0';
         }

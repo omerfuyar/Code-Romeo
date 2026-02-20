@@ -10,7 +10,8 @@ String String_CreateCopySafe(const char *string, RJ_Size length)
     String createdString = {0};
 
     createdString.length = length;
-    RJ_DebugAssert(RJ_Allocate(char, createdString.characters, createdString.length + 1), "Failed to allocate memory for string with length %u", createdString.length + 1);
+    RJ_DebugAssert(RJ_Allocate(char, createdString.characters, createdString.length + 1),
+                   "Failed to allocate memory for string with length %u", createdString.length + 1);
 
     memcpy(createdString.characters, string, createdString.length);
     createdString.characters[createdString.length] = '\0';
@@ -76,7 +77,7 @@ void String_ConcatBegin(String *string, StringView other)
 {
     RJ_DebugAssertNullPointerCheck(string);
 
-    String buffer = String_CreateCopySafe(string->characters, string->length);
+    String buffer = scc(*string);
 
     string->characters = (char *)realloc(string->characters, (string->length + other.length + 1));
     RJ_DebugAssertNullPointerCheck(string->characters);
@@ -190,12 +191,12 @@ float String_ToFloat(StringView string)
     RJ_Size copyLength = String_Min(sizeof(buffer) - 1, string.length);
     memcpy(buffer, string.characters, copyLength);
     buffer[copyLength] = '\0';
-    float result = (float)atof(buffer);
+    float result = (float)strtof(buffer, NULL);
 
     return result;
 }
 
-int String_ToInt(StringView string)
+long String_ToLong(StringView string)
 {
     RJ_DebugAssertNullPointerCheck(string.characters);
 
@@ -203,7 +204,20 @@ int String_ToInt(StringView string)
     RJ_Size copyLength = String_Min(sizeof(buffer) - 1, string.length);
     memcpy(buffer, string.characters, copyLength);
     buffer[copyLength] = '\0';
-    int result = atoi(buffer);
+    long result = strtol(buffer, NULL, 10);
 
     return result;
 }
+
+#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
+void String_WindowsNormalize(String *string)
+{
+    for (RJ_Size i = 0; i < string->length; i++)
+    {
+        if (string->characters[i] == '/')
+        {
+            string->characters[i] = '\\';
+        }
+    }
+}
+#endif

@@ -73,8 +73,8 @@ static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retText
         format = GL_RED;
         break;
     default:
-        RJ_DebugError("Unsupported number of channels (%d) for texture '%s'.", texture->image->channels, texture->name.characters);
-        break;
+        RJ_DebugWarning("Unsupported number of channels (%d) for texture '%s'.", texture->image->channels, texture->name.characters);
+        return RJ_ERROR_RESOURCE;
     }
 
     glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, texture->image->size.x, texture->image->size.y, 0, format, GL_UNSIGNED_BYTE, texture->image->data);
@@ -222,7 +222,7 @@ static RJ_ResultWarn ResourceMaterial_AddFromFileIfNew(StringView matFile, Strin
         }
         else if (String_AreSame(matFirstToken, strILLNUM))
         {
-            currentMaterial->illuminationModel = String_ToInt(matLineTokens[1]);
+            currentMaterial->illuminationModel = String_ToLong(matLineTokens[1]);
         }
         else if (String_AreSame(matFirstToken, strMAP_KD))
         {
@@ -317,15 +317,12 @@ RJ_ResultWarn ResourceText_Create(ResourceText **retResource, StringView file)
     String fullPath = scc(resource->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
-#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
-    String_Replace(&fullPath, scv(scl("\\")), scv(scl("/")));
-#endif
+    swn(&fullPath);
 
     RJ_Size lineCount = 0;
     int character = 0;
 
     FILE *fileHandle = NULL;
-
     RJ_ReturnFileOpen(fileHandle, fullPath.characters, "r",
                       String_Destroy(&fullPath);
                       free(resource););
@@ -347,6 +344,7 @@ RJ_ResultWarn ResourceText_Create(ResourceText **retResource, StringView file)
     RJ_ReturnAllocate(char, dataBuffer, resource->lineCount *RESOURCE_FILE_LINE_MAX_CHAR_COUNT,
                       String_Destroy(&fullPath);
                       free(resource););
+
     dataBuffer[0] = '\0';
 
     char lineBuffer[RESOURCE_FILE_LINE_MAX_CHAR_COUNT] = {0};
@@ -412,9 +410,7 @@ RJ_ResultWarn ResourceImage_Create(ResourceImage **retResourceImage, StringView 
     String fullPath = scc(resourceImage->file);
     String_ConcatBegin(&fullPath, scl(RESOURCE_PATH));
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
-#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
-    String_Replace(&fullPath, scv(scl("\\")), scv(scl("/")));
-#endif
+    swn(&fullPath);
 
     stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 4);
@@ -465,16 +461,16 @@ static void ProcessFaceVertex(StringView faceToken, ResourceModel *model, Resour
 
     RJ_DebugAssert(faceDataCount == 3, "Face vertex data '%.*s' is invalid. Expected format 'v/vt/vn'.", (int)faceToken.length, faceToken.characters);
 
-    int createdPositionIndex = String_ToInt(faceData[0]);
+    int createdPositionIndex = String_ToLong(faceData[0]);
     RJ_Size positionIndex = createdPositionIndex < 0 ? (RJ_Size)((int)model->vertices.count + createdPositionIndex) : (RJ_Size)createdPositionIndex - 1;
 
     ResourceMeshVertex *vertex = (ResourceMeshVertex *)ListArray_Get(&model->vertices, (RJ_Size)positionIndex);
 
-    int createdUVIndex = String_ToInt(faceData[1]);
+    int createdUVIndex = String_ToLong(faceData[1]);
     RJ_Size uvIndex = createdUVIndex < 0 ? (RJ_Size)((int)globalVertexUvPool->count + createdUVIndex) : (RJ_Size)createdUVIndex - 1;
     vertex->uv = *(Vector2 *)ListArray_Get(globalVertexUvPool, (RJ_Size)uvIndex);
 
-    int createdNormalIndex = String_ToInt(faceData[2]);
+    int createdNormalIndex = String_ToLong(faceData[2]);
     RJ_Size normalIndex = createdNormalIndex < 0 ? (RJ_Size)((int)globalVertexNormalPool->count + createdNormalIndex) : (RJ_Size)createdNormalIndex - 1;
     vertex->normal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (RJ_Size)normalIndex);
 
@@ -612,7 +608,7 @@ RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, String
         {
             String tempFilePath = scc(fileName);
 
-            while (tempFilePath.length > 0 && tempFilePath.characters[tempFilePath.length - 1] != (RJ_PLATFORM == RJ_PLATFORM_WINDOWS ? '\\' : '/'))
+            while (tempFilePath.length > 0 && tempFilePath.characters[tempFilePath.length - 1] != '/')
             {
                 tempFilePath.length--;
             }

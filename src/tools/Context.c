@@ -11,7 +11,7 @@ Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLB
 
 static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 {
-    RJ_DebugError("Context get error code '%d' : \n'%s'", error, description);
+    RJ_DebugError(error, "Context get error code '%d' : \n'%s'", error, description);
 }
 
 #pragma endregion Source Only

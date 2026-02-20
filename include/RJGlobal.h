@@ -37,11 +37,19 @@
 
 /// @brief Current platform is Unix-like.
 #define RJ_PLATFORM_UNIX 1
+/// @brief Path separator for the current platform.
+#define RJ_PATH_SEPARATOR '/'
+/// @brief Path separator string for the current platform.
+#define RJ_PATH_SEPARATOR_STR "/"
 
 #else
 
 /// @brief Current platform is not a Unix-like.
 #define RJ_PLATFORM_UNIX 0
+/// @brief Path separator for the current platform.
+#define RJ_PATH_SEPARATOR '\\'
+/// @brief Path separator string for the current platform.
+#define RJ_PATH_SEPARATOR_STR "\\"
 
 #endif
 
@@ -109,39 +117,39 @@
 #define RJ_Reallocate(type, pointer, newCount) (((pointer) = (type *)realloc((pointer), sizeof(type) * (newCount))) != NULL)
 
 /// @brief Macro wrapper for returning error code directly for file open. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
-#define RJ_ReturnFileOpen(filePointer, fileName, mode, ...)                              \
-    do                                                                                   \
-    {                                                                                    \
-        if (!RJ_FileOpen(filePointer, fileName, mode))                                   \
-        {                                                                                \
-            ##__VA_ARGS__                                                                \
-                RJ_DebugWarning("Failed to open file: %s with mode %s", fileName, mode); \
-            return RJ_ERROR_FILE;                                                        \
-        }                                                                                \
+#define RJ_ReturnFileOpen(filePointer, fileName, mode, ...)                               \
+    do                                                                                    \
+    {                                                                                     \
+        if (!RJ_FileOpen(filePointer, fileName, mode))                                    \
+        {                                                                                 \
+            RJ_DebugWarning("Failed to open file: '%s' with mode '%s'.", fileName, mode); \
+            __VA_ARGS__                                                                   \
+            return RJ_ERROR_FILE;                                                         \
+        }                                                                                 \
     } while (0)
 
 /// @brief Macro wrapper for returning error code directly for memory allocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
-#define RJ_ReturnAllocate(type, pointer, count, ...)                                                                              \
-    do                                                                                                                            \
-    {                                                                                                                             \
-        if (!RJ_Allocate(type, pointer, count))                                                                                   \
-        {                                                                                                                         \
-            ##__VA_ARGS__                                                                                                         \
-                RJ_DebugWarning("Memory allocation failed for %zu bytes for type '%s'.", (RJ_Size)(count) * sizeof(type), #type); \
-            return RJ_ERROR_ALLOCATION;                                                                                           \
-        }                                                                                                                         \
+#define RJ_ReturnAllocate(type, pointer, count, ...)                                                                          \
+    do                                                                                                                        \
+    {                                                                                                                         \
+        if (!RJ_Allocate(type, pointer, count))                                                                               \
+        {                                                                                                                     \
+            RJ_DebugWarning("Memory allocation failed for %zu bytes for type '%s'.", (RJ_Size)(count) * sizeof(type), #type); \
+            __VA_ARGS__                                                                                                       \
+            return RJ_ERROR_ALLOCATION;                                                                                       \
+        }                                                                                                                     \
     } while (0)
 
 /// @brief Macro wrapper for returning error code directly for memory reallocation. Use in functions that return RJ_Result. Variadic parameter is for cleanup commands if failed.
-#define RJ_ReturnReallocate(type, pointer, newCount, ...)                                                                              \
-    do                                                                                                                                 \
-    {                                                                                                                                  \
-        if (!RJ_Reallocate(type, pointer, newCount))                                                                                   \
-        {                                                                                                                              \
-            ##__VA_ARGS__                                                                                                              \
-                RJ_DebugWarning("Memory reallocation failed for %zu bytes for type '%s'.", (RJ_Size)(newCount) * sizeof(type), #type); \
-            return RJ_ERROR_ALLOCATION;                                                                                                \
-        }                                                                                                                              \
+#define RJ_ReturnReallocate(type, pointer, newCount, ...)                                                                          \
+    do                                                                                                                             \
+    {                                                                                                                              \
+        if (!RJ_Reallocate(type, pointer, newCount))                                                                               \
+        {                                                                                                                          \
+            RJ_DebugWarning("Memory reallocation failed for %zu bytes for type '%s'.", (RJ_Size)(newCount) * sizeof(type), #type); \
+            __VA_ARGS__                                                                                                            \
+            return RJ_ERROR_ALLOCATION;                                                                                            \
+        }                                                                                                                          \
     } while (0)
 
 #pragma region Typedefs
@@ -164,6 +172,7 @@ typedef enum RJ_Result
     RJ_ERROR_ALLOCATION,
     RJ_ERROR_FILE,
     RJ_ERROR_DEPENDENCY,
+    RJ_ERROR_RESOURCE,
     RJ_ERROR_NOT_FOUND,
 } RJ_Result;
 
@@ -178,7 +187,7 @@ typedef enum RJ_Result
 #pragma region Functions and Macros
 
 /// @brief Logs a debug message to the debug log file. Use wrapper macros for ease of use.
-/// @param terminate Whether to terminate the application after logging
+/// @param terminate Whether to terminate the application after logging, used as exit code.
 /// @param header The header of the log message, like "INFO", "WARNING", "ERROR", etc.
 /// @param file The source file name where the log is called from
 /// @param line The line number where the log is called from
@@ -186,7 +195,7 @@ typedef enum RJ_Result
 /// @param format The format string for the log message, similar to printf.
 /// @param ... The arguments for the format string.
 /// @note The log message is written to a file named 'RJ_DEBUG_FILE_NAME' macro which is defined in the header. Directory and name can be changed by modifying the macro.
-RJ_Result RJ_Log(bool terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
+RJ_Result RJ_Log(RJ_Result terminate, const char *header, const char *file, int line, const char *function, const char *format, ...);
 
 /// @brief Gets the executable file directory.
 /// @return The null terminated C string : "path/to/exe/"
@@ -233,8 +242,6 @@ void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 
 /// @brief Safe logging is enabled. Controls internal file operations to prevent crashes during logging. Activating this may reduce performance of logging but increases stability.
 #define RJ_DEBUG_SAFE_LOGGING RJ_BUILD_DEBUG
-/// @brief Flush log file after every log entry. May reduce performance but ensures all logs are written to file immediately.
-#define RJ_DEBUG_FLUSH_AFTER_LOG RJ_DEBUG_SAFE_LOGGING
 
 #ifndef RJ_DEBUG_INFO
 /// @brief Info level logging macros enabled.
@@ -256,11 +263,6 @@ void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 #define RJ_DEBUG_ASSERT RJ_BUILD_DEBUG
 #endif
 
-#ifndef RJ_DEBUG_TERMINATE_ON_ERROR
-/// @brief Terminate application on error log.
-#define RJ_DEBUG_TERMINATE_ON_ERROR RJ_DEBUG_SAFE_LOGGING
-#endif
-
 #ifndef RJ_DEBUG_TERMINATE_ON_ASSERT
 /// @brief Terminate application on assertion failure.
 #define RJ_DEBUG_TERMINATE_ON_ASSERT RJ_DEBUG_SAFE_LOGGING
@@ -272,10 +274,10 @@ void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 #define RJ_DEBUG_FILE_NAME "debug.log"
 
 /// @brief Macro wrapper for RJ_Log file to pass file, line and function automatically.
-#define RJ_DebugLog(terminate, header, format, ...)                                     \
-    do                                                                                  \
-    {                                                                                   \
-        RJ_Log(terminate, header, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
+#define RJ_DebugLog(terminate, header, format, ...)                                                \
+    do                                                                                             \
+    {                                                                                              \
+        RJ_Log((RJ_Result)terminate, header, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
     } while (false)
 
 #if RJ_DEBUG_INFO == false
@@ -315,10 +317,10 @@ void RJ_SetTerminateCallback(RJ_VoidFunIntCharPtr terminateCallback);
 #else
 
 /// @brief Logs an error level message to the debug log and terminates the application if configured.
-#define RJ_DebugError(format, ...)                                                \
-    do                                                                            \
-    {                                                                             \
-        RJ_DebugLog(RJ_DEBUG_TERMINATE_ON_ERROR, "ERROR", format, ##__VA_ARGS__); \
+#define RJ_DebugError(code, format, ...)                   \
+    do                                                     \
+    {                                                      \
+        RJ_DebugLog(code, "ERROR", format, ##__VA_ARGS__); \
     } while (false)
 
 #endif

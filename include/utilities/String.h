@@ -114,7 +114,14 @@ char String_GetChar(StringView string, RJ_Size index);
 /// @return Converted float value. 0.0f if string doesn't contain any numbers.
 float String_ToFloat(StringView string);
 
-/// @brief Converts a String object to an int.
+/// @brief Converts a String object to a long.
 /// @param string Pointer to the String object to convert.
-/// @return Converted int value. 0 if string doesn't contain any numbers.
-int String_ToInt(StringView string);
+/// @return Converted long value. 0 if string doesn't contain any numbers.
+long String_ToLong(StringView string);
+
+#if RJ_PLATFORM == RJ_PLATFORM_WINDOWS
+#define swn(string) String_WindowsNormalize(string)
+void String_WindowsNormalize(String *string);
+#else
+#define swn(string)
+#endif

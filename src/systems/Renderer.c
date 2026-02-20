@@ -203,7 +203,7 @@ static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint
 
     if (type == GL_DEBUG_TYPE_ERROR)
     {
-        RJ_DebugError("OpenGL Error :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
+        RJ_DebugError(RJ_ERROR_DEPENDENCY, "OpenGL Error :\ntype : 0x%x\nseverity : 0x%x\nmessage : \n%s\n",
                       type, severity, message);
     }
     else
@@ -561,7 +561,7 @@ RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray 
                 if (String_Compare(scv(model->name), scv(scnLineTokens[1])) == 0)
                 {
                     modelFound = true;
-                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (RJ_Size)String_ToInt(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY);
+                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (RJ_Size)String_ToLong(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY);
                     break;
                 }
             }

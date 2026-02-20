@@ -51,8 +51,8 @@ int main(int argc, char **argv)
         SHU_CacheClearAll();
     }
 
-    SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH SHUM_FLAGS_STANDARD_C99);
-    SHU_CompilerAddFlags("-w -DCGLM_STATIC");
+    SHU_CompilerAddFlags(isDebug ? SHUM_FLAGS_DEBUG : SHUM_FLAGS_OPTIMIZATION_HIGH);
+    SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C99 " -w -DCGLM_STATIC");
 
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
@@ -87,13 +87,13 @@ int main(int argc, char **argv)
 
     SHU_CompilerClearFlags();
 
-    SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C23);
+    SHU_CompilerAddFlags("-Wno-unused-function" SHUM_FLAGS_STANDARD_C23);
 
     if (isDebug)
     {
         SHU_CompilerAddFlags(SHUM_FLAGS_DEBUG);
         SHU_CompilerAddFlags(SHUM_FLAGS_WARNING_HIGH SHUM_FLAGS_WARNING_ERROR);
-        SHU_CompilerAddFlags("-Wno-format-nonliteral -Wno-language-extension-token");
+        SHU_CompilerAddFlags("-Wno-format-nonliteral");
     }
     else
     {
