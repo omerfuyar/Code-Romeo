@@ -4,10 +4,7 @@
 
 #pragma region Source Only
 
-bool CONTEXT_INITIALIZED = false;
-ContextWindow CONTEXT_MAIN_WINDOW = {0};
-Context_VoidFunVoidptrIntInt CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = NULL;
-Context_VoidFunUintUintUintUintIntCcharptrCvoidptr CONTEXT_MAIN_WINDOW_LOG_CALLBACK = NULL;
+ContextWindow *CONTEXT_MAIN_WINDOW_REF = NULL;
 
 static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 {
@@ -16,8 +13,10 @@ static void CONTEXT_ERROR_CALLBACK(int error, const char *description)
 
 #pragma endregion Source Only
 
-RJ_ResultWarn Context_Initialize(ContextWindow **retContext)
+RJ_ResultWarn Context_Initialize(ContextWindow *retContext)
 {
+    RJ_DebugAssertNullPointerCheck(retContext);
+
     glfwSetErrorCallback(CONTEXT_ERROR_CALLBACK);
 
     if (!glfwInit())
@@ -30,47 +29,48 @@ RJ_ResultWarn Context_Initialize(ContextWindow **retContext)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    CONTEXT_MAIN_WINDOW.handle = glfwCreateWindow(1080, 720, "", NULL, NULL);
+    retContext->handle = glfwCreateWindow(1080, 720, "Romeo Window", NULL, NULL);
     const char *errorLog = NULL;
 
-    if (CONTEXT_MAIN_WINDOW.handle == NULL)
+    if (retContext->handle == NULL)
     {
         RJ_DebugWarning("Failed to create GLFW window (%d):\n%s", glfwGetError(&errorLog), errorLog);
         return RJ_ERROR_DEPENDENCY;
     }
 
-    glfwMakeContextCurrent(CONTEXT_MAIN_WINDOW.handle);
+    glfwMakeContextCurrent(retContext->handle);
 
-    CONTEXT_INITIALIZED = true;
+    CONTEXT_MAIN_WINDOW_REF = retContext;
+    Context_Configure(scv(CONTEXT_MAIN_WINDOW_REF->title),
+                      CONTEXT_MAIN_WINDOW_REF->size,
+                      CONTEXT_MAIN_WINDOW_REF->vSync,
+                      CONTEXT_MAIN_WINDOW_REF->fullScreen,
+                      CONTEXT_MAIN_WINDOW_REF->resizeCallback);
+
     RJ_DebugInfo("Main window created successfully.");
 
-    *retContext = &CONTEXT_MAIN_WINDOW;
     return RJ_OK;
 }
 
 void Context_Terminate(void)
 {
-    glfwDestroyWindow(CONTEXT_MAIN_WINDOW.handle);
+    glfwDestroyWindow(CONTEXT_MAIN_WINDOW_REF->handle);
     glfwTerminate();
 
-    CONTEXT_INITIALIZED = false;
+    CONTEXT_MAIN_WINDOW_REF = NULL;
     RJ_DebugInfo("Context terminated successfully.");
 }
 
 bool Context_IsInitialized(void)
 {
-    return CONTEXT_INITIALIZED;
+    return CONTEXT_MAIN_WINDOW_REF != NULL;
 }
 
-void Context_Update(void)
+bool Context_Update(void)
 {
     glfwPollEvents();
 
-    if (glfwWindowShouldClose(CONTEXT_MAIN_WINDOW.handle))
-    {
-        RJ_DebugInfo("Main window close input received");
-        RJ_Terminate(EXIT_SUCCESS, "Main window close input received");
-    }
+    return !glfwWindowShouldClose(CONTEXT_MAIN_WINDOW_REF->handle);
 }
 
 void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, Context_VoidFunVoidptrIntInt resizeCallback)
@@ -84,56 +84,47 @@ void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool
 
 void Context_ConfigureTitle(StringView title)
 {
-    String_Change(&CONTEXT_MAIN_WINDOW.title, title);
+    String_Change(&CONTEXT_MAIN_WINDOW_REF->title, title);
 
-    glfwSetWindowTitle(CONTEXT_MAIN_WINDOW.handle, CONTEXT_MAIN_WINDOW.title.characters);
+    glfwSetWindowTitle(CONTEXT_MAIN_WINDOW_REF->handle, CONTEXT_MAIN_WINDOW_REF->title.characters);
 }
 
 void Context_ConfigureSize(Vector2Int size)
 {
-    CONTEXT_MAIN_WINDOW.size = size;
+    CONTEXT_MAIN_WINDOW_REF->size = size;
 
-    if (CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK != NULL)
-    {
-        CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK(CONTEXT_MAIN_WINDOW.handle, CONTEXT_MAIN_WINDOW.size.x, CONTEXT_MAIN_WINDOW.size.y);
-    }
-    else
-    {
-        RJ_DebugWarning("The context resize callback function is NULL. Skipped without calling");
-    }
+    glfwSetWindowSize(CONTEXT_MAIN_WINDOW_REF->handle, CONTEXT_MAIN_WINDOW_REF->size.x, CONTEXT_MAIN_WINDOW_REF->size.y);
 }
 
 void Context_ConfigureVSync(bool vSync)
 {
-    CONTEXT_MAIN_WINDOW.vSync = vSync;
+    CONTEXT_MAIN_WINDOW_REF->vSync = vSync;
 
-    glfwSwapInterval(CONTEXT_MAIN_WINDOW.vSync);
+    glfwSwapInterval(CONTEXT_MAIN_WINDOW_REF->vSync);
 }
 
 void Context_ConfigureFullScreen(bool fullScreen)
 {
-    CONTEXT_MAIN_WINDOW.fullScreen = fullScreen;
+    CONTEXT_MAIN_WINDOW_REF->fullScreen = fullScreen;
 
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 
     if (fullScreen)
     {
-        glfwSetWindowMonitor(CONTEXT_MAIN_WINDOW.handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        glfwSetWindowMonitor(CONTEXT_MAIN_WINDOW_REF->handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
     }
     else
     {
-        glfwSetWindowMonitor(CONTEXT_MAIN_WINDOW.handle, NULL, 100, 100, CONTEXT_MAIN_WINDOW.size.x, CONTEXT_MAIN_WINDOW.size.y, 0);
+        glfwSetWindowMonitor(CONTEXT_MAIN_WINDOW_REF->handle, NULL, 100, 100, CONTEXT_MAIN_WINDOW_REF->size.x, CONTEXT_MAIN_WINDOW_REF->size.y, 0);
     }
 }
 
-void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt callback)
+void Context_ConfigureResizeCallback(Context_VoidFunVoidptrIntInt resizeCallback)
 {
-    CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK = callback;
+    CONTEXT_MAIN_WINDOW_REF->resizeCallback = resizeCallback;
 
-    glfwSetFramebufferSizeCallback(CONTEXT_MAIN_WINDOW.handle, (GLFWframebuffersizefun)CONTEXT_MAIN_WINDOW_RESIZE_CALLBACK);
-
-    // Context_ConfigureSize(CONTEXT_MAIN_WINDOW.size);
+    glfwSetFramebufferSizeCallback(CONTEXT_MAIN_WINDOW_REF->handle, (GLFWframebuffersizefun)resizeCallback);
 }
 
 Context_VoidptrFunCcharptr Context_GetDynamicSymbolLoader(void)
@@ -143,5 +134,5 @@ Context_VoidptrFunCcharptr Context_GetDynamicSymbolLoader(void)
 
 void Context_SwapBuffers(void)
 {
-    glfwSwapBuffers(CONTEXT_MAIN_WINDOW.handle);
+    glfwSwapBuffers(CONTEXT_MAIN_WINDOW_REF->handle);
 }

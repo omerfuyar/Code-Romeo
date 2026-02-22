@@ -477,7 +477,7 @@ static void ProcessFaceVertex(StringView faceToken, ResourceModel *model, Resour
     ListArray_Add(&currentMesh->indices, &positionIndex);
 }
 
-RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, Vector3 *transformOffset)
+RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, const Vector3 *transformOffset)
 {
     if (RESOURCE_TEXTURE_POOL.head == NULL && RESOURCE_MATERIAL_POOL.head == NULL)
     {
@@ -504,13 +504,13 @@ RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, String
     model->file = scc(fileName);
     model->index = RESOURCE_MODEL_POOL.count - 1;
 
-    Resource_Matrix4 offsetMatrix = {0};
+    Matrix4 offsetMatrix = {0};
 
     if (transformOffset != NULL)
     {
-        Vector3 *positionOffset = transformOffset;
-        Vector3 *rotationOffset = transformOffset + 1;
-        Vector3 *scaleOffset = transformOffset + 2;
+        const Vector3 *positionOffset = transformOffset;
+        const Vector3 *rotationOffset = transformOffset + 1;
+        const Vector3 *scaleOffset = transformOffset + 2;
 
         glm_mat4_identity((vec4 *)offsetMatrix.m);
 

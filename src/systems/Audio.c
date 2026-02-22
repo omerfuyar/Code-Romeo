@@ -1,61 +1,50 @@
 #include "systems/Audio.h"
 
+#include "tools/Resource.h"
+#include "tools/Entity.h"
+
 #include "utilities/ListArray.h"
 #include "utilities/Maths.h"
 
-#include "tools/Resource.h"
-
 #include "miniaudio/miniaudio.h"
-
-#define AUDIO_FLAG_ACTIVE (1 << 0)
 
 #pragma region Source Only
 
-struct AUDIO_MAIN_SCENE
+struct AUDIO
 {
     ma_engine engine;
 
-    struct AUDIO_SCENE_DATA
+    struct AUDIO_INFO
     {
         RJ_Size capacity;
         RJ_Size count;
         ListArray freeIndices; // RJ_Size
-    } data;
+        // todo use another data structure like stack or queue
+    } info;
 
-    struct AUDIO_COMPONENTS
+    struct AUDIO_DATA
     {
-        RJ_Size *entities;
-
+        Entity *entityMap;
         ma_sound *sounds;
-        Vector3 *positionReferences;
-
-        uint8_t *flags;
-    } components;
+    } data;
 
     struct AUDIO_LISTENER
     {
         Vector3 *positionReference;
         Vector3 *rotationReference;
     } listener;
-} AMS = {0};
+} AUDIO = {0};
 
-#define amsEntity(component) (AMS.components.entities[component])
-#define amsSound(component) (AMS.components.sounds[component])
-#define amsPositionReference(component) (AMS.components.positionReferences[amsEntity(component)])
-#define amsFlag(component) (AMS.components.flags[component])
+#define amsEntity(component) (AUDIO.data.entityMap[component])
+#define amsSound(component) (AUDIO.data.sounds[component])
 
-#define amsIsActive(component) (amsFlag(component) & AUDIO_FLAG_ACTIVE)
-#define amsSetActive(component, isActive) (amsFlag(component) = ((isActive) ? (amsFlag(component) | AUDIO_FLAG_ACTIVE) : (amsFlag(component) & (uint8_t)~AUDIO_FLAG_ACTIVE)))
-
-#define amsAssertComponent(component) RJ_DebugAssert(component < AMS.data.count + AMS.data.freeIndices.count && amsEntity(component) != RJ_INDEX_INVALID && amsIsActive(component), "Audio component %u either exceeds maximum possible index %u, invalid or inactive.", component, AMS.data.count + AMS.data.freeIndices.count)
+#define amsAssertComponent(component) RJ_DebugAssert(component < AUDIO.info.count + AUDIO.info.freeIndices.count && amsEntity(component) != RJ_INDEX_INVALID, "Audio component %u either exceeds maximum possible index %u or is invalid.", component, AUDIO.info.count + AUDIO.info.freeIndices.count)
 
 #pragma endregion Source Only
 
-RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences)
+RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity)
 {
-    RJ_DebugAssertNullPointerCheck(positionReferences);
-
-    ma_result result = ma_engine_init(NULL, &AMS.engine);
+    ma_result result = ma_engine_init(NULL, &AUDIO.engine);
 
     if (result != MA_SUCCESS)
     {
@@ -63,36 +52,26 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positi
         return RJ_ERROR_DEPENDENCY;
     }
 
-    AMS.data.capacity = initialComponentCapacity;
-    AMS.data.count = 0;
+    AUDIO.info.capacity = initialComponentCapacity;
+    AUDIO.info.count = 0;
 
-    ListArray_Create(&AMS.data.freeIndices, "Audio Free Indices", sizeof(RJ_Size), AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    ListArray_Create(&AUDIO.info.freeIndices, "Audio Free Indices", sizeof(RJ_Size), ENTITY_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
-    AMS.components.positionReferences = positionReferences;
+    RJ_ReturnAllocate(RJ_Size, AUDIO.data.entityMap, initialComponentCapacity,
+                      ma_engine_uninit(&AUDIO.engine);
+                      ListArray_Destroy(&AUDIO.info.freeIndices);
 
-    RJ_ReturnAllocate(RJ_Size, AMS.components.entities, initialComponentCapacity,
-                      ma_engine_uninit(&AMS.engine);
-                      ListArray_Destroy(&AMS.data.freeIndices);
+                      AUDIO.info.capacity = 0;
+                      AUDIO.info.count = 0;);
 
-                      AMS.data.capacity = 0;
-                      AMS.data.count = 0;
-                      AMS.components.positionReferences = NULL;);
+    RJ_ReturnAllocate(ma_sound, AUDIO.data.sounds, initialComponentCapacity,
+                      ma_engine_uninit(&AUDIO.engine);
+                      ListArray_Destroy(&AUDIO.info.freeIndices);
 
-    RJ_ReturnAllocate(ma_sound, AMS.components.sounds, initialComponentCapacity,
-                      ma_engine_uninit(&AMS.engine);
-                      ListArray_Destroy(&AMS.data.freeIndices);
+                      AUDIO.info.capacity = 0;
+                      AUDIO.info.count = 0;);
 
-                      AMS.data.capacity = 0;
-                      AMS.data.count = 0;
-                      AMS.components.positionReferences = NULL;);
-
-    RJ_ReturnAllocate(uint8_t, AMS.components.flags, initialComponentCapacity,
-                      ma_engine_uninit(&AMS.engine);
-                      ListArray_Destroy(&AMS.data.freeIndices);
-
-                      AMS.data.capacity = 0;
-                      AMS.data.count = 0;
-                      AMS.components.positionReferences = NULL;);
+    memset(AUDIO.data.entityMap, 0xff, sizeof(RJ_Size) * initialComponentCapacity);
 
     RJ_DebugInfo("Audio system initialized with component capacity %u.", initialComponentCapacity);
     return RJ_OK;
@@ -100,23 +79,20 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positi
 
 void Audio_Terminate(void)
 {
-    ma_engine_uninit(&AMS.engine);
+    ma_engine_uninit(&AUDIO.engine);
 
-    AMS.data.capacity = 0;
-    AMS.data.count = 0;
-    ListArray_Destroy(&AMS.data.freeIndices);
+    AUDIO.info.capacity = 0;
+    AUDIO.info.count = 0;
+    ListArray_Destroy(&AUDIO.info.freeIndices);
 
-    free(AMS.components.entities);
-    free(AMS.components.sounds);
-    free(AMS.components.flags);
+    free(AUDIO.data.entityMap);
+    free(AUDIO.data.sounds);
 
-    AMS.components.entities = NULL;
-    AMS.components.sounds = NULL;
-    AMS.components.flags = NULL;
-    AMS.components.positionReferences = NULL;
+    AUDIO.data.entityMap = NULL;
+    AUDIO.data.sounds = NULL;
 
-    AMS.listener.positionReference = NULL;
-    AMS.listener.rotationReference = NULL;
+    AUDIO.listener.positionReference = NULL;
+    AUDIO.listener.rotationReference = NULL;
 
     RJ_DebugInfo("Audio system terminated successfully.");
 }
@@ -126,50 +102,42 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
     RJ_DebugAssertNullPointerCheck(positionReference);
     RJ_DebugAssertNullPointerCheck(rotationReference);
 
-    AMS.listener.positionReference = positionReference;
-    AMS.listener.rotationReference = rotationReference;
+    AUDIO.listener.positionReference = positionReference;
+    AUDIO.listener.rotationReference = rotationReference;
 }
 
-RJ_Result Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponentCapacity)
+RJ_Result Audio_Configure(RJ_Size newComponentCapacity)
 {
-    RJ_DebugAssertNullPointerCheck(positionReferences);
-    RJ_DebugAssert(newComponentCapacity > AMS.data.count, "New component capacity must be greater than current audio component count");
+    RJ_DebugAssert(newComponentCapacity > AUDIO.info.count, "New component capacity must be greater than current audio component count");
 
-    AMS.components.positionReferences = positionReferences;
-    AMS.data.capacity = newComponentCapacity;
+    AUDIO.info.capacity = newComponentCapacity;
 
-    RJ_ReturnReallocate(RJ_Size, AMS.components.entities, AMS.data.capacity);
-    RJ_ReturnReallocate(ma_sound, AMS.components.sounds, AMS.data.capacity);
-    RJ_ReturnReallocate(uint8_t, AMS.components.flags, AMS.data.capacity);
+    RJ_ReturnReallocate(RJ_Size, AUDIO.data.entityMap, AUDIO.info.capacity);
+    RJ_ReturnReallocate(ma_sound, AUDIO.data.sounds, AUDIO.info.capacity);
 
-    RJ_DebugInfo("Audio position references reconfigured with new capacity %u.", AMS.data.capacity);
+    RJ_DebugInfo("Audio position references reconfigured with new capacity %u.", AUDIO.info.capacity);
     return RJ_OK;
 }
 
 void Audio_Update(void)
 {
-    for (RJ_Size component = 0; component < AMS.data.count; component++)
+    for (RJ_Size component = 0; component < AUDIO.info.count; component++)
     {
-        if (!amsIsActive(component))
-        {
-            continue;
-        }
-
-        ma_sound_set_position((ma_sound *)&amsSound(component), amsPositionReference(component).x, amsPositionReference(component).y, amsPositionReference(component).z);
+        Vector3 componentPos = Entity_GetPosition(amsEntity(component));
+        ma_sound_set_position((ma_sound *)&amsSound(component), componentPos.x, componentPos.y, componentPos.z);
     }
 
-    ma_engine_listener_set_position(&AMS.engine, 0, AMS.listener.positionReference->x, AMS.listener.positionReference->y, AMS.listener.positionReference->z);
-    ma_engine_listener_set_direction(&AMS.engine, 0, AMS.listener.rotationReference->x, AMS.listener.rotationReference->y, AMS.listener.rotationReference->z); // todo forward rotation
+    ma_engine_listener_set_position(&AUDIO.engine, 0, AUDIO.listener.positionReference->x, AUDIO.listener.positionReference->y, AUDIO.listener.positionReference->z);
+    ma_engine_listener_set_direction(&AUDIO.engine, 0, AUDIO.listener.rotationReference->x, AUDIO.listener.rotationReference->y, AUDIO.listener.rotationReference->z); // todo forward rotation
 }
 
-RJ_ResultWarn Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity, StringView audioFile)
+RJ_ResultWarn Audio_ComponentCreate(RJ_Size entity, AudioComponent *retComponent, StringView audioFile)
 {
-    RJ_DebugAssert(AMS.data.count + AMS.data.freeIndices.count < AMS.data.capacity, "Maximum audio component capacity of %u reached.", AMS.data.capacity);
+    RJ_DebugAssert(AUDIO.info.count + AUDIO.info.freeIndices.count < AUDIO.info.capacity, "Maximum audio component capacity of %u reached.", AUDIO.info.capacity);
 
-    AudioComponent newComponent = AMS.data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&AMS.data.freeIndices)) : AMS.data.count;
+    AudioComponent newComponent = AUDIO.info.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&AUDIO.info.freeIndices)) : AUDIO.info.count;
 
     amsEntity(newComponent) = entity;
-    amsSetActive(newComponent, true);
 
     *retComponent = newComponent;
 
@@ -178,7 +146,7 @@ RJ_ResultWarn Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
 
     ma_result result = ma_sound_init_from_file(
-        &AMS.engine,
+        &AUDIO.engine,
         fullPath.characters,
         0,
         NULL,
@@ -187,15 +155,15 @@ RJ_ResultWarn Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity
 
     if (result != MA_SUCCESS)
     {
-        ListArray_Add(&AMS.data.freeIndices, &newComponent);
+        ListArray_Add(&AUDIO.info.freeIndices, &newComponent);
         amsEntity(newComponent) = RJ_INDEX_INVALID;
-        amsFlag(newComponent) = false;
+        RJ_DebugWarning("Failed to create audio component : %zu", result);
         return RJ_ERROR_DEPENDENCY;
     }
 
     String_Destroy(&fullPath);
 
-    AMS.data.count++;
+    AUDIO.info.count++;
 
     return RJ_OK;
 }
@@ -204,27 +172,12 @@ void Audio_ComponentDestroy(AudioComponent component)
 {
     amsAssertComponent(component);
 
-    ListArray_Add(&AMS.data.freeIndices, &component);
+    ListArray_Add(&AUDIO.info.freeIndices, &component);
 
     amsEntity(component) = RJ_INDEX_INVALID;
     ma_sound_uninit((ma_sound *)&amsSound(component));
-    amsFlag(component) = false;
 
-    AMS.data.count--;
-}
-
-bool Audio_ComponentIsActive(AudioComponent component)
-{
-    amsAssertComponent(component);
-
-    return amsIsActive(component);
-}
-
-void Audio_ComponentSetActive(AudioComponent component, bool isActive)
-{
-    amsAssertComponent(component);
-
-    amsSetActive(component, (uint8_t)isActive);
+    AUDIO.info.count--;
 }
 
 bool Audio_ComponentIsPlaying(AudioComponent component)

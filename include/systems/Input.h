@@ -116,7 +116,7 @@ typedef enum InputMouseMode
 
 /// @brief Initialization function for the input system. Can be called multiple times if the GLFW window changes.
 /// @param window Window to initialize.
-void Input_Initialize(ContextWindow *window);
+void Input_Initialize(const ContextWindow *window);
 
 /// @brief Configures the mouse mode of the main window.
 /// @param mode Mode to set.

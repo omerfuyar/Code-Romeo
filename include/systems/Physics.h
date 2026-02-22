@@ -2,15 +2,14 @@
 
 #include "RJGlobal.h"
 
+#include "tools/Entity.h"
+
 #include "utilities/Vector.h"
+
+#pragma region Typedefs
 
 /// @brief Number of iterations to perform when resolving collisions in a physics scene.
 #define PHYSICS_COLLISION_RESOLVE_ITERATIONS 2
-
-/// @brief Capacity of free indices array of the physics system.
-#define PHYSICS_INITIAL_FREE_INDEX_ARRAY_SIZE 4
-
-#pragma region Typedefs
 
 /// @brief Represents a component that can interact with the physics system.
 typedef RJ_Size PhysicsComponent;
@@ -18,22 +17,20 @@ typedef RJ_Size PhysicsComponent;
 #pragma endregion Typedefs
 
 /// @brief Creates a new physics scene. Try keeping entities that have physics component in sequence for best cpu cache performance.
-/// @param componentCapacity The initial capacity for physics components.
-/// @param positionReferences A pointer to the start of position vector references for all objects.
+/// @param initialComponentCapacity The initial capacity for physics components.
 /// @param drag The drag to be applied to components (0-1).
 /// @param gravity The gravity to be applied to components.
 /// @param elasticity The elasticity to be applied to components (0-1).
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Physics_Initialize(RJ_Size componentCapacity, Vector3 *positionReferences, float drag, float gravity, float elasticity);
+RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, float gravity, float elasticity);
 
 /// @brief Destroys a physics scene and all its components.
 void Physics_Terminate(void);
 
 /// @brief Changes the position references for all physics components in the scene.
-/// @param positionReferences A pointer to the start of the new position vector references.
 /// @param newCapacity The maximum number of position vectors available.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Physics_ConfigureReferences(Vector3 *positionReferences, RJ_Size newCapacity);
+RJ_ResultWarn Physics_Configure(RJ_Size newCapacity);
 
 /// @brief Checks for collision between two AABB colliders.
 /// @param component1 The first component.

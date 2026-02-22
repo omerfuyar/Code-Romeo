@@ -2,25 +2,19 @@
 
 #include "RJGlobal.h"
 
+#include "tools/Entity.h"
+
 #include "utilities/String.h"
 #include "utilities/Vector.h"
 #include "utilities/ListArray.h"
 
-/// @brief Capacity of free indices array of the audio system.
-#define AUDIO_INITIAL_FREE_INDEX_ARRAY_SIZE 4
-
-#pragma region Typedefs
-
 /// @brief Represents a component that can interact with the audio system.
 typedef RJ_Size AudioComponent;
 
-#pragma endregion Typedefs
-
 /// @brief Initialize the audio system with the specified component capacity.
 /// @param initialComponentCapacity The initial capacity for audio components.
-/// @param positionReferences Reference to the array of position vectors for audio components.
 /// @return RJ_OK on success or RJ_ERROR_DEPENDENCY if miniaudio fails or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity, Vector3 *positionReferences);
+RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity);
 
 /// @brief Terminate and free the necessary resources for audio system.
 void Audio_Terminate(void);
@@ -31,9 +25,8 @@ void Audio_Terminate(void);
 void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationReference);
 
 /// @brief Reconfigure the audio system's position references and component capacity.
-/// @param positionReferences Reference to the array of position vectors for audio components.
 /// @param newComponentCapacity The new capacity for audio components.
-RJ_Result Audio_ConfigureReferences(Vector3 *positionReferences, RJ_Size newComponentCapacity);
+RJ_Result Audio_Configure(RJ_Size newComponentCapacity);
 
 /// @brief Update the audio system.
 void Audio_Update(void);
@@ -44,7 +37,7 @@ void Audio_Update(void);
 /// @param audioFile The audio file to be used by the component.
 /// @param positionReference Reference to the position of the audio component.
 /// @return RJ_OK on success or RJ_ERROR_DEPENDENCY if miniaudio fails.
-RJ_ResultWarn Audio_ComponentCreate(AudioComponent *retComponent, RJ_Size entity, StringView audioFile);
+RJ_ResultWarn Audio_ComponentCreate(RJ_Size entity, AudioComponent *retComponent, StringView audioFile);
 
 /// @brief Destroys an audio component and frees its resources.
 /// @param component Component to destroy.

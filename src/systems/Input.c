@@ -20,7 +20,7 @@ InputState INPUT_KEY_FUNCTIONS[INPUT_KEY_FUNCTIONS_COUNT] = {0};
 InputState INPUT_KEY_CONTROLS[INPUT_KEY_CONTROLS_COUNT] = {0};
 InputState INPUT_KEY_MOUSE_BUTTONS[INPUT_KEY_MOUSE_BUTTONS_COUNT] = {0};
 
-ContextWindow *INPUT_MAIN_WINDOW = NULL;
+const ContextWindow *INPUT_MAIN_WINDOW = NULL;
 float INPUT_MOUSE_SCROLL = 0.0f;
 Vector2Int INPUT_MOUSE_POSITION = {0};
 Vector2Int INPUT_PREVIOUS_MOUSE_POSITION = {0};
@@ -191,7 +191,7 @@ static void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, doub
 
 #pragma endregion Source Only
 
-void Input_Initialize(ContextWindow *window)
+void Input_Initialize(const ContextWindow *window)
 {
     RJ_DebugAssertNullPointerCheck(window);
 

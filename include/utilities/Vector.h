@@ -54,6 +54,12 @@ typedef struct Vector4Int
     int w;
 } Vector4Int;
 
+/// @brief A matrix that contains 4 columns and 4 rows.
+typedef struct Matrix4
+{
+    alignas(16) float m[4][4];
+} Matrix4;
+
 #pragma endregion typedefs
 
 /// @brief Creates a new Vector2 struct.

@@ -2,13 +2,13 @@
 
 #include "RJGlobal.h"
 
+#include "tools/Entity.h"
+#include "tools/Context.h"
+
 #include "utilities/String.h"
 #include "utilities/Vector.h"
 
-#include "tools/Context.h"
-
-/// @brief Capacity of free indices array of the renderer system.
-#define RENDERER_INITIAL_FREE_INDEX_ARRAY_SIZE 4
+#pragma region typedefs
 
 #define RENDERER_OPENGL_CLEAR_COLOR 0.3f, 0.3f, 0.3f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
@@ -32,13 +32,23 @@
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 #define RENDERER_BATCH_INITIAL_CAPACITY 16
 
-#pragma region typedefs
-
 /// @brief Represents a component that can interact with the renderer system.
 typedef RJ_Size RendererComponent;
 
 /// @brief Represents a batch of objects that share the same model for rendering.
 typedef RJ_Size RendererBatch;
+
+/// @brief Represents a camera used to render components.
+typedef struct RendererCamera
+{
+    Vector3 position;
+    Vector3 rotation;
+
+    float size; // fov if perspective, orthographic size if orthographic
+    float nearClipPlane;
+    float farClipPlane;
+    bool isPerspective;
+} RendererCamera;
 
 #pragma endregion typedefs
 
@@ -48,7 +58,7 @@ typedef RJ_Size RendererBatch;
 /// @param window The context window to render to.
 /// @param initialBatchCapacity The initial capacity for renderer batches.
 /// @return RJ_OK on success, RJ_ERROR_DEPENDENCY if glad or GLFW fails or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Renderer_Initialize(ContextWindow *window, RJ_Size initialBatchCapacity);
+RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
 void Renderer_Terminate(void);
@@ -64,13 +74,13 @@ bool Renderer_IsInitialized(void);
 RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
 /// @brief Configures the camera parameters for the renderer.
-/// @param positionReference The reference to the camera's position vector.
-/// @param rotationReference The reference to the camera's rotation vector.
-/// @param sizeReference The reference to the camera's size. FOV if perspective, orthographic size if orthographic.
-/// @param nearClipPlaneReference The reference to the camera's near clipping plane distance.
-/// @param farClipPlaneReference The reference to the camera's far clipping plane distance.
-/// @param isPerspectiveReference The reference to whether the camera uses perspective projection or orthographic projection.
-void Renderer_ConfigureCamera(Vector3 *positionReference, Vector3 *rotationReference, float *sizeReference, float *nearClipPlaneReference, float *farClipPlaneReference, bool *isPerspectiveReference);
+/// @param camera The address of the camera data struct to use for rendering.
+void Renderer_SetCamera(RendererCamera *camera);
+
+/// @brief Gets the camera used for rendering.
+/// @param retCamera Camera pointer reference to store returned data.
+/// @return RJ_OK on success,
+RJ_ResultWarn Renderer_GetCamera(RendererCamera **retCamera);
 
 /// @brief Converts screen coordinates to world coordinates with given depth.
 /// @param screenPosition Screen coordinate to convert.
@@ -95,11 +105,8 @@ void Renderer_Render(void);
 /// @param retBatch The handle to the created renderer batch.
 /// @param transformOffset The offset to apply to the model's transform.
 /// @param initialComponentCapacity The initial capacity for components in the batch.
-/// @param positionReferences The array of position references for components.
-/// @param rotationReferences The array of rotation references for components.
-/// @param scaleReferences The array of scale references for components.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if model loading fails.
-RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, Vector3 *transformOffset, RJ_Size initialComponentCapacity, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences);
+RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, const Vector3 *transformOffset, RJ_Size initialComponentCapacity);
 
 /// @brief Destroys a renderer batch.
 /// @param batch The handle to the renderer batch to destroy.
@@ -107,18 +114,15 @@ void Renderer_BatchDestroy(RendererBatch batch);
 
 /// @brief Configures the references for a renderer batch.
 /// @param batch The handle to the renderer batch.
-/// @param positionReferences The array of position references for components.
-/// @param rotationReferences The array of rotation references for components.
-/// @param scaleReferences The array of scale references for components.
 /// @param newComponentCapacity The new capacity for components in the batch.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Renderer_BatchConfigureReferences(RendererBatch batch, Vector3 *positionReferences, Vector3 *rotationReferences, Vector3 *scaleReferences, RJ_Size newComponentCapacity);
+RJ_ResultWarn Renderer_BatchConfigure(RendererBatch batch, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.
 /// @param batch The handle to the renderer batch.
 /// @return The handle to the created renderer component.
-RendererComponent Renderer_ComponentCreate(RJ_Size entity, RendererBatch batch);
+RendererComponent Renderer_ComponentCreate(Entity entity, RendererBatch batch);
 
 /// @brief Destroys a renderer component within a specified batch.
 /// @param batch The handle to the renderer batch.

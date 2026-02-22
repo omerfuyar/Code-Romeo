@@ -168,12 +168,13 @@ typedef uint32_t RJ_Size;
 
 typedef enum RJ_Result
 {
-    RJ_OK = 0,
-    RJ_ERROR_ALLOCATION,
-    RJ_ERROR_FILE,
-    RJ_ERROR_DEPENDENCY,
-    RJ_ERROR_RESOURCE,
-    RJ_ERROR_NOT_FOUND,
+    RJ_OK = 0,           // Function was successful
+    RJ_ERROR_ALLOCATION, // Errors received from OS memory allocations
+    RJ_ERROR_FILE,       // Errors received from OS file system
+    RJ_ERROR_DEPENDENCY, // Errors received from dependency functions
+    RJ_ERROR_RESOURCE,   // Errors received from resource operations
+    RJ_ERROR_NOT_FOUND,  // Errors received from finding functions
+    RJ_ERROR_INTERNAL    // Errors received from functions called in wrong order
 } RJ_Result;
 
 #if RJ_COMPILER == RJ_COMPILER_GCC || RJ_COMPILER == RJ_COMPILER_CLANG
