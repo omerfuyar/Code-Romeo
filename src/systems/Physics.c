@@ -12,13 +12,6 @@
 
 struct PHYSICS
 {
-    struct PHYSICS_INFO
-    {
-        RJ_Size capacity;
-        RJ_Size count;
-        ListArray freeIndices; // RJ_Size
-    } info;
-
     struct PHYSICS_PROPERTIES
     {
         float drag;
@@ -28,7 +21,12 @@ struct PHYSICS
 
     struct PHYSICS_DATA
     {
-        Entity *entityMap;
+        RJ_Size capacity;
+        RJ_Size count;
+
+        Entity *entityToCompMap;
+        Entity *compToEntityMap;
+
         Vector3 *velocities;
         Vector3 *colliderSizes;
         float *masses;
@@ -36,7 +34,8 @@ struct PHYSICS
     } data;
 } PHYSICS = {0};
 
-#define pEntity(component) (PHYSICS.data.entityMap[component])
+#define rEntity(component) (PHYSICS.data.compToEntityMap[component])
+#define rComponent(entity) (PHYSICS.data.entityToCompMap[entity])
 
 #define pVelocity(component) (PHYSICS.data.velocities[component])
 #define pColliderSize(component) (PHYSICS.data.colliderSizes[component])
@@ -46,16 +45,21 @@ struct PHYSICS
 #define pIsStatic(component) (pFlag(component) & PHYSICS_FLAG_STATIC)
 #define pSetStatic(component, isStatic) (pFlag(component) = ((isStatic) ? (pFlag(component) | PHYSICS_FLAG_STATIC) : (pFlag(component) & (uint8_t)~PHYSICS_FLAG_STATIC)))
 
-#define pAssertComponent(component) RJ_DebugAssert((component) < PHYSICS.info.count + PHYSICS.info.freeIndices.count && pEntity(component) != RJ_INDEX_INVALID, "Physics component %u either exceeds maximum possible index %u or is invalid.", (component), PHYSICS.info.count + PHYSICS.info.freeIndices.count)
+#define pAssertComponent(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                              \
+                                                    rComponent(entity) != RJ_INDEX_INVALID &&                                                \
+                                                    rEntity(rComponent(entity)) == entity &&                                                 \
+                                                    rComponent(entity) < PHYSICS.data.count,                                                 \
+                                                "Physics component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
+                                                rComponent(entity), entity, PHYSICS.data.count)
 
 /// @brief Resolve a collision between a static and dynamic physics component.
 /// @param staticComponent Static physics component.
 /// @param dynamicComponent Dynamic physics component.
 /// @param overlap Overlap vector indicating the penetration depth.
-static void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent, PhysicsComponent dynamicComponent, Vector3 overlap)
+static void PhysicsScene_ResolveStaticVsDynamic(Entity staticComponent, Entity dynamicComponent, Vector3 overlap)
 {
-    Vector3 staticPos = Entity_GetPosition(pEntity(staticComponent));
-    Vector3 dynamicPos = Entity_GetPosition(pEntity(dynamicComponent));
+    Vector3 staticPos = Entity_GetPosition(rEntity(staticComponent));
+    Vector3 dynamicPos = Entity_GetPosition(rEntity(dynamicComponent));
 
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
@@ -82,21 +86,21 @@ static void PhysicsScene_ResolveStaticVsDynamic(PhysicsComponent staticComponent
         pVelocity(dynamicComponent).z *= -PHYSICS.properties.elasticity;
     }
 
-    Entity_SetPosition(pEntity(dynamicComponent), dynamicPos);
+    Entity_SetPosition(rEntity(dynamicComponent), dynamicPos);
 }
 
 /// @brief Resolve a collision between two dynamic physics components.
 /// @param firstComponent First dynamic physics component.
 /// @param secondComponent Second dynamic physics component.
 /// @param overlap Overlap vector indicating the penetration depth.
-static void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent, PhysicsComponent secondComponent, Vector3 overlap)
+static void PhysicsScene_ResolveDynamicVsDynamic(Entity firstComponent, Entity secondComponent, Vector3 overlap)
 {
     float totalInvMass = 1.0f / pMass(firstComponent) + 1.0f / pMass(secondComponent);
     float move1 = 0.0f;
     float move2 = 0.0f;
 
-    Vector3 firstPos = Entity_GetPosition(pEntity(firstComponent));
-    Vector3 secondPos = Entity_GetPosition(pEntity(secondComponent));
+    Vector3 firstPos = Entity_GetPosition(rEntity(firstComponent));
+    Vector3 secondPos = Entity_GetPosition(rEntity(secondComponent));
 
     if (overlap.x < overlap.y && overlap.x < overlap.z)
     {
@@ -147,8 +151,8 @@ static void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent
         }
     }
 
-    Entity_SetPosition(pEntity(firstComponent), firstPos);
-    Entity_SetPosition(pEntity(secondComponent), secondPos);
+    Entity_SetPosition(rEntity(firstComponent), firstPos);
+    Entity_SetPosition(rEntity(secondComponent), secondPos);
 
     // v1' = ( (m1 - e*m2)*v1 + (1+e)*m2*v2 ) / (m1+m2)
     // v2' = ( (m2 - e*m1)*v2 + (1+e)*m1*v1 ) / (m1+m2)
@@ -183,11 +187,11 @@ static void PhysicsScene_ResolveDynamicVsDynamic(PhysicsComponent firstComponent
 /// @brief Resolve a collision between two physics components. Which resolution method to use is determined by whether components are static or dynamic.
 /// @param firstComponent First physics component.
 /// @param secondComponent Second physics component.
-static void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, PhysicsComponent secondComponent)
+static void PhysicsScene_ResolveCollision(Entity firstComponent, Entity secondComponent)
 {
     Vector3 overlap;
 
-    if (!Physics_IsColliding(firstComponent, secondComponent, &overlap))
+    if (!Physics_IsColliding(rEntity(firstComponent), rEntity(secondComponent), &overlap))
     {
         return;
     }
@@ -210,63 +214,66 @@ static void PhysicsScene_ResolveCollision(PhysicsComponent firstComponent, Physi
 
 RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, float gravity, float elasticity)
 {
-    PHYSICS.info.capacity = initialComponentCapacity;
-    PHYSICS.info.count = 0;
-    ListArray_Create(&PHYSICS.info.freeIndices, "RJ_Size", sizeof(RJ_Size), ENTITY_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    PHYSICS.data.capacity = initialComponentCapacity;
+    PHYSICS.data.count = 0;
 
     PHYSICS.properties.drag = drag;
     PHYSICS.properties.gravity = gravity;
     PHYSICS.properties.elasticity = elasticity;
 
-    RJ_ReturnAllocate(RJ_Size, PHYSICS.data.entityMap, PHYSICS.info.capacity,
-                      ListArray_Destroy(&PHYSICS.info.freeIndices););
+    RJ_ReturnAllocate(Entity, PHYSICS.data.entityToCompMap, PHYSICS.data.capacity);
 
-    RJ_ReturnAllocate(Vector3, PHYSICS.data.velocities, PHYSICS.info.capacity,
-                      ListArray_Destroy(&PHYSICS.info.freeIndices);
-                      free(PHYSICS.data.entityMap););
+    RJ_ReturnAllocate(Entity, PHYSICS.data.compToEntityMap, PHYSICS.data.capacity,
+                      free(PHYSICS.data.entityToCompMap););
 
-    RJ_ReturnAllocate(Vector3, PHYSICS.data.colliderSizes, PHYSICS.info.capacity,
-                      ListArray_Destroy(&PHYSICS.info.freeIndices);
+    RJ_ReturnAllocate(Vector3, PHYSICS.data.velocities, PHYSICS.data.capacity,
+                      free(PHYSICS.data.compToEntityMap);
+                      free(PHYSICS.data.entityToCompMap););
+
+    RJ_ReturnAllocate(Vector3, PHYSICS.data.colliderSizes, PHYSICS.data.capacity,
                       free(PHYSICS.data.velocities);
-                      free(PHYSICS.data.entityMap););
+                      free(PHYSICS.data.compToEntityMap);
+                      free(PHYSICS.data.entityToCompMap););
 
-    RJ_ReturnAllocate(float, PHYSICS.data.masses, PHYSICS.info.capacity,
-                      ListArray_Destroy(&PHYSICS.info.freeIndices);
+    RJ_ReturnAllocate(float, PHYSICS.data.masses, PHYSICS.data.capacity,
+                      free(PHYSICS.data.velocities);
                       free(PHYSICS.data.colliderSizes);
-                      free(PHYSICS.data.velocities);
-                      free(PHYSICS.data.entityMap););
+                      free(PHYSICS.data.compToEntityMap);
+                      free(PHYSICS.data.entityToCompMap););
 
-    RJ_ReturnAllocate(uint8_t, PHYSICS.data.flags, PHYSICS.info.capacity,
-                      ListArray_Destroy(&PHYSICS.info.freeIndices);
+    RJ_ReturnAllocate(uint8_t, PHYSICS.data.flags, PHYSICS.data.capacity,
                       free(PHYSICS.data.masses);
                       free(PHYSICS.data.colliderSizes);
                       free(PHYSICS.data.velocities);
-                      free(PHYSICS.data.entityMap););
+                      free(PHYSICS.data.compToEntityMap);
+                      free(PHYSICS.data.entityToCompMap););
 
-    memset(PHYSICS.data.entityMap, 0xff, sizeof(RJ_Size) * initialComponentCapacity);
+    memset(PHYSICS.data.entityToCompMap, 0xff, sizeof(Entity) * initialComponentCapacity);
+    memset(PHYSICS.data.compToEntityMap, 0xff, sizeof(Entity) * initialComponentCapacity);
 
-    RJ_DebugInfo("Physics initialized with component capacity %u.", PHYSICS.info.capacity);
+    RJ_DebugInfo("Physics initialized with component capacity %u.", PHYSICS.data.capacity);
 
     return RJ_OK;
 }
 
 void Physics_Terminate(void)
 {
-    PHYSICS.info.capacity = 0;
-    PHYSICS.info.count = 0;
-    ListArray_Destroy(&PHYSICS.info.freeIndices);
+    PHYSICS.data.capacity = 0;
+    PHYSICS.data.count = 0;
 
     PHYSICS.properties.drag = 0.0f;
     PHYSICS.properties.gravity = 0.0f;
     PHYSICS.properties.elasticity = 0.0f;
 
-    free(PHYSICS.data.entityMap);
+    free(PHYSICS.data.entityToCompMap);
+    free(PHYSICS.data.compToEntityMap);
     free(PHYSICS.data.velocities);
     free(PHYSICS.data.colliderSizes);
     free(PHYSICS.data.masses);
     free(PHYSICS.data.flags);
 
-    PHYSICS.data.entityMap = NULL;
+    PHYSICS.data.entityToCompMap = NULL;
+    PHYSICS.data.compToEntityMap = NULL;
     PHYSICS.data.velocities = NULL;
     PHYSICS.data.colliderSizes = NULL;
     PHYSICS.data.masses = NULL;
@@ -277,37 +284,48 @@ void Physics_Terminate(void)
 
 RJ_ResultWarn Physics_Configure(RJ_Size newCapacity)
 {
-    RJ_DebugAssert(newCapacity > PHYSICS.info.count, "New component capacity must be greater than current physics component count.");
+    RJ_DebugAssert(newCapacity > PHYSICS.data.count, "New component capacity must be greater than current physics component count.");
 
-    PHYSICS.info.capacity = newCapacity;
+    PHYSICS.data.capacity = newCapacity;
 
-    RJ_ReturnReallocate(RJ_Size, PHYSICS.data.entityMap, PHYSICS.info.capacity);
-    RJ_ReturnReallocate(Vector3, PHYSICS.data.velocities, PHYSICS.info.capacity,
-                        free(PHYSICS.data.entityMap););
-    RJ_ReturnReallocate(Vector3, PHYSICS.data.colliderSizes, PHYSICS.info.capacity,
+    RJ_ReturnReallocate(Entity, PHYSICS.data.entityToCompMap, PHYSICS.data.capacity);
+
+    RJ_ReturnReallocate(Entity, PHYSICS.data.compToEntityMap, PHYSICS.data.capacity,
+                        free(PHYSICS.data.entityToCompMap););
+
+    RJ_ReturnReallocate(Vector3, PHYSICS.data.velocities, PHYSICS.data.capacity,
+                        free(PHYSICS.data.compToEntityMap);
+                        free(PHYSICS.data.entityToCompMap););
+
+    RJ_ReturnReallocate(Vector3, PHYSICS.data.colliderSizes, PHYSICS.data.capacity,
                         free(PHYSICS.data.velocities);
-                        free(PHYSICS.data.entityMap););
-    RJ_ReturnReallocate(float, PHYSICS.data.masses, PHYSICS.info.capacity,
+                        free(PHYSICS.data.compToEntityMap);
+                        free(PHYSICS.data.entityToCompMap););
+
+    RJ_ReturnReallocate(float, PHYSICS.data.masses, PHYSICS.data.capacity,
                         free(PHYSICS.data.colliderSizes);
                         free(PHYSICS.data.velocities);
-                        free(PHYSICS.data.entityMap););
-    RJ_ReturnReallocate(uint8_t, PHYSICS.data.flags, PHYSICS.info.capacity,
+                        free(PHYSICS.data.compToEntityMap);
+                        free(PHYSICS.data.entityToCompMap););
+
+    RJ_ReturnReallocate(uint8_t, PHYSICS.data.flags, PHYSICS.data.capacity,
                         free(PHYSICS.data.masses);
                         free(PHYSICS.data.colliderSizes);
                         free(PHYSICS.data.velocities);
-                        free(PHYSICS.data.entityMap););
+                        free(PHYSICS.data.compToEntityMap);
+                        free(PHYSICS.data.entityToCompMap););
 
-    RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PHYSICS.info.capacity);
+    RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PHYSICS.data.capacity);
     return RJ_OK;
 }
 
-bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component2, Vector3 *overlapRet)
+bool Physics_IsColliding(Entity entity1, Entity entity2, Vector3 *overlapRet)
 {
-    Vector3 position1 = Entity_GetPosition(pEntity(component1));
-    Vector3 position2 = Entity_GetPosition(pEntity(component2));
+    Vector3 position1 = Entity_GetPosition(entity1);
+    Vector3 position2 = Entity_GetPosition(entity2);
 
-    Vector3 colliderSize1 = pColliderSize(component1);
-    Vector3 colliderSize2 = pColliderSize(component2);
+    Vector3 colliderSize1 = pColliderSize(rComponent(entity1));
+    Vector3 colliderSize2 = pColliderSize(rComponent(entity2));
 
     float overlapX = Maths_Min(position1.x + colliderSize1.x / 2.0f,
                                position2.x + colliderSize2.x / 2.0f) -
@@ -334,7 +352,7 @@ bool Physics_IsColliding(PhysicsComponent component1, PhysicsComponent component
 
 void Physics_UpdateComponents(float deltaTime)
 {
-    for (RJ_Size component = 0; component < PHYSICS.info.count; component++)
+    for (Entity component = 0; component < PHYSICS.data.count; component++)
     {
         if (pIsStatic(component))
         {
@@ -343,7 +361,8 @@ void Physics_UpdateComponents(float deltaTime)
 
         pVelocity(component) = Vector3_Sum(pVelocity(component), Vector3_New(0.0f, PHYSICS.properties.gravity * deltaTime, 0.0f));
         pVelocity(component) = Vector3_Scale(pVelocity(component), 1.0f - PHYSICS.properties.drag);
-        Entity_SetPosition(pEntity(component), Vector3_Sum(Entity_GetPosition(pEntity(component)), Vector3_Scale(pVelocity(component), deltaTime)));
+
+        Entity_SetPosition(rEntity(component), Vector3_Sum(Entity_GetPosition(rEntity(component)), Vector3_Scale(pVelocity(component), deltaTime)));
     }
 }
 
@@ -351,9 +370,9 @@ void Physics_ResolveCollisions(void)
 {
     for (RJ_Size iteration = 0; iteration < PHYSICS_COLLISION_RESOLVE_ITERATIONS; iteration++)
     {
-        for (RJ_Size firstComponent = 0; firstComponent < PHYSICS.info.count; firstComponent++)
+        for (Entity firstComponent = 0; firstComponent < PHYSICS.data.count; firstComponent++)
         {
-            for (RJ_Size secondComponent = firstComponent + 1; secondComponent < PHYSICS.info.count; secondComponent++)
+            for (Entity secondComponent = firstComponent + 1; secondComponent < PHYSICS.data.count; secondComponent++)
             {
                 PhysicsScene_ResolveCollision(firstComponent, secondComponent);
             }
@@ -361,82 +380,83 @@ void Physics_ResolveCollisions(void)
     }
 }
 
-PhysicsComponent Physics_ComponentCreate(RJ_Size entity, Vector3 colliderSize, float mass, bool isStatic)
+Entity Physics_ComponentCreate(Entity entity, Vector3 colliderSize, float mass, bool isStatic)
 {
-    RJ_DebugAssert(PHYSICS.info.count + PHYSICS.info.freeIndices.count < PHYSICS.info.capacity, "Maximum physics component capacity of %u reached.", PHYSICS.info.capacity);
+    RJ_DebugAssert(PHYSICS.data.count < PHYSICS.data.capacity, "Maximum physics component capacity of %u reached.", PHYSICS.data.capacity);
 
-    PhysicsComponent newComponent = PHYSICS.info.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&PHYSICS.info.freeIndices)) : PHYSICS.info.count;
+    Entity component = PHYSICS.data.count;
 
-    pEntity(newComponent) = entity;
-    pColliderSize(newComponent) = colliderSize;
-    pMass(newComponent) = mass;
-    pSetStatic(newComponent, isStatic);
+    rComponent(entity) = component;
+    rEntity(component) = entity;
 
-    PHYSICS.info.count++;
+    pColliderSize(component) = colliderSize;
+    pMass(component) = mass;
+    pSetStatic(component, isStatic);
 
-    return newComponent;
+    PHYSICS.data.count++;
+
+    return component;
 }
 
-void Physics_ComponentDestroy(PhysicsComponent component)
+void Physics_ComponentDestroy(Entity entity)
 {
-    pAssertComponent(component);
+    pAssertComponent(entity);
 
-    pEntity(component) = RJ_INDEX_INVALID;
+    pVelocity(rComponent(entity)) = Vector3_Zero;
+    pColliderSize(rComponent(entity)) = Vector3_Zero;
+    pMass(rComponent(entity)) = 0.0f;
+    pFlag(rComponent(entity)) = false;
 
-    pVelocity(component) = Vector3_Zero;
-    pColliderSize(component) = Vector3_Zero;
-    pMass(component) = 0.0f;
-    pFlag(component) = false;
+    rEntity(rComponent(entity)) = RJ_INDEX_INVALID;
+    rComponent(entity) = RJ_INDEX_INVALID;
 
-    ListArray_Add(&PHYSICS.info.freeIndices, &component);
-
-    PHYSICS.info.count--;
+    PHYSICS.data.count--;
 }
 
-Vector3 Physics_ComponentGetVelocity(PhysicsComponent component)
+Vector3 Physics_ComponentGetVelocity(Entity entity)
 {
-    pAssertComponent(component);
-    return pVelocity(component);
+    pAssertComponent(entity);
+    return pVelocity(rComponent(entity));
 }
 
-void Physics_ComponentSetVelocity(PhysicsComponent component, Vector3 newVelocity)
+void Physics_ComponentSetVelocity(Entity entity, Vector3 newVelocity)
 {
-    pAssertComponent(component);
-    pVelocity(component) = newVelocity;
+    pAssertComponent(entity);
+    pVelocity(rComponent(entity)) = newVelocity;
 }
 
-Vector3 Physics_ComponentGetColliderSize(PhysicsComponent component)
+Vector3 Physics_ComponentGetColliderSize(Entity entity)
 {
-    pAssertComponent(component);
-    return pColliderSize(component);
+    pAssertComponent(entity);
+    return pColliderSize(rComponent(entity));
 }
 
-void Physics_ComponentSetColliderSize(PhysicsComponent component, Vector3 newColliderSize)
+void Physics_ComponentSetColliderSize(Entity entity, Vector3 newColliderSize)
 {
-    pAssertComponent(component);
-    pColliderSize(component) = newColliderSize;
+    pAssertComponent(entity);
+    pColliderSize(rComponent(entity)) = newColliderSize;
 }
 
-float Physics_ComponentGetMass(PhysicsComponent component)
+float Physics_ComponentGetMass(Entity entity)
 {
-    pAssertComponent(component);
-    return pMass(component);
+    pAssertComponent(entity);
+    return pMass(rComponent(entity));
 }
 
-void Physics_ComponentSetMass(PhysicsComponent component, float newMass)
+void Physics_ComponentSetMass(Entity entity, float newMass)
 {
-    pAssertComponent(component);
-    pMass(component) = newMass;
+    pAssertComponent(entity);
+    pMass(rComponent(entity)) = newMass;
 }
 
-bool Physics_ComponentIsStatic(PhysicsComponent component)
+bool Physics_ComponentIsStatic(Entity entity)
 {
-    pAssertComponent(component);
-    return pIsStatic(component);
+    pAssertComponent(entity);
+    return pIsStatic(rComponent(entity));
 }
 
-void Physics_ComponentSetStatic(PhysicsComponent component, bool newIsStatic)
+void Physics_ComponentSetStatic(Entity entity, bool newIsStatic)
 {
-    pAssertComponent(component);
-    pSetStatic(component, newIsStatic);
+    pAssertComponent(entity);
+    pSetStatic(rComponent(entity), newIsStatic);
 }

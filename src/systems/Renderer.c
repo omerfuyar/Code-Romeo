@@ -55,41 +55,46 @@ typedef struct RENDERER_BATCH
 {
     ResourceModel *model;
 
-    struct RENDERER_BATCH_DATA
+    struct RENDERER_BATCH_COMPONENTS
     {
         RJ_Size capacity;
         RJ_Size count;
-        ListArray freeIndices; // RJ_Size
-    } data;
 
-    struct RENDERER_BATCH_COMPONENTS
-    {
-        Entity *entityMap;
+        Entity *entityToCompMap;
+        Entity *compToEntityMap;
         Matrix4 *objectMatrices;
-    } components;
+    } data;
 } RENDERER_BATCH;
 
 #pragma endregion typedefs
 
+typedef struct RendererEntityPair
+{
+    RendererBatch batch;
+    Entity component;
+} RendererEntityPair;
+
 struct RENDERER
 {
     const ContextWindow *window;
-    RENDERER_BATCH *batches; // RENDERER_BATCH
-    // todo maybe change with linked list for dynamic resizing?
 
-    struct RENDERER_CAMERA
-    {
-        RendererCamera *ref;
-        Matrix4 projectionMatrix;
-        Matrix4 viewMatrix;
-    } camera;
-
-    struct RENDERER_INFO
+    struct RENDERER_DATA
     {
         RJ_Size capacity;
         RJ_Size count;
-        ListArray freeIndices; // RJ_Size
-    } info;
+
+        RendererEntityPair *entityToPairMap;
+
+        RENDERER_BATCH *batches;
+        // todo maybe change with linked list for dynamic resizing?
+    } data;
+
+    struct RENDERER_CAMERA
+    {
+        RendererCamera *reference;
+        Matrix4 projectionMatrix;
+        Matrix4 viewMatrix;
+    } camera;
 
     struct RENDERER_SHADER
     {
@@ -134,13 +139,22 @@ struct RENDERER
     } debugShader;
 } RENDERER = {0};
 
-#define rmsBatch(batch) (RENDERER.batches[batch])
+#define rmsBatch(batch) (RENDERER.data.batches[batch])
+// #define rEntity(component) (PHYSICS.data.compToEntityMap[component])
+// #define rComponent(entity) (PHYSICS.data.entityToCompMap[entity])
 
-#define rmsEntity(batch, component) (rmsBatch(batch).components.entityMap[component])
-#define rmsObjectMatrix(batch, component) (rmsBatch(batch).components.objectMatrices[component])
+#define rEntity(batch, component) (rmsBatch(batch).components.entityToCompMap[component])
+#define rObjectMatrix(batch, component) (rmsBatch(batch).components.objectMatrices[component])
 
 #define rmsAssertBatch(batch) RJ_DebugAssert(batch < RENDERER.info.count + RENDERER.info.freeIndices.count, "Renderer batch %u exceeds maximum batch count %u.", batch, RENDERER.info.count)
-#define rmsAssertComponent(batch, component) RJ_DebugAssert(component < rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count && rmsEntity(batch, component) != RJ_INDEX_INVALID, "Renderer component %u either exceeds maximum possible index %u or is invalid.", component, rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count)
+#define rmsAssertComponent(batch, component) RJ_DebugAssert(component < rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count && rEntity(batch, component) != RJ_INDEX_INVALID, "Renderer component %u either exceeds maximum possible index %u or is invalid.", component, rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count)
+
+#define rAssertComponent(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                               \
+                                                    rComponent(entity) != RJ_INDEX_INVALID &&                                                 \
+                                                    rEntity(rComponent(entity)) == entity &&                                                  \
+                                                    rComponent(entity) < PHYSICS.data.count,                                                  \
+                                                "Renderer component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
+                                                rComponent(entity), entity, PHYSICS.data.count)
 
 /// @brief
 /// @param window
@@ -198,7 +212,7 @@ RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBa
 
     RENDERER.window = window;
 
-    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.batches, initialBatchCapacity);
+    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, initialBatchCapacity);
 
     RENDERER.info.capacity = initialBatchCapacity;
     RENDERER.info.count = 0;
@@ -255,14 +269,14 @@ void Renderer_Terminate(void)
         Renderer_BatchDestroy(batch - 1);
     }
 
-    free(RENDERER.batches);
-    RENDERER.batches = NULL;
+    free(RENDERER.data.batches);
+    RENDERER.data.batches = NULL;
 
     RENDERER.info.capacity = 0;
     RENDERER.info.count = 0;
     ListArray_Destroy(&RENDERER.info.freeIndices);
 
-    RENDERER.camera.ref = NULL;
+    RENDERER.camera.reference = NULL;
 
     if (RENDERER.shader.programHandle != 0)
     {
@@ -396,21 +410,21 @@ void Renderer_SetCamera(RendererCamera *camera)
 {
     RJ_DebugAssertNullPointerCheck(camera);
 
-    RENDERER.camera.ref = camera;
+    RENDERER.camera.reference = camera;
 }
 
 RJ_ResultWarn Renderer_GetCamera(RendererCamera **retCamera)
 {
     RJ_DebugAssertNullPointerCheck(retCamera);
 
-    if (RENDERER.camera.ref == NULL)
+    if (RENDERER.camera.reference == NULL)
     {
         *retCamera = NULL;
         RJ_DebugWarning("Internal renderer camera is NULL");
         return RJ_ERROR_INTERNAL;
     }
 
-    *retCamera = RENDERER.camera.ref;
+    *retCamera = RENDERER.camera.reference;
     return RJ_OK;
 }
 
@@ -438,13 +452,13 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
 
     Vector3 rayDirection = Vector3_Normalized(Vector3_Sum(farPoint, Vector3_Scale(nearPoint, -1.0f)));
 
-    if (RENDERER.camera.ref->isPerspective)
+    if (RENDERER.camera.reference->isPerspective)
     {
-        return Vector3_Sum(RENDERER.camera.ref->position, Vector3_Scale(rayDirection, depth));
+        return Vector3_Sum(RENDERER.camera.reference->position, Vector3_Scale(rayDirection, depth));
     }
     else
     {
-        return Vector3_Sum(Vector3_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(RENDERER.camera.ref->nearClipPlane))), Vector3_Scale(rayDirection, depth));
+        return Vector3_Sum(Vector3_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(RENDERER.camera.reference->nearClipPlane))), Vector3_Scale(rayDirection, depth));
     }
 }
 
@@ -460,8 +474,8 @@ RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
         newBatches[i] = rmsBatch(i);
     }
 
-    free(RENDERER.batches);
-    RENDERER.batches = newBatches;
+    free(RENDERER.data.batches);
+    RENDERER.data.batches = newBatches;
 
     RENDERER.info.capacity = newBatchCapacity;
 
@@ -565,30 +579,30 @@ void Renderer_Update(void)
     glm_mat4_identity((vec4 *)&RENDERER.camera.projectionMatrix);
     glm_mat4_identity((vec4 *)&RENDERER.camera.viewMatrix);
 
-    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(RENDERER.camera.ref->rotation.x) * Maths_Cos(RENDERER.camera.ref->rotation.y),
-                                                       Maths_Sin(RENDERER.camera.ref->rotation.x),
-                                                       Maths_Cos(RENDERER.camera.ref->rotation.x) * Maths_Sin(RENDERER.camera.ref->rotation.y)));
+    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(RENDERER.camera.reference->rotation.x) * Maths_Cos(RENDERER.camera.reference->rotation.y),
+                                                       Maths_Sin(RENDERER.camera.reference->rotation.x),
+                                                       Maths_Cos(RENDERER.camera.reference->rotation.x) * Maths_Sin(RENDERER.camera.reference->rotation.y)));
 
-    Vector3 center = Vector3_Sum(RENDERER.camera.ref->position, Vector3_Normalized(direction));
+    Vector3 center = Vector3_Sum(RENDERER.camera.reference->position, Vector3_Normalized(direction));
 
-    glm_lookat((float *)&RENDERER.camera.ref->position, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RENDERER.camera.viewMatrix);
-    if (RENDERER.camera.ref->isPerspective)
+    glm_lookat((float *)&RENDERER.camera.reference->position, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RENDERER.camera.viewMatrix);
+    if (RENDERER.camera.reference->isPerspective)
     {
-        glm_perspective(Maths_DegToRad(RENDERER.camera.ref->size),
+        glm_perspective(Maths_DegToRad(RENDERER.camera.reference->size),
                         (float)RENDERER.window->size.x / (float)RENDERER.window->size.y,
-                        RENDERER.camera.ref->nearClipPlane,
-                        RENDERER.camera.ref->farClipPlane,
+                        RENDERER.camera.reference->nearClipPlane,
+                        RENDERER.camera.reference->farClipPlane,
                         (vec4 *)&RENDERER.camera.projectionMatrix);
     }
     else
     {
-        float sizeX = (float)RENDERER.window->size.x * RENDERER.camera.ref->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        float sizeY = (float)RENDERER.window->size.y * RENDERER.camera.ref->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeX = (float)RENDERER.window->size.x * RENDERER.camera.reference->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeY = (float)RENDERER.window->size.y * RENDERER.camera.reference->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
 
         glm_ortho(-sizeX, sizeX,
                   -sizeY, sizeY,
-                  RENDERER.camera.ref->nearClipPlane,
-                  RENDERER.camera.ref->farClipPlane,
+                  RENDERER.camera.reference->nearClipPlane,
+                  RENDERER.camera.reference->farClipPlane,
                   (vec4 *)&RENDERER.camera.projectionMatrix);
     }
 
@@ -598,18 +612,18 @@ void Renderer_Update(void)
         {
             // todo send transform data to gpu instead of calculating here
 
-            glm_mat4_identity((vec4 *)&rmsObjectMatrix(batch, component));
+            glm_mat4_identity((vec4 *)&rObjectMatrix(batch, component));
 
-            Vector3 componentPos = Entity_GetPosition(rmsEntity(batch, component));
-            glm_translate((vec4 *)&rmsObjectMatrix(batch, component), (float *)&(vec3){componentPos.x, componentPos.y, componentPos.z});
+            Vector3 componentPos = Entity_GetPosition(rEntity(batch, component));
+            glm_translate((vec4 *)&rObjectMatrix(batch, component), (float *)&(vec3){componentPos.x, componentPos.y, componentPos.z});
 
-            Vector3 componentRot = Entity_GetRotation(rmsEntity(batch, component));
-            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), componentRot.x, (float *)&(vec3){1, 0, 0});
-            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), componentRot.y, (float *)&(vec3){0, 1, 0});
-            glm_rotate((vec4 *)&rmsObjectMatrix(batch, component), componentRot.z, (float *)&(vec3){0, 0, 1});
+            Vector3 componentRot = Entity_GetRotation(rEntity(batch, component));
+            glm_rotate((vec4 *)&rObjectMatrix(batch, component), componentRot.x, (float *)&(vec3){1, 0, 0});
+            glm_rotate((vec4 *)&rObjectMatrix(batch, component), componentRot.y, (float *)&(vec3){0, 1, 0});
+            glm_rotate((vec4 *)&rObjectMatrix(batch, component), componentRot.z, (float *)&(vec3){0, 0, 1});
 
-            Vector3 componentScl = Entity_GetScale(rmsEntity(batch, component));
-            glm_scale((vec4 *)&rmsObjectMatrix(batch, component), (float *)&(vec3){componentScl.x, componentScl.y, componentScl.z});
+            Vector3 componentScl = Entity_GetScale(rEntity(batch, component));
+            glm_scale((vec4 *)&rObjectMatrix(batch, component), (float *)&(vec3){componentScl.x, componentScl.y, componentScl.z});
         }
     }
 }
@@ -627,10 +641,10 @@ void Renderer_Render(void)
 
     glUniformMatrix4fv(RENDERER.shader.camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&RENDERER.camera.projectionMatrix);
     glUniformMatrix4fv(RENDERER.shader.camViewMatrix, 1, GL_FALSE, (GLfloat *)&RENDERER.camera.viewMatrix);
-    glUniform3fv(RENDERER.shader.camPosition, 1, (GLfloat *)&RENDERER.camera.ref->position);
-    glUniform3fv(RENDERER.shader.camRotation, 1, (GLfloat *)&RENDERER.camera.ref->rotation);
-    glUniform1f(RENDERER.shader.camSize, RENDERER.camera.ref->size);
-    glUniform1i(RENDERER.shader.camIsPerspective, RENDERER.camera.ref->isPerspective);
+    glUniform3fv(RENDERER.shader.camPosition, 1, (GLfloat *)&RENDERER.camera.reference->position);
+    glUniform3fv(RENDERER.shader.camRotation, 1, (GLfloat *)&RENDERER.camera.reference->rotation);
+    glUniform1f(RENDERER.shader.camSize, RENDERER.camera.reference->size);
+    glUniform1i(RENDERER.shader.camIsPerspective, RENDERER.camera.reference->isPerspective);
 
     ResourceModel *previousModel = NULL;
 
@@ -718,16 +732,16 @@ RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, 
     rmsBatch(newBatch).data.count = 0;
     ListArray_Create(&rmsBatch(newBatch).data.freeIndices, "RJ_Size", sizeof(RJ_Size), ENTITY_INITIAL_FREE_INDEX_ARRAY_SIZE);
 
-    RJ_ReturnAllocate(RJ_Size, rmsBatch(newBatch).components.entityMap, initialComponentCapacity,
+    RJ_ReturnAllocate(RJ_Size, rmsBatch(newBatch).components.entityToCompMap, initialComponentCapacity,
                       ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
                       ListArray_Add(&RENDERER.info.freeIndices, &newBatch););
 
     RJ_ReturnAllocate(Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity,
                       ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
                       ListArray_Add(&RENDERER.info.freeIndices, &newBatch);
-                      free(rmsBatch(newBatch).components.entityMap););
+                      free(rmsBatch(newBatch).components.entityToCompMap););
 
-    memset(rmsBatch(newBatch).components.entityMap, 0xff, sizeof(RJ_Size) * initialComponentCapacity);
+    memset(rmsBatch(newBatch).components.entityToCompMap, 0xff, sizeof(RJ_Size) * initialComponentCapacity);
 
     RENDERER.info.count++;
 
@@ -736,6 +750,7 @@ RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, 
 
 void Renderer_BatchDestroy(RendererBatch batch)
 {
+    // todo cleanup all components
     rmsAssertBatch(batch);
 
     rmsBatch(batch).model = NULL;
@@ -744,10 +759,10 @@ void Renderer_BatchDestroy(RendererBatch batch)
     rmsBatch(batch).data.count = 0;
     ListArray_Destroy(&rmsBatch(batch).data.freeIndices);
 
-    free(rmsBatch(batch).components.entityMap);
+    free(rmsBatch(batch).components.entityToCompMap);
     free(rmsBatch(batch).components.objectMatrices);
 
-    rmsBatch(batch).components.entityMap = NULL;
+    rmsBatch(batch).components.entityToCompMap = NULL;
     rmsBatch(batch).components.objectMatrices = NULL;
 
     RENDERER.info.count--;
@@ -760,7 +775,7 @@ RJ_ResultWarn Renderer_BatchConfigure(RendererBatch batch, RJ_Size newComponentC
 
     rmsBatch(batch).data.capacity = newComponentCapacity;
 
-    RJ_ReturnReallocate(RJ_Size, rmsBatch(batch).components.entityMap, newComponentCapacity);
+    RJ_ReturnReallocate(RJ_Size, rmsBatch(batch).components.entityToCompMap, newComponentCapacity);
     RJ_ReturnReallocate(Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
 
     // todo memset rest
@@ -768,7 +783,7 @@ RJ_ResultWarn Renderer_BatchConfigure(RendererBatch batch, RJ_Size newComponentC
     return RJ_OK;
 }
 
-RendererComponent Renderer_ComponentCreate(Entity entity, RendererBatch batch)
+void Renderer_ComponentCreate(RendererBatch batch, Entity entity)
 {
     rmsAssertBatch(batch);
     RJ_DebugAssert(rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count < rmsBatch(batch).data.capacity,
@@ -776,19 +791,19 @@ RendererComponent Renderer_ComponentCreate(Entity entity, RendererBatch batch)
 
     RendererComponent newComponent = rmsBatch(batch).data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&rmsBatch(batch).data.freeIndices)) : rmsBatch(batch).data.count;
 
-    rmsEntity(batch, newComponent) = entity;
+    rEntity(batch, newComponent) = entity;
 
     rmsBatch(batch).data.count++;
 
     return newComponent;
 }
 
-void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component)
+void Renderer_ComponentDestroy(Entity entity)
 {
     rmsAssertBatch(batch);
     rmsAssertComponent(batch, component);
 
-    rmsEntity(batch, component) = RJ_INDEX_INVALID;
+    rEntity(batch, component) = RJ_INDEX_INVALID;
 
     ListArray_Add(&rmsBatch(batch).data.freeIndices, &component);
 

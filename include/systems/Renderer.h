@@ -32,9 +32,6 @@
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 #define RENDERER_BATCH_INITIAL_CAPACITY 16
 
-/// @brief Represents a component that can interact with the renderer system.
-typedef RJ_Size RendererComponent;
-
 /// @brief Represents a batch of objects that share the same model for rendering.
 typedef RJ_Size RendererBatch;
 
@@ -122,24 +119,12 @@ RJ_ResultWarn Renderer_BatchConfigure(RendererBatch batch, RJ_Size newComponentC
 /// @param entity The entity associated with the renderer component.
 /// @param batch The handle to the renderer batch.
 /// @return The handle to the created renderer component.
-RendererComponent Renderer_ComponentCreate(Entity entity, RendererBatch batch);
+void Renderer_ComponentCreate(RendererBatch batch, Entity entity);
 
 /// @brief Destroys a renderer component within a specified batch.
 /// @param batch The handle to the renderer batch.
 /// @param component The handle to the renderer component to destroy.
-void Renderer_ComponentDestroy(RendererBatch batch, RendererComponent component);
-
-/// @brief Checks if a renderer component within a specified batch is active.
-/// @param batch The handle to the renderer batch.
-/// @param component The handle to the renderer component.
-/// @return True if the component is active, false otherwise.
-bool Renderer_ComponentIsActive(RendererBatch batch, RendererComponent component);
-
-/// @brief Sets the active state of a renderer component within a specified batch.
-/// @param batch The handle to the renderer batch.
-/// @param component The handle to the renderer component.
-/// @param isActive The new active state to set.
-void Renderer_ComponentSetActive(RendererBatch batch, RendererComponent component, bool isActive);
+void Renderer_ComponentDestroy(Entity entity);
 
 #pragma endregion Renderer
 
