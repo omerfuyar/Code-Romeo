@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
     SHU_CompilerAddFlags("-D_GLFW_WIN32");
 #elif SHUM_HOST_PLATFORM == SHUM_PLATFORM_LINUX
-    SHU_CompilerAddFlags("-D_GLFW_X11");
+    SHU_CompilerAddFlags("-D_GLFW_X11 -D_XOPEN_SOURCE=700 -D_GNU_SOURCE");
 #endif
 
     ShowBuildConfig(SHUM_COLOR_BLUE("Romeo Dependencies"), argv[1], isDebug);
