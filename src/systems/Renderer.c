@@ -60,8 +60,8 @@ typedef struct RENDERER_BATCH
         RJ_Size capacity;
         RJ_Size count;
 
-        Entity *entityToCompMap;
         Entity *compToEntityMap;
+
         Matrix4 *objectMatrices;
     } data;
 } RENDERER_BATCH;
@@ -139,22 +139,23 @@ struct RENDERER
     } debugShader;
 } RENDERER = {0};
 
-#define rmsBatch(batch) (RENDERER.data.batches[batch])
-// #define rEntity(component) (PHYSICS.data.compToEntityMap[component])
-// #define rComponent(entity) (PHYSICS.data.entityToCompMap[entity])
+#define rBatch(batch) (RENDERER.data.batches[batch])
+#define rPair(entity) (RENDERER.data.entityToPairMap[entity])
+#define rEntity(pair) (rBatch((pair).batch).data.compToEntityMap[(pair).component])
 
-#define rEntity(batch, component) (rmsBatch(batch).components.entityToCompMap[component])
-#define rObjectMatrix(batch, component) (rmsBatch(batch).components.objectMatrices[component])
+#define rObjectMatrix(pair) (rBatch((pair).batch).data.objectMatrices[(pair).component])
 
-#define rmsAssertBatch(batch) RJ_DebugAssert(batch < RENDERER.info.count + RENDERER.info.freeIndices.count, "Renderer batch %u exceeds maximum batch count %u.", batch, RENDERER.info.count)
-#define rmsAssertComponent(batch, component) RJ_DebugAssert(component < rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count && rEntity(batch, component) != RJ_INDEX_INVALID, "Renderer component %u either exceeds maximum possible index %u or is invalid.", component, rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count)
+#define rAssertBatch(batch) RJ_DebugAssert((batch) != RJ_INDEX_INVALID &&                       \
+                                               (batch) < RENDERER.data.count,                   \
+                                           "Renderer batch %u exceeds maximum batch count %u.", \
+                                           (batch), RENDERER.data.count)
 
-#define rAssertComponent(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                               \
-                                                    rComponent(entity) != RJ_INDEX_INVALID &&                                                 \
-                                                    rEntity(rComponent(entity)) == entity &&                                                  \
-                                                    rComponent(entity) < PHYSICS.data.count,                                                  \
-                                                "Renderer component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
-                                                rComponent(entity), entity, PHYSICS.data.count)
+#define rAssertEntity(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                               \
+                                                 rPair(entity).component != RJ_INDEX_INVALID &&                                            \
+                                                 rEntity(rPair(entity)) == entity &&                                                       \
+                                                 rPair(entity).component < rBatch(rPair(entity).batch).data.count,                         \
+                                             "Renderer component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
+                                             rPair(entity).component, entity, rBatch(rPair(entity).batch).data.count)
 
 /// @brief
 /// @param window
@@ -214,9 +215,8 @@ RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBa
 
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, initialBatchCapacity);
 
-    RENDERER.info.capacity = initialBatchCapacity;
-    RENDERER.info.count = 0;
-    ListArray_Create(&RENDERER.info.freeIndices, "Renderer Free Indices", sizeof(RJ_Size), ENTITY_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    RENDERER.data.capacity = initialBatchCapacity;
+    RENDERER.data.count = 0;
 
     RJ_DebugAssert(gladLoadGLLoader((GLADloadproc)Context_GetDynamicSymbolLoader()), "Failed to initialize GLAD");
 
@@ -264,7 +264,7 @@ void Renderer_Terminate(void)
 {
     RENDERER.window = NULL;
 
-    for (RJ_Size batch = RENDERER.info.count; batch > 0; batch--)
+    for (RJ_Size batch = RENDERER.data.count; batch > 0; batch--)
     {
         Renderer_BatchDestroy(batch - 1);
     }
@@ -272,9 +272,8 @@ void Renderer_Terminate(void)
     free(RENDERER.data.batches);
     RENDERER.data.batches = NULL;
 
-    RENDERER.info.capacity = 0;
-    RENDERER.info.count = 0;
-    ListArray_Destroy(&RENDERER.info.freeIndices);
+    RENDERER.data.capacity = 0;
+    RENDERER.data.count = 0;
 
     RENDERER.camera.reference = NULL;
 
@@ -464,20 +463,11 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
 
 RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
 {
-    RJ_DebugAssert(newBatchCapacity > RENDERER.info.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RENDERER.info.count);
+    RJ_DebugAssert(newBatchCapacity > RENDERER.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RENDERER.data.count);
 
-    RENDERER_BATCH *newBatches = NULL;
-    RJ_ReturnAllocate(RENDERER_BATCH, newBatches, newBatchCapacity);
+    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, newBatchCapacity);
 
-    for (RJ_Size i = 0; i < RENDERER.info.count; i++)
-    {
-        newBatches[i] = rmsBatch(i);
-    }
-
-    free(RENDERER.data.batches);
-    RENDERER.data.batches = newBatches;
-
-    RENDERER.info.capacity = newBatchCapacity;
+    RENDERER.data.capacity = newBatchCapacity;
 
     RJ_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
     return RJ_OK;
@@ -606,24 +596,25 @@ void Renderer_Update(void)
                   (vec4 *)&RENDERER.camera.projectionMatrix);
     }
 
-    for (RJ_Size batch = 0; batch < RENDERER.info.count; batch++)
+    for (RJ_Size batch = 0; batch < RENDERER.data.count; batch++)
     {
-        for (RJ_Size component = 0; component < rmsBatch(batch).data.count; component++)
+        for (RJ_Size component = 0; component < rBatch(batch).data.count; component++)
         {
+            RendererEntityPair pair = {batch, component};
             // todo send transform data to gpu instead of calculating here
 
-            glm_mat4_identity((vec4 *)&rObjectMatrix(batch, component));
+            glm_mat4_identity((vec4 *)&rObjectMatrix(pair));
 
-            Vector3 componentPos = Entity_GetPosition(rEntity(batch, component));
-            glm_translate((vec4 *)&rObjectMatrix(batch, component), (float *)&(vec3){componentPos.x, componentPos.y, componentPos.z});
+            Vector3 componentPos = Entity_GetPosition(rEntity(pair));
+            glm_translate((vec4 *)&rObjectMatrix(pair), (float *)&(vec3){componentPos.x, componentPos.y, componentPos.z});
 
-            Vector3 componentRot = Entity_GetRotation(rEntity(batch, component));
-            glm_rotate((vec4 *)&rObjectMatrix(batch, component), componentRot.x, (float *)&(vec3){1, 0, 0});
-            glm_rotate((vec4 *)&rObjectMatrix(batch, component), componentRot.y, (float *)&(vec3){0, 1, 0});
-            glm_rotate((vec4 *)&rObjectMatrix(batch, component), componentRot.z, (float *)&(vec3){0, 0, 1});
+            Vector3 componentRot = Entity_GetRotation(rEntity(pair));
+            glm_rotate((vec4 *)&rObjectMatrix(pair), componentRot.x, (float *)&(vec3){1, 0, 0});
+            glm_rotate((vec4 *)&rObjectMatrix(pair), componentRot.y, (float *)&(vec3){0, 1, 0});
+            glm_rotate((vec4 *)&rObjectMatrix(pair), componentRot.z, (float *)&(vec3){0, 0, 1});
 
-            Vector3 componentScl = Entity_GetScale(rEntity(batch, component));
-            glm_scale((vec4 *)&rObjectMatrix(batch, component), (float *)&(vec3){componentScl.x, componentScl.y, componentScl.z});
+            Vector3 componentScl = Entity_GetScale(rEntity(pair));
+            glm_scale((vec4 *)&rObjectMatrix(pair), (float *)&(vec3){componentScl.x, componentScl.y, componentScl.z});
         }
     }
 }
@@ -648,28 +639,28 @@ void Renderer_Render(void)
 
     ResourceModel *previousModel = NULL;
 
-    for (RJ_Size batch = 0; batch < RENDERER.info.count; batch++)
+    for (RJ_Size batch = 0; batch < RENDERER.data.count; batch++)
     {
         ResourceMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Matrix4) * rmsBatch(batch).data.count),
-                     rmsBatch(batch).components.objectMatrices,
+                     (long long)(sizeof(Matrix4) * rBatch(batch).data.count),
+                     rBatch(batch).data.objectMatrices,
                      RENDERER_OPENGL_DRAW_TYPE); // todo send transforms
 
-        if (previousModel != rmsBatch(batch).model)
+        if (previousModel != rBatch(batch).model)
         {
             glBufferData(GL_ARRAY_BUFFER,
-                         (long long)(rmsBatch(batch).model->vertices.sizeOfItem * rmsBatch(batch).model->vertices.count),
-                         rmsBatch(batch).model->vertices.data,
+                         (long long)(rBatch(batch).model->vertices.sizeOfItem * rBatch(batch).model->vertices.count),
+                         rBatch(batch).model->vertices.data,
                          RENDERER_OPENGL_DRAW_TYPE);
 
-            previousModel = rmsBatch(batch).model;
+            previousModel = rBatch(batch).model;
         }
 
-        for (RJ_Size j = 0; j < rmsBatch(batch).model->meshes.count; j++)
+        for (RJ_Size j = 0; j < rBatch(batch).model->meshes.count; j++)
         {
-            ResourceMesh *mesh = (ResourceMesh *)ListArray_Get(&rmsBatch(batch).model->meshes, j);
+            ResourceMesh *mesh = (ResourceMesh *)ListArray_Get(&rBatch(batch).model->meshes, j);
 
             if (mesh->material != previousMaterial)
             {
@@ -705,7 +696,7 @@ void Renderer_Render(void)
                                     (GLsizei)mesh->indices.count,
                                     GL_UNSIGNED_INT,
                                     0,
-                                    (GLsizei)rmsBatch(batch).data.count);
+                                    (GLsizei)rBatch(batch).data.count);
         }
     }
 
@@ -715,99 +706,89 @@ void Renderer_Render(void)
 
 RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, const Vector3 *transformOffset, RJ_Size initialComponentCapacity)
 {
-    RJ_DebugAssert(RENDERER.info.count + RENDERER.info.freeIndices.count < RENDERER.info.capacity, "Maximum renderer batch capacity of %u reached.", RENDERER.info.capacity); // todo expand capacity
+    RJ_DebugAssert(RENDERER.data.count < RENDERER.data.capacity, "Maximum renderer batch capacity of %u reached.", RENDERER.data.capacity); // todo expand capacity
 
-    RendererBatch newBatch = RENDERER.info.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&RENDERER.info.freeIndices)) : RENDERER.info.count;
+    RendererBatch newBatch = RENDERER.data.count;
 
-    *retBatch = newBatch;
-
-    RJ_Result result = ResourceModel_GetOrCreate(&rmsBatch(newBatch).model, mdlFile, transformOffset);
+    RJ_Result result = ResourceModel_GetOrCreate(&rBatch(newBatch).model, mdlFile, transformOffset);
     if (result != RJ_OK)
     {
         RJ_DebugWarning("Failed to create renderer batch for model file '%s'.", mdlFile.characters);
         return result;
     }
 
-    rmsBatch(newBatch).data.capacity = initialComponentCapacity;
-    rmsBatch(newBatch).data.count = 0;
-    ListArray_Create(&rmsBatch(newBatch).data.freeIndices, "RJ_Size", sizeof(RJ_Size), ENTITY_INITIAL_FREE_INDEX_ARRAY_SIZE);
+    rBatch(newBatch).data.capacity = initialComponentCapacity;
+    rBatch(newBatch).data.count = 0;
 
-    RJ_ReturnAllocate(RJ_Size, rmsBatch(newBatch).components.entityToCompMap, initialComponentCapacity,
-                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
-                      ListArray_Add(&RENDERER.info.freeIndices, &newBatch););
+    RJ_ReturnAllocate(RJ_Size, rBatch(newBatch).data.compToEntityMap, initialComponentCapacity);
 
-    RJ_ReturnAllocate(Matrix4, rmsBatch(newBatch).components.objectMatrices, initialComponentCapacity,
-                      ListArray_Destroy(&rmsBatch(newBatch).data.freeIndices);
-                      ListArray_Add(&RENDERER.info.freeIndices, &newBatch);
-                      free(rmsBatch(newBatch).components.entityToCompMap););
+    RJ_ReturnAllocate(Matrix4, rBatch(newBatch).data.objectMatrices, initialComponentCapacity,
+                      free(rBatch(newBatch).data.compToEntityMap););
 
-    memset(rmsBatch(newBatch).components.entityToCompMap, 0xff, sizeof(RJ_Size) * initialComponentCapacity);
+    memset(rBatch(newBatch).data.compToEntityMap, 0xff, sizeof(RJ_Size) * initialComponentCapacity);
 
-    RENDERER.info.count++;
+    RENDERER.data.count++;
 
+    *retBatch = newBatch;
     return RJ_OK;
 }
 
 void Renderer_BatchDestroy(RendererBatch batch)
 {
     // todo cleanup all components
-    rmsAssertBatch(batch);
+    rAssertBatch(batch);
 
-    rmsBatch(batch).model = NULL;
+    rBatch(batch).model = NULL;
 
-    rmsBatch(batch).data.capacity = 0;
-    rmsBatch(batch).data.count = 0;
-    ListArray_Destroy(&rmsBatch(batch).data.freeIndices);
+    rBatch(batch).data.capacity = 0;
+    rBatch(batch).data.count = 0;
 
-    free(rmsBatch(batch).components.entityToCompMap);
-    free(rmsBatch(batch).components.objectMatrices);
+    free(rBatch(batch).data.compToEntityMap);
+    free(rBatch(batch).data.objectMatrices);
 
-    rmsBatch(batch).components.entityToCompMap = NULL;
-    rmsBatch(batch).components.objectMatrices = NULL;
+    rBatch(batch).data.compToEntityMap = NULL;
+    rBatch(batch).data.objectMatrices = NULL;
 
-    RENDERER.info.count--;
+    RENDERER.data.count--;
 }
 
-RJ_ResultWarn Renderer_BatchConfigure(RendererBatch batch, RJ_Size newComponentCapacity)
+RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity)
 {
-    rmsAssertBatch(batch);
-    RJ_DebugAssert(newComponentCapacity > rmsBatch(batch).data.count, "New component capacity %u must be greater than current physics component count %u.", newComponentCapacity, rmsBatch(batch).data.count);
+    rAssertBatch(batch);
+    RJ_DebugAssert(newComponentCapacity > rBatch(batch).data.count, "New component capacity %u must be greater than current physics component count %u.", newComponentCapacity, rBatch(batch).data.count);
 
-    rmsBatch(batch).data.capacity = newComponentCapacity;
+    rBatch(batch).data.capacity = newComponentCapacity;
 
-    RJ_ReturnReallocate(RJ_Size, rmsBatch(batch).components.entityToCompMap, newComponentCapacity);
-    RJ_ReturnReallocate(Matrix4, rmsBatch(batch).components.objectMatrices, newComponentCapacity);
+    RJ_ReturnReallocate(RJ_Size, rBatch(batch).data.compToEntityMap, newComponentCapacity);
 
-    // todo memset rest
+    RJ_ReturnReallocate(Matrix4, rBatch(batch).data.objectMatrices, newComponentCapacity,
+                        free(rBatch(batch).data.compToEntityMap););
+
+    memset(rBatch(batch).data.compToEntityMap, 0xff, sizeof(RJ_Size) * newComponentCapacity);
 
     return RJ_OK;
 }
 
 void Renderer_ComponentCreate(RendererBatch batch, Entity entity)
 {
-    rmsAssertBatch(batch);
-    RJ_DebugAssert(rmsBatch(batch).data.count + rmsBatch(batch).data.freeIndices.count < rmsBatch(batch).data.capacity,
-                   "Maximum renderer batch %u component capacity of %u reached.", batch, rmsBatch(batch).data.capacity); // todo expand capacity
+    rAssertBatch(batch);
+    RJ_DebugAssert(rBatch(batch).data.count < rBatch(batch).data.capacity,
+                   "Maximum renderer batch %u component capacity of %u reached.", batch, rBatch(batch).data.capacity); // todo expand capacity
 
-    RendererComponent newComponent = rmsBatch(batch).data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&rmsBatch(batch).data.freeIndices)) : rmsBatch(batch).data.count;
+    Entity component = rBatch(batch).data.count;
 
-    rEntity(batch, newComponent) = entity;
+    rEntity(((RendererEntityPair){batch, component})) = entity;
 
-    rmsBatch(batch).data.count++;
-
-    return newComponent;
+    rBatch(batch).data.count++;
 }
 
 void Renderer_ComponentDestroy(Entity entity)
 {
-    rmsAssertBatch(batch);
-    rmsAssertComponent(batch, component);
+    rAssertEntity(entity);
 
-    rEntity(batch, component) = RJ_INDEX_INVALID;
+    rEntity(rPair(entity)) = RJ_INDEX_INVALID;
 
-    ListArray_Add(&rmsBatch(batch).data.freeIndices, &component);
-
-    rmsBatch(batch).data.count--;
+    rBatch(rPair(entity).batch).data.count--;
 }
 
 #pragma endregion Renderer

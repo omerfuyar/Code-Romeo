@@ -33,7 +33,7 @@
 #define RENDERER_BATCH_INITIAL_CAPACITY 16
 
 /// @brief Represents a batch of objects that share the same model for rendering.
-typedef RJ_Size RendererBatch;
+typedef Entity RendererBatch;
 
 /// @brief Represents a camera used to render components.
 typedef struct RendererCamera
@@ -113,7 +113,7 @@ void Renderer_BatchDestroy(RendererBatch batch);
 /// @param batch The handle to the renderer batch.
 /// @param newComponentCapacity The new capacity for components in the batch.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Renderer_BatchConfigure(RendererBatch batch, RJ_Size newComponentCapacity);
+RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.

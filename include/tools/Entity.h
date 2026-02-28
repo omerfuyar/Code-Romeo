@@ -33,6 +33,8 @@ Entity Entity_Create(Vector3 position, Vector3 rotation, Vector3 scale);
 /// @param entity
 void Entity_Destroy(Entity entity);
 
+// todo add resize and callbacks
+
 /// @brief
 /// @param entity
 /// @return

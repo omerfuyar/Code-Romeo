@@ -23,7 +23,7 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
 
 /// @brief Reconfigure the audio system's position references and component capacity.
 /// @param newComponentCapacity The new capacity for audio components.
-RJ_ResultWarn Audio_Configure(RJ_Size newComponentCapacity);
+RJ_ResultWarn Audio_Resize(RJ_Size newComponentCapacity);
 
 /// @brief Update the audio system.
 void Audio_Update(void);

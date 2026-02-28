@@ -37,12 +37,12 @@ struct AUDIO
 
 #define aSound(component) (AUDIO.data.sounds[component])
 
-#define aAssertComponent(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                            \
-                                                    aComponent(entity) != RJ_INDEX_INVALID &&                                              \
-                                                    aEntity(aComponent(entity)) == entity &&                                               \
-                                                    aComponent(entity) < AUDIO.data.count,                                                 \
-                                                "Audio component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
-                                                aComponent(entity), entity, AUDIO.data.count)
+#define aAssertEntity(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                            \
+                                                 aComponent(entity) != RJ_INDEX_INVALID &&                                              \
+                                                 aEntity(aComponent(entity)) == entity &&                                               \
+                                                 aComponent(entity) < AUDIO.data.count,                                                 \
+                                             "Audio component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
+                                             aComponent(entity), entity, AUDIO.data.count)
 
 #pragma endregion Source Only
 
@@ -118,15 +118,20 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
     AUDIO.listener.rotationReference = rotationReference;
 }
 
-RJ_ResultWarn Audio_Configure(RJ_Size newComponentCapacity)
+RJ_ResultWarn Audio_Resize(RJ_Size newComponentCapacity)
 {
     RJ_DebugAssert(newComponentCapacity > AUDIO.data.count, "New component capacity must be greater than current audio component count");
 
-    AUDIO.data.capacity = newComponentCapacity;
-
     RJ_ReturnReallocate(RJ_Size, AUDIO.data.entityToCompMap, AUDIO.data.capacity); // todo proper failing
-    RJ_ReturnReallocate(Entity, AUDIO.data.compToEntityMap, AUDIO.data.capacity);
-    RJ_ReturnReallocate(ma_sound, AUDIO.data.sounds, AUDIO.data.capacity);
+
+    RJ_ReturnReallocate(Entity, AUDIO.data.compToEntityMap, AUDIO.data.capacity,
+                        free(AUDIO.data.entityToCompMap););
+
+    RJ_ReturnReallocate(ma_sound, AUDIO.data.sounds, AUDIO.data.capacity,
+                        free(AUDIO.data.compToEntityMap);
+                        free(AUDIO.data.entityToCompMap););
+
+    AUDIO.data.capacity = newComponentCapacity;
 
     RJ_DebugInfo("Audio position references reconfigured with new capacity %u.", AUDIO.data.capacity);
     return RJ_OK;
@@ -182,7 +187,7 @@ RJ_ResultWarn Audio_ComponentCreate(Entity entity, StringView audioFile)
 
 void Audio_ComponentDestroy(Entity entity)
 {
-    aAssertComponent(entity);
+    aAssertEntity(entity);
 
     ma_sound_uninit((ma_sound *)&aSound(aComponent(entity)));
 
@@ -195,14 +200,14 @@ void Audio_ComponentDestroy(Entity entity)
 
 bool Audio_ComponentIsPlaying(Entity entity)
 {
-    aAssertComponent(entity);
+    aAssertEntity(entity);
 
     return ma_sound_is_playing((ma_sound *)&aSound(aComponent(entity)));
 }
 
 void Audio_ComponentSetPlaying(Entity entity, bool play)
 {
-    aAssertComponent(entity);
+    aAssertEntity(entity);
 
     if (play)
     {
@@ -216,7 +221,7 @@ void Audio_ComponentSetPlaying(Entity entity, bool play)
 
 void Audio_ComponentRewind(Entity entity, float interval)
 {
-    aAssertComponent(entity);
+    aAssertEntity(entity);
 
     ma_uint64 totalFrames = 0;
 
@@ -229,14 +234,14 @@ void Audio_ComponentRewind(Entity entity, float interval)
 
 bool Audio_ComponentIsLooping(Entity entity)
 {
-    aAssertComponent(entity);
+    aAssertEntity(entity);
 
     return ma_sound_is_looping((ma_sound *)&aSound(aComponent(entity)));
 }
 
 void Audio_ComponentSetLooping(Entity entity, bool loop)
 {
-    aAssertComponent(entity);
+    aAssertEntity(entity);
 
     ma_sound_set_looping((ma_sound *)&aSound(aComponent(entity)), loop);
 }

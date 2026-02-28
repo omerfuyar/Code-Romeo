@@ -27,7 +27,7 @@ void Physics_Terminate(void);
 /// @brief Changes the position references for all physics components in the scene.
 /// @param newCapacity The maximum number of position vectors available.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Physics_Configure(RJ_Size newCapacity);
+RJ_ResultWarn Physics_Resize(RJ_Size newCapacity);
 
 /// @brief Checks for collision between two AABB colliders.
 /// @param component1 The first component.
@@ -49,7 +49,7 @@ void Physics_ResolveCollisions(void);
 /// @param mass The mass of the object.
 /// @param isStatic Whether the object is static (unmovable).
 /// @return A pointer to the newly created physics component.
-void Physics_ComponentCreate(RJ_Size entity, Vector3 colliderSize, float mass, bool isStatic);
+void Physics_ComponentCreate(Entity entity, Vector3 colliderSize, float mass, bool isStatic);
 
 /// @brief Destroys a physics component and removes it from its scene.
 /// @param component The component to destroy.

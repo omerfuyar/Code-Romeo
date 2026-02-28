@@ -45,12 +45,12 @@ struct PHYSICS
 #define pIsStatic(component) (pFlag(component) & PHYSICS_FLAG_STATIC)
 #define pSetStatic(component, isStatic) (pFlag(component) = ((isStatic) ? (pFlag(component) | PHYSICS_FLAG_STATIC) : (pFlag(component) & (uint8_t)~PHYSICS_FLAG_STATIC)))
 
-#define pAssertComponent(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                              \
-                                                    rComponent(entity) != RJ_INDEX_INVALID &&                                                \
-                                                    rEntity(rComponent(entity)) == entity &&                                                 \
-                                                    rComponent(entity) < PHYSICS.data.count,                                                 \
-                                                "Physics component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
-                                                rComponent(entity), entity, PHYSICS.data.count)
+#define pAssertEntity(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                              \
+                                                 rComponent(entity) != RJ_INDEX_INVALID &&                                                \
+                                                 rEntity(rComponent(entity)) == entity &&                                                 \
+                                                 rComponent(entity) < PHYSICS.data.count,                                                 \
+                                             "Physics component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
+                                             rComponent(entity), entity, PHYSICS.data.count)
 
 /// @brief Resolve a collision between a static and dynamic physics component.
 /// @param staticComponent Static physics component.
@@ -282,11 +282,9 @@ void Physics_Terminate(void)
     RJ_DebugInfo("Physics terminated successfully.");
 }
 
-RJ_ResultWarn Physics_Configure(RJ_Size newCapacity)
+RJ_ResultWarn Physics_Resize(RJ_Size newCapacity)
 {
     RJ_DebugAssert(newCapacity > PHYSICS.data.count, "New component capacity must be greater than current physics component count.");
-
-    PHYSICS.data.capacity = newCapacity;
 
     RJ_ReturnReallocate(Entity, PHYSICS.data.entityToCompMap, PHYSICS.data.capacity);
 
@@ -314,6 +312,8 @@ RJ_ResultWarn Physics_Configure(RJ_Size newCapacity)
                         free(PHYSICS.data.velocities);
                         free(PHYSICS.data.compToEntityMap);
                         free(PHYSICS.data.entityToCompMap););
+
+    PHYSICS.data.capacity = newCapacity;
 
     RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PHYSICS.data.capacity);
     return RJ_OK;
@@ -380,7 +380,7 @@ void Physics_ResolveCollisions(void)
     }
 }
 
-Entity Physics_ComponentCreate(Entity entity, Vector3 colliderSize, float mass, bool isStatic)
+void Physics_ComponentCreate(Entity entity, Vector3 colliderSize, float mass, bool isStatic)
 {
     RJ_DebugAssert(PHYSICS.data.count < PHYSICS.data.capacity, "Maximum physics component capacity of %u reached.", PHYSICS.data.capacity);
 
@@ -394,13 +394,11 @@ Entity Physics_ComponentCreate(Entity entity, Vector3 colliderSize, float mass, 
     pSetStatic(component, isStatic);
 
     PHYSICS.data.count++;
-
-    return component;
 }
 
 void Physics_ComponentDestroy(Entity entity)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
 
     pVelocity(rComponent(entity)) = Vector3_Zero;
     pColliderSize(rComponent(entity)) = Vector3_Zero;
@@ -415,48 +413,48 @@ void Physics_ComponentDestroy(Entity entity)
 
 Vector3 Physics_ComponentGetVelocity(Entity entity)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     return pVelocity(rComponent(entity));
 }
 
 void Physics_ComponentSetVelocity(Entity entity, Vector3 newVelocity)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     pVelocity(rComponent(entity)) = newVelocity;
 }
 
 Vector3 Physics_ComponentGetColliderSize(Entity entity)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     return pColliderSize(rComponent(entity));
 }
 
 void Physics_ComponentSetColliderSize(Entity entity, Vector3 newColliderSize)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     pColliderSize(rComponent(entity)) = newColliderSize;
 }
 
 float Physics_ComponentGetMass(Entity entity)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     return pMass(rComponent(entity));
 }
 
 void Physics_ComponentSetMass(Entity entity, float newMass)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     pMass(rComponent(entity)) = newMass;
 }
 
 bool Physics_ComponentIsStatic(Entity entity)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     return pIsStatic(rComponent(entity));
 }
 
 void Physics_ComponentSetStatic(Entity entity, bool newIsStatic)
 {
-    pAssertComponent(entity);
+    pAssertEntity(entity);
     pSetStatic(rComponent(entity), newIsStatic);
 }
