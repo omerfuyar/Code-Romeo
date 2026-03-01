@@ -222,7 +222,7 @@ static RJ_ResultWarn ResourceMaterial_AddFromFileIfNew(StringView matFile, Strin
         }
         else if (String_AreSame(matFirstToken, strILLNUM))
         {
-            currentMaterial->illuminationModel = String_ToLong(matLineTokens[1]);
+            currentMaterial->illuminationModel = (int)String_ToLong(matLineTokens[1]);
         }
         else if (String_AreSame(matFirstToken, strMAP_KD))
         {
@@ -461,16 +461,16 @@ static void ProcessFaceVertex(StringView faceToken, ResourceModel *model, Resour
 
     RJ_DebugAssert(faceDataCount == 3, "Face vertex data '%.*s' is invalid. Expected format 'v/vt/vn'.", (int)faceToken.length, faceToken.characters);
 
-    int createdPositionIndex = String_ToLong(faceData[0]);
+    int createdPositionIndex = (int)String_ToLong(faceData[0]);
     RJ_Size positionIndex = createdPositionIndex < 0 ? (RJ_Size)((int)model->vertices.count + createdPositionIndex) : (RJ_Size)createdPositionIndex - 1;
 
     ResourceMeshVertex *vertex = (ResourceMeshVertex *)ListArray_Get(&model->vertices, (RJ_Size)positionIndex);
 
-    int createdUVIndex = String_ToLong(faceData[1]);
+    int createdUVIndex = (int)String_ToLong(faceData[1]);
     RJ_Size uvIndex = createdUVIndex < 0 ? (RJ_Size)((int)globalVertexUvPool->count + createdUVIndex) : (RJ_Size)createdUVIndex - 1;
     vertex->uv = *(Vector2 *)ListArray_Get(globalVertexUvPool, (RJ_Size)uvIndex);
 
-    int createdNormalIndex = String_ToLong(faceData[2]);
+    int createdNormalIndex = (int)String_ToLong(faceData[2]);
     RJ_Size normalIndex = createdNormalIndex < 0 ? (RJ_Size)((int)globalVertexNormalPool->count + createdNormalIndex) : (RJ_Size)createdNormalIndex - 1;
     vertex->normal = *(Vector3 *)ListArray_Get(globalVertexNormalPool, (RJ_Size)normalIndex);
 
