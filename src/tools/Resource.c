@@ -512,15 +512,17 @@ RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, String
         const Vector3 *rotationOffset = transformOffset + 1;
         const Vector3 *scaleOffset = transformOffset + 2;
 
-        glm_mat4_identity((vec4 *)offsetMatrix.m);
+		void *const matrixAddress = &offsetMatrix;
 
-        glm_translate((vec4 *)offsetMatrix.m, (float *)&(vec3){positionOffset->x, positionOffset->y, positionOffset->z});
+        glm_mat4_identity((vec4 *)matrixAddress);
 
-        glm_rotate((vec4 *)offsetMatrix.m, rotationOffset->x, (float *)&(vec3){1, 0, 0});
-        glm_rotate((vec4 *)offsetMatrix.m, rotationOffset->y, (float *)&(vec3){0, 1, 0});
-        glm_rotate((vec4 *)offsetMatrix.m, rotationOffset->z, (float *)&(vec3){0, 0, 1});
+        glm_translate((vec4 *)matrixAddress, (float *)&(vec3){positionOffset->x, positionOffset->y, positionOffset->z});
 
-        glm_scale((vec4 *)offsetMatrix.m, (float *)&(vec3){scaleOffset->x, scaleOffset->y, scaleOffset->z});
+        glm_rotate((vec4 *)matrixAddress, rotationOffset->x, (float *)&(vec3){1, 0, 0});
+        glm_rotate((vec4 *)matrixAddress, rotationOffset->y, (float *)&(vec3){0, 1, 0});
+        glm_rotate((vec4 *)matrixAddress, rotationOffset->z, (float *)&(vec3){0, 0, 1});
+
+        glm_scale((vec4 *)matrixAddress, (float *)&(vec3){scaleOffset->x, scaleOffset->y, scaleOffset->z});
     }
 
     RJ_Size meshCount = 0;

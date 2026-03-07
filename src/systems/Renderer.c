@@ -644,14 +644,14 @@ void Renderer_Render(void)
         ResourceMaterial *previousMaterial = NULL;
 
         glBufferData(GL_UNIFORM_BUFFER,
-                     (long long)(sizeof(Matrix4) * rBatch(batch).data.count),
+                     (GLsizeiptr)(sizeof(Matrix4) * rBatch(batch).data.count),
                      rBatch(batch).data.objectMatrices,
                      RENDERER_OPENGL_DRAW_TYPE); // todo send transforms
 
         if (previousModel != rBatch(batch).model)
         {
             glBufferData(GL_ARRAY_BUFFER,
-                         (long long)(rBatch(batch).model->vertices.sizeOfItem * rBatch(batch).model->vertices.count),
+                         (GLsizeiptr)(rBatch(batch).model->vertices.sizeOfItem * rBatch(batch).model->vertices.count),
                          rBatch(batch).model->vertices.data,
                          RENDERER_OPENGL_DRAW_TYPE);
 
@@ -688,7 +688,7 @@ void Renderer_Render(void)
             }
 
             glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                         (long long)(mesh->indices.sizeOfItem * mesh->indices.count),
+                         (GLsizeiptr)(mesh->indices.sizeOfItem * mesh->indices.count),
                          mesh->indices.data,
                          RENDERER_OPENGL_DRAW_TYPE);
 

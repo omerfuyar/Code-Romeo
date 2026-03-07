@@ -6,7 +6,7 @@
 #include "utilities/Vector.h"
 
 /// @brief OpenGL context version major number
-#define CONTEXT_VERSION_MAJOR 3
+#define CONTEXT_VERSION_MAJOR 4
 /// @brief OpenGL context version minor number
 #define CONTEXT_VERSION_MINOR 3
 

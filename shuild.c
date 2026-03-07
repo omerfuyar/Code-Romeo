@@ -5,12 +5,18 @@
 #define SHUC_SHORT_LOG
 #include "dependencies/shuild/shuild.h"
 
+#define DEBUG_REGULAR 1
+#define DEBUG_SANITIZE_ADDRESS 2
+#define DEBUG_SANITIZE_THREAD 3
+#define DEBUG_SANITIZE_UNDEFINED 4
+#define DEBUG_SANITIZE_MEMORY 5
+
 void ShowBuildConfig(const char *header, const char *compiler, char isDebug)
 {
     SHU_Log(0, header, "Build info : %s", isDebug ? "Debug" : "Release");
     SHU_Log(0, header, "Compiler info : %s", compiler);
 
-    char flagBuffer[2048] = {0};
+    char flagBuffer[1024] = {0};
     SHU_CompilerGetFlags(flagBuffer, sizeof(flagBuffer));
 
     SHU_Log(0, header, "Compile options : %s", flagBuffer);
@@ -20,22 +26,56 @@ int main(int argc, char **argv)
 {
     if (argc < 3)
     {
-        SHU_LogError(1, "Usage is <compiler> <d/r> [clean]");
+        SHU_LogError(1, "Usage is <compiler> <r/d/sa/st/su/sm> [clean]");
     }
 
-    char isDebug = -1;
+    char isDebug = 0;
+	char isClean = 0;
 
-    if (strcmp(argv[2], "d") == 0)
-    {
-        isDebug = 1;
-    }
-    else if (strcmp(argv[2], "r") == 0)
+	const char *compilerStr = argv[1];
+	const char *buildOptStr = argv[2];
+
+    if(strcmp(buildOptStr, "r") == 0)
     {
         isDebug = 0;
     }
+    else if(strcmp(buildOptStr, "d") == 0)
+    {
+    	isDebug = DEBUG_REGULAR;
+    }
+    else if(strcmp(buildOptStr, "sa") == 0)
+    {
+		isDebug = DEBUG_SANITIZE_ADDRESS;
+    }
+    else if(strcmp(buildOptStr, "st") == 0)
+    {
+		isDebug = DEBUG_SANITIZE_THREAD;
+    }
+    else if(strcmp(buildOptStr, "su") == 0)
+    {
+		isDebug = DEBUG_SANITIZE_UNDEFINED;
+    }
+    else if(strcmp(buildOptStr, "sm") == 0)
+    {
+		isDebug = DEBUG_SANITIZE_MEMORY;
+    }
     else
     {
-        SHU_LogError(2, "Specify debug or release with second parameter <d/r>.");
+        SHU_LogError(1, "Specify debug or release build with second parameter <r/d/sa/st/su/sm>.");
+    }
+
+	if(isDebug > DEBUG_REGULAR && strcmp(compilerStr, "clang") != 0)
+	{
+		SHU_LogError(1, "Sanitizers can only be used with Clang compiler");
+	}
+
+    if(argv[3] != NULL && strcmp(argv[3], "clean") == 0)
+    {
+		isClean = 1;
+    }
+    else if(argv[3] != NULL)
+    {
+        SHU_LogError(1, "Specify clean build with thrid parameter [clean].");
     }
 
     SHU_CompilerTryConfigure(argv[1]);
@@ -45,7 +85,7 @@ int main(int argc, char **argv)
 
     SHU_CacheConfigure(isDebug ? ".shu/debug/" : ".shu/release/");
 
-    if (argc > 3)
+    if (isClean)
     {
         SHU_LogWarning("Performing clean build...");
         SHU_CacheClearAll();
@@ -87,18 +127,42 @@ int main(int argc, char **argv)
 
     SHU_CompilerClearFlags();
 
-    SHU_CompilerAddFlags("-Wno-unused-function" SHUM_FLAGS_STANDARD_C23);
+    SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C2X);
 
-    if (isDebug)
+    if (isDebug > 0)
     {
-        SHU_CompilerAddFlags(SHUM_FLAGS_DEBUG);
-        SHU_CompilerAddFlags(SHUM_FLAGS_WARNING_HIGH SHUM_FLAGS_WARNING_ERROR);
-        SHU_CompilerAddFlags("-Wno-format-nonliteral");
+        SHU_CompilerAddFlags(SHUM_FLAGS_DEBUG SHUM_FLAGS_WARNING_ERROR);
+        SHU_CompilerAddFlags(SHUM_FLAGS_WARNING_HIGH);
+        SHU_CompilerAddFlags("-Wno-format-nonliteral -Wno-unused-function");
+
+        if(SHU_CompilerGetIdentifier() == SHUM_COMPILER_CLANG)
+        {
+        	SHU_CompilerAddFlags("-Wno-gnu-zero-variadic-macro-arguments");
+        }
     }
     else
     {
         SHU_CompilerAddFlags(SHUM_FLAGS_OPTIMIZATION_HIGH);
     }
+
+    switch(isDebug)
+    {
+    case DEBUG_SANITIZE_ADDRESS:
+    	SHU_CompilerAddFlags("-fsanitize=address");
+        break;
+
+    case DEBUG_SANITIZE_THREAD:
+     	SHU_CompilerAddFlags("-fsanitize=thread");
+        break;
+
+    case DEBUG_SANITIZE_UNDEFINED:
+        SHU_CompilerAddFlags("-fsanitize=undefined");
+        break;
+
+    case DEBUG_SANITIZE_MEMORY:
+        SHU_CompilerAddFlags("-fsanitize=memory");
+        break;
+     }
 
     SHU_CompilerAddFlags("-DCGLM_STATIC");
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
@@ -109,7 +173,7 @@ int main(int argc, char **argv)
 
     ShowBuildConfig(SHUM_COLOR_BLUE("Romeo"), argv[1], isDebug);
 
-    SHU_ModuleBegin("Code-Romeo", "");
+    SHU_ModuleBegin("Code-Romeo", NULL);
 
     SHU_ModuleAddIncludeDirectory("include/");
     SHU_ModuleAddIncludeDirectory("dependencies/");
