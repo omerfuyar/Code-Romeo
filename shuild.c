@@ -99,7 +99,7 @@ int main(int argc, char **argv)
     SHU_UtilAutomate(argc, argv);
 
 	char strBuffer[SHUC_MAX_STRING_SIZE] = {0};
-	snprintf(strBuffer, SHUC_MAX_STRING_SIZE, ".shu/%s/", buildName);
+	snprintf(strBuffer, SHUC_MAX_STRING_SIZE, ".shu/%s/%s/", isDynamic ? "dynamic" : "static", buildName);
     SHU_CacheConfigure(strBuffer);
 
     if (isClean)
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 
     ShowBuildConfig(SHUM_COLOR_BLUE("Romeo Dependencies"), compilerStr, isDebug);
 
-	snprintf(strBuffer, SHUC_MAX_STRING_SIZE, "build/%s/", buildName);
+	snprintf(strBuffer, SHUC_MAX_STRING_SIZE, "build/%s/%s/", isDynamic ? "dynamic" : "static", buildName);
 
     SHU_ModuleBegin("cglm", "dependencies/cglm/");
     SHU_ModuleAddIncludeDirectory("include/");
