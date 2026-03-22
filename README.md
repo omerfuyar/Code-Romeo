@@ -25,6 +25,9 @@ sudo apt install libwayland-dev libxkbcommon-dev wayland-protocols libx11-dev li
 
 # For Arch
 sudo pacman -S libxkbcommon wayland wayland-protocols libx11 libxrandr libxinerama libxcursor libxi mesa xorg-server-xvfb
+
+# For Fedora
+sudo dnf install wayland-devel libxbcommon-devel libXcursor-devel libXi-devel libXinerma-devel libXrandr-devel
 ```
 
 ## Build
