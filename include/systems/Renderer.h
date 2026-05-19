@@ -126,35 +126,3 @@ void Renderer_ComponentCreate(RendererBatch batch, Entity entity);
 void Renderer_ComponentDestroy(Entity entity);
 
 #pragma endregion Renderer
-
-#pragma region Renderer Debug
-
-/// @brief Initialize function for renderer debug functions. Should be called after the Renderer_Initialize function.
-/// @param vertexShaderFile The source file for debug vertex shader.
-/// @param fragmentShaderFile The source file for debug fragment shader.
-/// @param initialVertexCapacity The initial capacity for the vertex buffer.
-/// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
-RJ_ResultWarn RendererDebug_Initialize(StringView vertexShaderFile, StringView fragmentShaderFile, RJ_Size initialVertexCapacity);
-
-/// @brief Terminator for renderer debug functions.
-void RendererDebug_Terminate(void);
-
-/// @brief Should be called before using debug rendering functions, and after main renderer's rendering functions.
-void RendererDebug_StartRendering(void);
-
-/// @brief Should be called before Renderer_FinishRendering to draw all debug shapes.
-void RendererDebug_FinishRendering(void);
-
-/// @brief Draws a line in 3D space for debugging purposes.
-/// @param start The starting point of the line.
-/// @param end The ending point of the line.
-/// @param color The color of the line.
-void RendererDebug_DrawLine(Vector3 start, Vector3 end, Color color);
-
-/// @brief Draws the wireframe of a box in 3D space for debugging purposes.
-/// @param position The center position of the box.
-/// @param size The size of the box on each axis.
-/// @param color The color of the lines.
-void RendererDebug_DrawBoxLines(Vector3 position, Vector3 size, Color color);
-
-#pragma endregion Renderer Debug

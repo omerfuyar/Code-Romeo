@@ -11,8 +11,6 @@
 
 #pragma region Source Only
 
-ListLinked RESOURCE_MODEL_POOL = {0};
-ListLinked RESOURCE_MATERIAL_POOL = {0};
 ListLinked RESOURCE_TEXTURE_POOL = {0};
 
 #pragma region ResourceTexture
@@ -287,9 +285,9 @@ static void ProcessNode(cgltf_node *node, mat4 parentTransform, ResourceModel *m
 
     if (node->mesh)
     {
-        for (cgltf_size p = 0; p < node->mesh->primitives_count; p++)
+        for (cgltf_size primitiveIndex = 0; primitiveIndex < node->mesh->primitives_count; primitiveIndex++)
         {
-            cgltf_primitive *primitive = &node->mesh->primitives[p];
+            cgltf_primitive *primitive = &node->mesh->primitives[primitiveIndex];
             ResourceMesh *targetMesh = meshMap[0]; // fallback
             if (primitive->material)
             {
@@ -400,6 +398,7 @@ RJ_ResultWarn ResourceModel_Create(ResourceModel **retResourceModel, StringView 
     {
         String_Destroy(&fullPath);
         free(model);
+        *retResourceModel = NULL;
         RJ_DebugWarning("Failed to parse GLTF file '%s'. cgltf Error: %d", fullPath.characters, result);
         return RJ_ERROR_DEPENDENCY;
     }
@@ -410,6 +409,7 @@ RJ_ResultWarn ResourceModel_Create(ResourceModel **retResourceModel, StringView 
         cgltf_free(data);
         String_Destroy(&fullPath);
         free(model);
+        *retResourceModel = NULL;
         RJ_DebugWarning("Failed to load GLTF buffers '%s'. cgltf Error: %d", fullPath.characters, result);
         return RJ_ERROR_DEPENDENCY;
     }

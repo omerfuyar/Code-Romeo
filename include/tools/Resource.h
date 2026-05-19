@@ -54,7 +54,6 @@ typedef struct ResourceMaterial
     String name;
     RJ_Size index;
 
-    // PBR Properties
     Vector4 baseColorFactor;
     float metallicFactor;
     float roughnessFactor;
@@ -62,6 +61,9 @@ typedef struct ResourceMaterial
 
     ResourceTexture *baseColorMap;
     ResourceTexture *metallicRoughnessMap;
+    ResourceTexture *normalMap;
+    ResourceTexture *emissiveMap;
+    ResourceTexture *occlusionMap;
 } ResourceMaterial;
 
 /// @brief Should not be used by user.
