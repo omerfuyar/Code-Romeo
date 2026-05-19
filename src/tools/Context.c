@@ -30,7 +30,7 @@ RJ_ResultWarn Context_Initialize(ContextWindow *retContext)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    retContext->handle = glfwCreateWindow(1080, 720, "Romeo Window", NULL, NULL);
+    retContext->handle = glfwCreateWindow(CONTEXT_MAIN_WINDOW_REF->size.x, CONTEXT_MAIN_WINDOW_REF->size.y, CONTEXT_MAIN_WINDOW_REF->title.characters, NULL, NULL);
     const char *errorLog = NULL;
 
     if (retContext->handle == NULL)

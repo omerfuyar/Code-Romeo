@@ -32,6 +32,9 @@ typedef struct ContextWindow
     Context_VoidFunVoidptrIntInt resizeCallback;
 } ContextWindow;
 
+#define ContextWindow_Default \
+    (ContextWindow) { .title = {0}, .size = Vector2Int_New(640, 360), .vSync = true, .fullScreen = false }
+
 #pragma endregion Typedefs
 
 /// @brief Initialize the context system and create the main window.

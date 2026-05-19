@@ -47,6 +47,9 @@ typedef struct RendererCamera
     bool isPerspective;
 } RendererCamera;
 
+#define RendererCamera_Default \
+    (RendererCamera) { .position = Vector3_Zero, .rotation = Vector3_Zero, .size = 90.0f, .nearClipPlane = 0.01f, .farClipPlane = 100.0f, .isPerspective = true }
+
 #pragma endregion typedefs
 
 #pragma region Renderer
