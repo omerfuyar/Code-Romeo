@@ -169,7 +169,11 @@ int main(int argc, char **argv)
     SHU_ModuleAddSourceFile("../cgltf.c");
     SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
 
-    SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C2X);
+    SHU_ModuleBegin("stb", "dependencies/stb/");
+    SHU_ModuleAddSourceFile("../stb.c");
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+
+    SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C23);
 
     if (isDebug > 0)
     {

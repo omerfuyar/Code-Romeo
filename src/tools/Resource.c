@@ -5,6 +5,7 @@
 #include "utilities/ListLinked.h"
 
 #include "glad/glad.h"
+#include "stb/stb_image.h"
 #include "cglm/cglm.h"
 
 #pragma region Source Only
