@@ -54,15 +54,14 @@ typedef struct ResourceMaterial
     String name;
     RJ_Size index;
 
-    Vector3 ambientColor;
-    Vector3 diffuseColor;
-    Vector3 specularColor;
-    Vector3 emissiveColor;
-    ResourceTexture *diffuseMap;
-    float specularExponent;
-    float refractionIndex;
-    float dissolve;
-    int illuminationModel;
+    // PBR Properties
+    Vector4 baseColorFactor;
+    float metallicFactor;
+    float roughnessFactor;
+    Vector3 emissiveFactor;
+    
+    ResourceTexture *baseColorMap;
+    ResourceTexture *metallicRoughnessMap;
 } ResourceMaterial;
 
 /// @brief Should not be used by user.
@@ -130,9 +129,8 @@ void ResourceImage_Destroy(ResourceImage *resourceImage);
 /// @brief Creates a new resource model. Looks for a resources folder in executable directory.
 /// @param retResourceModel Pointer to the ResourceModel pointer to store the created resource model.
 /// @param fileName The file path of the resource model in resources folder. Including file name. (e.g. "models/model.mdl").
-/// @param transformOffset Transform offset to apply to the model's vertices. Should be in position, rotation, and scale order. Leave NULL if not needed.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if the file cannot be opened or RJ_ERROR_DEPENDENCY if the model loading fails.
-RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, StringView fileName, const Vector3 *transformOffset);
+RJ_ResultWarn ResourceModel_Create(ResourceModel **retResourceModel, StringView fileName);
 
 /// @brief Destroys a resource model and frees all associated memory.
 /// @param model The resource model to destroy.
