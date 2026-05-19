@@ -91,6 +91,80 @@ static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retText
     return RJ_OK;
 }
 
+static RJ_ResultWarn ResourceTexture_GetFromMemoryOrCreate(ResourceTexture **retTexture, StringView name, const void *bufferData, size_t bufferSize)
+{
+    for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
+    {
+        ResourceTexture *texture = (ResourceTexture *)ListLinked_Get(&RESOURCE_TEXTURE_POOL, textureIndex);
+
+        if (String_AreSame(scv(texture->name), name))
+        {
+            texture->refCount++;
+            *retTexture = texture;
+            return RJ_OK;
+        }
+    }
+
+    ResourceTexture *texture = (ResourceTexture *)ListLinked_Add(&RESOURCE_TEXTURE_POOL, NULL);
+    *retTexture = texture;
+
+    texture->index = RESOURCE_TEXTURE_POOL.count - 1;
+    texture->name = scc(name);
+    texture->refCount = 1;
+
+    stbi_set_flip_vertically_on_load(true);
+
+    int x, y, channels;
+    unsigned char *data = stbi_load_from_memory((const unsigned char *)bufferData, (int)bufferSize, &x, &y, &channels, 0);
+    if (!data)
+    {
+        ListLinked_RemoveAtIndex(&RESOURCE_TEXTURE_POOL, texture->index);
+        String_Destroy(&texture->name);
+        RJ_DebugWarning("Failed to load embedded resource image for texture '%s'.", texture->name.characters);
+        return RJ_ERROR_RESOURCE;
+    }
+
+    glGenTextures(1, &texture->handle);
+    glBindTexture(GL_TEXTURE_2D, texture->handle);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    GLenum format = 0;
+
+    switch (channels)
+    {
+    case 4:
+        format = GL_RGBA;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 2:
+        format = GL_RG;
+        break;
+    case 1:
+        format = GL_RED;
+        break;
+    default:
+        RJ_DebugWarning("Unsupported number of channels (%d) for texture '%s'.", channels, texture->name.characters);
+        stbi_image_free(data);
+        return RJ_ERROR_RESOURCE;
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, x, y, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    stbi_image_free(data);
+
+    RJ_DebugInfo("Texture '%s' created successfully.", texture->name.characters);
+
+    return RJ_OK;
+}
+
 static void ResourceTexture_Destroy(ResourceTexture *texture)
 {
     RJ_DebugAssertNullPointerCheck(texture);
@@ -235,7 +309,7 @@ RJ_ResultWarn ResourceImage_Create(ResourceImage **retResourceImage, StringView 
     swn(&fullPath);
 
     stbi_set_flip_vertically_on_load(true);
-    resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 4);
+    resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
     if (resourceImage->data == NULL)
     {
         String_Destroy(&fullPath);
@@ -336,9 +410,11 @@ static void ProcessNode(cgltf_node *node, mat4 parentTransform, ResourceModel *m
                     cgltf_accessor_read_float(normAcc, v, norm, 3);
                     vec3 normVec = {norm[0], norm[1], norm[2]};
                     mat3 normalMatrix;
+
                     glm_mat4_pick3(globalTransform, normalMatrix);
                     glm_mat3_mulv(normalMatrix, normVec, normVec);
                     glm_vec3_normalize(normVec);
+
                     vertex.normal = Vector3_New(normVec[0], normVec[1], normVec[2]);
                 }
 
@@ -460,6 +536,42 @@ RJ_ResultWarn ResourceModel_Create(ResourceModel **retResourceModel, StringView 
                 if (baseTextureView->texture->image->uri)
                 {
                     ResourceTexture_GetByNameOrCreate(&mat->baseColorMap, scl(baseTextureView->texture->image->uri), scv(dirPath));
+                }
+                else if (baseTextureView->texture->image->buffer_view && baseTextureView->texture->image->buffer_view->buffer->data)
+                {
+                    char embName[64];
+                    snprintf(embName, sizeof(embName), "emb_%zu_%zu", (size_t)baseTextureView->texture->image->buffer_view->offset, (size_t)baseTextureView->texture->image->buffer_view->size);
+                    const void *dataPtr = (const unsigned char *)baseTextureView->texture->image->buffer_view->buffer->data + baseTextureView->texture->image->buffer_view->offset;
+                    ResourceTexture_GetFromMemoryOrCreate(&mat->baseColorMap, scl(embName), dataPtr, baseTextureView->texture->image->buffer_view->size);
+                }
+                String_Destroy(&dirPath);
+            }
+
+            cgltf_texture_view *mrTextureView = &data->materials[i].pbr_metallic_roughness.metallic_roughness_texture;
+            if (mrTextureView->texture && mrTextureView->texture->image)
+            {
+                String dirPath = scc(model->file);
+                for (RJ_Size idx = dirPath.length; idx > 0; idx--)
+                {
+                    if (dirPath.characters[idx - 1] == '/' || dirPath.characters[idx - 1] == '\\')
+                    {
+                        dirPath.length = idx;
+                        break;
+                    }
+                }
+                if (dirPath.length == model->file.length)
+                    dirPath.length = 0;
+
+                if (mrTextureView->texture->image->uri)
+                {
+                    ResourceTexture_GetByNameOrCreate(&mat->metallicRoughnessMap, scl(mrTextureView->texture->image->uri), scv(dirPath));
+                }
+                else if (mrTextureView->texture->image->buffer_view && mrTextureView->texture->image->buffer_view->buffer->data)
+                {
+                    char embName[64];
+                    snprintf(embName, sizeof(embName), "emb_%zu_%zu", (size_t)mrTextureView->texture->image->buffer_view->offset, (size_t)mrTextureView->texture->image->buffer_view->size);
+                    const void *dataPtr = (const unsigned char *)mrTextureView->texture->image->buffer_view->buffer->data + mrTextureView->texture->image->buffer_view->offset;
+                    ResourceTexture_GetFromMemoryOrCreate(&mat->metallicRoughnessMap, scl(embName), dataPtr, mrTextureView->texture->image->buffer_view->size);
                 }
                 String_Destroy(&dirPath);
             }

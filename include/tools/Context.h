@@ -6,7 +6,7 @@
 #include "utilities/Vector.h"
 
 /// @brief OpenGL context version major number
-#define CONTEXT_VERSION_MAJOR 4
+#define CONTEXT_VERSION_MAJOR 3
 /// @brief OpenGL context version minor number
 #define CONTEXT_VERSION_MINOR 3
 
@@ -37,7 +37,7 @@ typedef struct ContextWindow
 
 #pragma endregion Typedefs
 
-/// @brief Initialize the context system and create the main window.
+/// @brief Initialize the context system and create the main window. Context can be initialized with data inside to avoid configuring again.
 /// @param retContext Pointer to store the address of the main window context structure.
 /// @return RJ_OK on success, or RJ_ERROR_DEPENDENCY if GLFW fails. Analyze the logs for more information.
 RJ_ResultWarn Context_Initialize(ContextWindow *retContext);

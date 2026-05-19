@@ -17,20 +17,6 @@
 
 #pragma region typedefs
 
-#define RendererDebug_CheckError()                                            \
-    do                                                                        \
-    {                                                                         \
-        GLenum glError = glGetError();                                        \
-        RJ_DebugAssert(glError == GL_NO_ERROR, "OpenGL error : %d", glError); \
-    } while (0)
-
-//! LAYOUT OF MEMBERS IN THE STRUCT MUST MATCH THE OPENGL ATTRIBUTE LAYOUT IN SHADER AND ATTRIBUTE SETUPS (RENDERER DEBUG INITIALIZE)
-typedef struct RendererDebugVertex
-{
-    Vector3 vertexPosition;
-    Color vertexColor;
-} RendererDebugVertex;
-
 /// @brief Handle for a shader program object.
 typedef uint32_t RendererShaderProgramHandle;
 /// @brief Handle for a uniform location in a shader program.
@@ -46,6 +32,12 @@ typedef uint32_t RendererVBOHandle;
 typedef uint32_t RendererIBOHandle;
 /// @brief Handle for a Uniform Buffer Object.
 typedef uint32_t RendererUBOHandle;
+
+typedef struct RendererEntityPair
+{
+    RendererBatch batch;
+    Entity component;
+} RendererEntityPair;
 
 /// @brief A batch of render components that use the same model.
 typedef struct RENDERER_BATCH
@@ -65,11 +57,7 @@ typedef struct RENDERER_BATCH
 
 #pragma endregion typedefs
 
-typedef struct RendererEntityPair
-{
-    RendererBatch batch;
-    Entity component;
-} RendererEntityPair;
+// todo lights
 
 struct RENDERER
 {
@@ -115,8 +103,8 @@ struct RENDERER
         RendererUniformLocationHandle matRoughnessFactor;
         RendererUniformLocationHandle matEmissiveFactor;
 
-        RendererUniformLocationHandle matBaseColorMap;
         RendererUniformLocationHandle matHasBaseColorMap;
+        RendererUniformLocationHandle matBaseColorMap;
         RendererUniformLocationHandle matHasMetallicRoughnessMap;
         RendererUniformLocationHandle matMetallicRoughnessMap;
 
@@ -198,6 +186,7 @@ RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBa
 
     RENDERER.window = window;
 
+    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.entityToPairMap, initialBatchCapacity);
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, initialBatchCapacity);
 
     RENDERER.data.capacity = initialBatchCapacity;
@@ -253,6 +242,9 @@ void Renderer_Terminate(void)
     {
         Renderer_BatchDestroy(batch - 1);
     }
+
+    free(RENDERER.data.entityToPairMap);
+    RENDERER.data.entityToPairMap = NULL;
 
     free(RENDERER.data.batches);
     RENDERER.data.batches = NULL;
@@ -450,6 +442,7 @@ RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
 {
     RJ_DebugAssert(newBatchCapacity > RENDERER.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RENDERER.data.count);
 
+    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.entityToPairMap, newBatchCapacity);
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, newBatchCapacity);
 
     RENDERER.data.capacity = newBatchCapacity;
@@ -543,6 +536,8 @@ void Renderer_Render(void)
 
         if (previousModel != rBatch(batch).model)
         {
+            // todo dont upload static model data every frame upload on batch creation
+            // todo  move buffer objects to batch struct
             glBufferData(GL_ARRAY_BUFFER,
                          (GLsizeiptr)(rBatch(batch).model->vertices.sizeOfItem * rBatch(batch).model->vertices.count),
                          rBatch(batch).model->vertices.data,
@@ -605,7 +600,6 @@ void Renderer_Render(void)
     }
 
     Context_SwapBuffers();
-    glFinish();
 }
 
 RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView modelFile, RJ_Size initialComponentCapacity)
@@ -642,6 +636,7 @@ void Renderer_BatchDestroy(RendererBatch batch)
     // todo cleanup all components
     rAssertBatch(batch);
 
+    // todo refcount ResourceModel_Destroy(rBatch(batch).model);
     rBatch(batch).model = NULL;
 
     rBatch(batch).data.capacity = 0;
