@@ -5,7 +5,6 @@
 #include "utilities/ListLinked.h"
 
 #include "glad/glad.h"
-#include "stb/stb_image.h"
 #include "cglm/cglm.h"
 
 #pragma region Source Only
@@ -512,7 +511,7 @@ RJ_ResultWarn ResourceModel_GetOrCreate(ResourceModel **retResourceModel, String
         const Vector3 *rotationOffset = transformOffset + 1;
         const Vector3 *scaleOffset = transformOffset + 2;
 
-		void *const matrixAddress = &offsetMatrix;
+        void *const matrixAddress = &offsetMatrix;
 
         glm_mat4_identity((vec4 *)matrixAddress);
 
