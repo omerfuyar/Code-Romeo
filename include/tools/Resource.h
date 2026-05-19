@@ -45,7 +45,7 @@ typedef struct ResourceTexture
     RJ_Size index;
 
     ResourceTextureHandle handle;
-    ResourceImage *image;
+    RJ_Size refCount;
 } ResourceTexture;
 
 /// @brief Should not be used by user.
@@ -59,7 +59,7 @@ typedef struct ResourceMaterial
     float metallicFactor;
     float roughnessFactor;
     Vector3 emissiveFactor;
-    
+
     ResourceTexture *baseColorMap;
     ResourceTexture *metallicRoughnessMap;
 } ResourceMaterial;
@@ -104,7 +104,7 @@ typedef struct ResourceModel
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, or RJ_ERROR_FILE if the file cannot be opened.
 RJ_ResultWarn ResourceText_Create(ResourceText **retResource, StringView file);
 
-/// @brief Destroys a resource.
+/// @brief Destroys a resource text.
 /// @param resource The resource to destroy.
 void ResourceText_Destroy(ResourceText *resource);
 
@@ -128,7 +128,7 @@ void ResourceImage_Destroy(ResourceImage *resourceImage);
 
 /// @brief Creates a new resource model. Looks for a resources folder in executable directory.
 /// @param retResourceModel Pointer to the ResourceModel pointer to store the created resource model.
-/// @param fileName The file path of the resource model in resources folder. Including file name. (e.g. "models/model.mdl").
+/// @param fileName The file path of the resource model in resources folder. Including file name. (e.g. "models/model.glb").
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if the file cannot be opened or RJ_ERROR_DEPENDENCY if the model loading fails.
 RJ_ResultWarn ResourceModel_Create(ResourceModel **retResourceModel, StringView fileName);
 

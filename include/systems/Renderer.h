@@ -98,12 +98,11 @@ void Renderer_Render(void);
 
 /// @brief Creates a renderer batch.
 
-/// @param mdlFile The file path of the model.
+/// @param modelFile The file path to the .glb or .gltf model file.
 /// @param retBatch The handle to the created renderer batch.
-/// @param transformOffset The offset to apply to the model's transform.
 /// @param initialComponentCapacity The initial capacity for components in the batch.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if model loading fails.
-RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, const Vector3 *transformOffset, RJ_Size initialComponentCapacity);
+RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView modelFile, RJ_Size initialComponentCapacity);
 
 /// @brief Destroys a renderer batch.
 /// @param batch The handle to the renderer batch to destroy.

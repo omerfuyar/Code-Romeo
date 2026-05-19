@@ -113,14 +113,14 @@ struct RENDERER
         RendererUniformLocationHandle camSize;
         RendererUniformLocationHandle camIsPerspective;
 
-        RendererUniformLocationHandle matAmbientColor;
-        RendererUniformLocationHandle matDiffuseColor;
-        RendererUniformLocationHandle matSpecularColor;
-        RendererUniformLocationHandle matEmissiveColor;
-        RendererUniformLocationHandle matSpecularExponent;
-        RendererUniformLocationHandle matDissolve;
-        RendererUniformLocationHandle matDiffuseMap;
-        RendererUniformLocationHandle matHasDiffuseMap;
+        RendererUniformLocationHandle matBaseColorFactor;
+        RendererUniformLocationHandle matMetallicFactor;
+        RendererUniformLocationHandle matRoughnessFactor;
+        RendererUniformLocationHandle matEmissiveFactor;
+        RendererUniformLocationHandle matBaseColorMap;
+        RendererUniformLocationHandle matHasBaseColorMap;
+        RendererUniformLocationHandle matMetallicRoughnessMap;
+        RendererUniformLocationHandle matHasMetallicRoughnessMap;
 
         RendererUniformBlockHandle objectMatricesHandle;
     } shader;
@@ -301,14 +301,14 @@ void Renderer_Terminate(void)
     RENDERER.shader.camSize = 0;
     RENDERER.shader.camIsPerspective = 0;
 
-    RENDERER.shader.matAmbientColor = 0;
-    RENDERER.shader.matDiffuseColor = 0;
-    RENDERER.shader.matSpecularColor = 0;
-    RENDERER.shader.matEmissiveColor = 0;
-    RENDERER.shader.matSpecularExponent = 0;
-    RENDERER.shader.matDissolve = 0;
-    RENDERER.shader.matDiffuseMap = 0;
-    RENDERER.shader.matHasDiffuseMap = 0;
+    RENDERER.shader.matBaseColorFactor = 0;
+    RENDERER.shader.matMetallicFactor = 0;
+    RENDERER.shader.matRoughnessFactor = 0;
+    RENDERER.shader.matEmissiveFactor = 0;
+    RENDERER.shader.matBaseColorMap = 0;
+    RENDERER.shader.matHasBaseColorMap = 0;
+    RENDERER.shader.matMetallicRoughnessMap = 0;
+    RENDERER.shader.matHasMetallicRoughnessMap = 0;
 
     RENDERER.shader.objectMatricesHandle = 0;
 
@@ -387,14 +387,14 @@ RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView 
     RENDERER.shader.camSize = glGetUniformLocation(RENDERER.shader.programHandle, "camSize");
     RENDERER.shader.camIsPerspective = glGetUniformLocation(RENDERER.shader.programHandle, "camIsPerspective");
 
-    RENDERER.shader.matAmbientColor = glGetUniformLocation(RENDERER.shader.programHandle, "matAmbientColor");
-    RENDERER.shader.matDiffuseColor = glGetUniformLocation(RENDERER.shader.programHandle, "matDiffuseColor");
-    RENDERER.shader.matSpecularColor = glGetUniformLocation(RENDERER.shader.programHandle, "matSpecularColor");
-    RENDERER.shader.matEmissiveColor = glGetUniformLocation(RENDERER.shader.programHandle, "matEmissiveColor");
-    RENDERER.shader.matSpecularExponent = glGetUniformLocation(RENDERER.shader.programHandle, "matSpecularExponent");
-    RENDERER.shader.matDissolve = glGetUniformLocation(RENDERER.shader.programHandle, "matDissolve");
-    RENDERER.shader.matDiffuseMap = glGetUniformLocation(RENDERER.shader.programHandle, "matDiffuseMap");
-    RENDERER.shader.matHasDiffuseMap = glGetUniformLocation(RENDERER.shader.programHandle, "matHasDiffuseMap");
+    RENDERER.shader.matBaseColorFactor = glGetUniformLocation(RENDERER.shader.programHandle, "matBaseColorFactor");
+    RENDERER.shader.matMetallicFactor = glGetUniformLocation(RENDERER.shader.programHandle, "matMetallicFactor");
+    RENDERER.shader.matRoughnessFactor = glGetUniformLocation(RENDERER.shader.programHandle, "matRoughnessFactor");
+    RENDERER.shader.matEmissiveFactor = glGetUniformLocation(RENDERER.shader.programHandle, "matEmissiveFactor");
+    RENDERER.shader.matBaseColorMap = glGetUniformLocation(RENDERER.shader.programHandle, "matBaseColorMap");
+    RENDERER.shader.matHasBaseColorMap = glGetUniformLocation(RENDERER.shader.programHandle, "matHasBaseColorMap");
+    RENDERER.shader.matMetallicRoughnessMap = glGetUniformLocation(RENDERER.shader.programHandle, "matMetallicRoughnessMap");
+    RENDERER.shader.matHasMetallicRoughnessMap = glGetUniformLocation(RENDERER.shader.programHandle, "matHasMetallicRoughnessMap");
 
     RENDERER.shader.objectMatricesHandle = glGetUniformBlockIndex(RENDERER.shader.programHandle, "modelMatrices");
     glUniformBlockBinding(RENDERER.shader.programHandle, RENDERER.shader.objectMatricesHandle, RENDERER_UBO_MATRICES_BINDING);
@@ -472,96 +472,6 @@ RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
     RJ_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
     return RJ_OK;
 }
-
-/*
-RendererScene *RendererScene_CreateFromFile(StringView scnFile, const ListArray *modelPool, void *objectReferences, RJ_Size transformOffsetInObject, RJ_Size totalObjectSize, RJ_Size objectCount)
-{
-    RJ_DebugAssertNullPointerCheck(modelPool);
-    RJ_DebugAssertNullPointerCheck(objectReferences);
-
-    RendererScene *scene = NULL;
-    RendererBatch *currentBatch = NULL;
-    RendererComponent *currentComponent = NULL;
-    RJ_Size totalObjectIndex = 0;
-
-    ResourceText *rscScene = ResourceText_Create(scnFile);
-
-    RJ_Size scnLineCount = 0;
-    StringView *scnLines = (StringView *)malloc(rscScene->lineCount * sizeof(StringView));
-    RJ_DebugAssertNullPointerCheck(scnLines);
-    memset(scnLines, 0, rscScene->lineCount * sizeof(StringView));
-
-    RJ_Size scnLineTokenCount = 0;
-    StringView scnLineTokens[RENDERER_MODEL_LINE_MAX_TOKEN_COUNT] = {0};
-
-    StringView strNewline = scl("\n");
-    StringView strSpace = scl(" ");
-    StringView strP = scl("p");
-    StringView strR = scl("r");
-    StringView strS = scl("s");
-    StringView strNEWSCN = scl("newscn");
-    StringView strUSEMDL = scl("usemdl");
-
-    String_Tokenize(scv(rscScene->data), strNewline, &scnLineCount, scnLines, rscScene->lineCount);
-    for (RJ_Size i = 0; i < scnLineCount; i++)
-    {
-        String_Tokenize(scnLines[i], strSpace, &scnLineTokenCount, scnLineTokens, RENDERER_MODEL_LINE_MAX_TOKEN_COUNT);
-
-        StringView firstToken = scnLineTokens[0];
-
-        if (String_Compare(firstToken, strP) == 0)
-        {
-            RJ_DebugAssert(totalObjectIndex < objectCount, "Object reference count %u is not enough for the imported scene file", objectCount);
-            currentComponent = RendererBatch_CreateComponent(currentBatch,
-                                                             (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 0 * sizeof(Vector3)),
-                                                             (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 1 * sizeof(Vector3)),
-                                                             (Vector3 *)((char *)objectReferences + (totalObjectSize * totalObjectIndex) + transformOffsetInObject + 2 * sizeof(Vector3)));
-
-            *currentComponent->positionReference = Vector3_New(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
-        }
-        else if (String_Compare(firstToken, strR) == 0)
-        {
-            *currentComponent->rotationReference = Vector3_New(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
-        }
-        else if (String_Compare(firstToken, strS) == 0)
-        {
-            *currentComponent->scaleReference = Vector3_New(String_ToFloat(scnLineTokens[1]), String_ToFloat(scnLineTokens[2]), String_ToFloat(scnLineTokens[3]));
-            totalObjectIndex++;
-        }
-        else if (String_Compare(firstToken, strNEWSCN) == 0)
-        {
-            scene = RendererScene_CreateEmpty(scnLineTokens[1], modelPool->count);
-        }
-        else if (String_Compare(firstToken, strUSEMDL) == 0)
-        {
-            bool modelFound = false;
-
-            for (RJ_Size j = 0; j < modelPool->count; j++)
-            {
-                RendererModel *model = *(RendererModel **)ListArray_Get(modelPool, j);
-
-                // RJ_DebugInfo("Comparing model '%.*s' with '%.*s'...", model->name.length, model->name.characters, lineTokens[1].length, lineTokens[1].characters);
-
-                if (String_Compare(scv(model->name), scv(scnLineTokens[1])) == 0)
-                {
-                    modelFound = true;
-                    currentBatch = RendererScene_CreateBatch(scene, model, scnLineTokenCount > 2 ? (RJ_Size)String_ToLong(scv(scnLineTokens[2])) : RENDERER_BATCH_INITIAL_CAPACITY);
-                    break;
-                }
-            }
-
-            RJ_DebugAssert(modelFound, "Model '%.*s' not found in model pool when trying to assign it to mesh in model '%.*s'.", scnLineTokens[1].length, scnLineTokens[1].characters, currentBatch->model->name.length, currentBatch->model->name.characters);
-        }
-    }
-
-    free(scnLines);
-    ResourceText_Destroy(rscScene);
-
-    RJ_DebugInfo("Scene %s imported successfully.", scene->name.characters);
-
-    return scene;
-}
-*/
 
 // todo move this to shader, compute in gpu
 void Renderer_Update(void)
@@ -664,24 +574,33 @@ void Renderer_Render(void)
 
             if (mesh->material != previousMaterial)
             {
-                glUniform3fv(RENDERER.shader.matAmbientColor, 1, (GLfloat *)&mesh->material->ambientColor);
-                glUniform3fv(RENDERER.shader.matDiffuseColor, 1, (GLfloat *)&mesh->material->diffuseColor);
-                glUniform3fv(RENDERER.shader.matSpecularColor, 1, (GLfloat *)&mesh->material->specularColor);
-                glUniform3fv(RENDERER.shader.matEmissiveColor, 1, (GLfloat *)&mesh->material->emissiveColor);
-                glUniform1f(RENDERER.shader.matSpecularExponent, mesh->material->specularExponent);
-                glUniform1f(RENDERER.shader.matDissolve, mesh->material->dissolve);
+                glUniform4fv(RENDERER.shader.matBaseColorFactor, 1, (GLfloat *)&mesh->material->baseColorFactor);
+                glUniform1f(RENDERER.shader.matMetallicFactor, mesh->material->metallicFactor);
+                glUniform1f(RENDERER.shader.matRoughnessFactor, mesh->material->roughnessFactor);
+                glUniform3fv(RENDERER.shader.matEmissiveFactor, 1, (GLfloat *)&mesh->material->emissiveFactor);
 
-                // Texture binding
-                if (mesh->material->diffuseMap != NULL)
+                if (mesh->material->baseColorMap != NULL)
                 {
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, mesh->material->diffuseMap->handle);
-                    glUniform1i(RENDERER.shader.matDiffuseMap, 0);
-                    glUniform1i(RENDERER.shader.matHasDiffuseMap, 1);
+                    glBindTexture(GL_TEXTURE_2D, mesh->material->baseColorMap->handle);
+                    glUniform1i(RENDERER.shader.matBaseColorMap, 0);
+                    glUniform1i(RENDERER.shader.matHasBaseColorMap, 1);
                 }
                 else
                 {
-                    glUniform1i(RENDERER.shader.matHasDiffuseMap, 0);
+                    glUniform1i(RENDERER.shader.matHasBaseColorMap, 0);
+                }
+
+                if (mesh->material->metallicRoughnessMap != NULL)
+                {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, mesh->material->metallicRoughnessMap->handle);
+                    glUniform1i(RENDERER.shader.matMetallicRoughnessMap, 1);
+                    glUniform1i(RENDERER.shader.matHasMetallicRoughnessMap, 1);
+                }
+                else
+                {
+                    glUniform1i(RENDERER.shader.matHasMetallicRoughnessMap, 0);
                 }
 
                 previousMaterial = mesh->material;
@@ -704,16 +623,16 @@ void Renderer_Render(void)
     glFinish();
 }
 
-RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView mdlFile, const Vector3 *transformOffset, RJ_Size initialComponentCapacity)
+RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView modelFile, RJ_Size initialComponentCapacity)
 {
     RJ_DebugAssert(RENDERER.data.count < RENDERER.data.capacity, "Maximum renderer batch capacity of %u reached.", RENDERER.data.capacity); // todo expand capacity
 
     RendererBatch newBatch = RENDERER.data.count;
 
-    RJ_Result result = ResourceModel_GetOrCreate(&rBatch(newBatch).model, mdlFile, transformOffset);
+    RJ_Result result = ResourceModel_Create(&rBatch(newBatch).model, modelFile);
     if (result != RJ_OK)
     {
-        RJ_DebugWarning("Failed to create renderer batch for model file '%s'.", mdlFile.characters);
+        RJ_DebugWarning("Failed to create renderer batch for model file '%s'.", modelFile.characters);
         return result;
     }
 
