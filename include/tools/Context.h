@@ -21,6 +21,7 @@ typedef void (*Context_VoidFunVoidptrIntInt)(void *, int, int);
 /// @brief Function pointer type used for window log callback
 typedef void (*Context_VoidFunUintUintUintUintIntCcharptrCvoidptr)(unsigned int, unsigned int, unsigned int, unsigned int, int, const char *, const void *);
 
+// todo move to internal data or make the systems to support multiple contexts
 /// @brief Structure representing the main window context
 typedef struct ContextWindow
 {

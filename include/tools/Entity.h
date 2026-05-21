@@ -22,6 +22,8 @@ RJ_ResultWarn Entity_Initialize(RJ_Size initialEntityCapacity);
 /// @brief Terminate and free the necessary resources for entity datas.
 void Entity_Terminate(void);
 
+bool Entity_IsInitialized(void);
+
 /// @brief
 /// @param position
 /// @param rotation
@@ -34,6 +36,8 @@ Entity Entity_Create(Vector3 position, Vector3 rotation, Vector3 scale);
 void Entity_Destroy(Entity entity);
 
 // todo add resize and callbacks
+
+void Entity_InternalData(RJ_Size *retCapacity, RJ_Size *retCount);
 
 /// @brief
 /// @param entity

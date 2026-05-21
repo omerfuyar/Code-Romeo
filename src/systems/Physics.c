@@ -1,7 +1,5 @@
 #include "systems/Physics.h"
 
-#include "tools/Entity.h"
-
 #include "utilities/Maths.h"
 #include "utilities/ListArray.h"
 
@@ -280,6 +278,11 @@ void Physics_Terminate(void)
     PHYSICS.data.flags = NULL;
 
     RJ_DebugInfo("Physics terminated successfully.");
+}
+
+bool Physics_IsInitialized(void)
+{
+    return PHYSICS.data.capacity > 0;
 }
 
 RJ_ResultWarn Physics_Resize(RJ_Size newCapacity)

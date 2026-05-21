@@ -44,7 +44,7 @@ typedef struct RENDERER_BATCH
 {
     ResourceModel *model;
 
-    struct RENDERER_BATCH_COMPONENTS
+    struct RENDERER_BATCH_DATA
     {
         RJ_Size capacity;
         RJ_Size count;
@@ -68,11 +68,17 @@ struct RENDERER
         RJ_Size capacity;
         RJ_Size count;
 
-        RendererEntityPair *entityToPairMap;
-
         RENDERER_BATCH *batches;
         // todo maybe change with linked list for dynamic resizing?
     } data;
+
+    struct RENDERER_PAIRS
+    {
+        RJ_Size capacity;
+        RJ_Size count;
+
+        RendererEntityPair *entityToPairMap;
+    } pairs;
 
     struct RENDERER_CAMERA
     {
@@ -113,7 +119,7 @@ struct RENDERER
 } RENDERER = {0};
 
 #define rBatch(batch) (RENDERER.data.batches[batch])
-#define rPair(entity) (RENDERER.data.entityToPairMap[entity])
+#define rPair(entity) (RENDERER.pairs.entityToPairMap[entity])
 #define rEntity(pair) (rBatch((pair).batch).data.compToEntityMap[(pair).component])
 
 #define rObjectMatrix(pair) (rBatch((pair).batch).data.objectMatrices[(pair).component])
@@ -186,7 +192,7 @@ RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBa
 
     RENDERER.window = window;
 
-    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.entityToPairMap, initialBatchCapacity);
+    RJ_ReturnAllocate(RendererEntityPair, RENDERER.pairs.entityToPairMap, initialBatchCapacity);
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, initialBatchCapacity);
 
     RENDERER.data.capacity = initialBatchCapacity;
@@ -243,8 +249,8 @@ void Renderer_Terminate(void)
         Renderer_BatchDestroy(batch - 1);
     }
 
-    free(RENDERER.data.entityToPairMap);
-    RENDERER.data.entityToPairMap = NULL;
+    free(RENDERER.pairs.entityToPairMap);
+    RENDERER.pairs.entityToPairMap = NULL;
 
     free(RENDERER.data.batches);
     RENDERER.data.batches = NULL;
@@ -294,7 +300,7 @@ void Renderer_Terminate(void)
 
 bool Renderer_IsInitialized(void)
 {
-    return RENDERER.window != NULL;
+    return RENDERER.data.capacity > 0;
 }
 
 RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile)
@@ -442,7 +448,7 @@ RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
 {
     RJ_DebugAssert(newBatchCapacity > RENDERER.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RENDERER.data.count);
 
-    RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.entityToPairMap, newBatchCapacity);
+    RJ_ReturnAllocate(RendererEntityPair, RENDERER.pairs.entityToPairMap, newBatchCapacity);
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, newBatchCapacity);
 
     RENDERER.data.capacity = newBatchCapacity;

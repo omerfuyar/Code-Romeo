@@ -15,6 +15,7 @@ struct ENTITY
         ListArray freeIndices; // RJ_Size
         // todo use another data structure like stack or queue
 
+        // todo move to transform component
         Vector3 *positions;
         Vector3 *rotations;
         Vector3 *scales;
@@ -90,6 +91,11 @@ void Entity_Terminate()
     RJ_DebugInfo("Entity data terminated successfully.");
 }
 
+bool Entity_IsInitialized(void)
+{
+    return ENTITY.data.capacity > 0;
+}
+
 Entity Entity_Create(Vector3 position, Vector3 rotation, Vector3 scale)
 {
     RJ_DebugAssert(ENTITY.data.count + ENTITY.data.freeIndices.count < ENTITY.data.capacity, "Maximum Entity capacity of %u reached.", ENTITY.data.capacity);
@@ -114,6 +120,19 @@ void Entity_Destroy(Entity entity)
     ListArray_Add(&ENTITY.data.freeIndices, &entity);
 
     ENTITY.data.count--;
+}
+
+void Entity_InternalData(RJ_Size *retCapacity, RJ_Size *retCount)
+{
+    if (retCapacity != NULL && ENTITY.data.flags != NULL)
+    {
+        *retCapacity = ENTITY.data.capacity;
+    }
+
+    if (retCount != NULL && ENTITY.data.flags != NULL)
+    {
+        *retCount = ENTITY.data.count;
+    }
 }
 
 Vector3 Entity_GetPosition(Entity entity)

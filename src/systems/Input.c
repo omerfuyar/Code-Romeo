@@ -211,6 +211,21 @@ void Input_Initialize(const ContextWindow *window)
     RJ_DebugInfo("Input system initialized successfully");
 }
 
+void Input_Terminate(void)
+{
+    glfwSetKeyCallback(INPUT_MAIN_WINDOW->handle, NULL);
+    glfwSetCursorPosCallback(INPUT_MAIN_WINDOW->handle, NULL);
+    glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW->handle, NULL);
+    glfwSetScrollCallback(INPUT_MAIN_WINDOW->handle, NULL);
+
+    INPUT_MAIN_WINDOW = NULL;
+}
+
+bool Input_IsInitialized(void)
+{
+    return INPUT_MAIN_WINDOW != NULL;
+}
+
 void Input_ConfigureMouseMode(InputMouseMode mode)
 {
     RJ_DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);

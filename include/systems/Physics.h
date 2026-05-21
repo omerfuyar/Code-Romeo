@@ -24,6 +24,8 @@ RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, f
 /// @brief Destroys a physics scene and all its components.
 void Physics_Terminate(void);
 
+bool Physics_IsInitialized(void);
+
 /// @brief Changes the position references for all physics components in the scene.
 /// @param newCapacity The maximum number of position vectors available.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.

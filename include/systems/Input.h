@@ -118,6 +118,12 @@ typedef enum InputMouseMode
 /// @param window Window to initialize.
 void Input_Initialize(const ContextWindow *window);
 
+// todo these are not crucial, no memory allocation
+
+void Input_Terminate(void);
+
+bool Input_IsInitialized(void);
+
 /// @brief Configures the mouse mode of the main window.
 /// @param mode Mode to set.
 void Input_ConfigureMouseMode(InputMouseMode mode);

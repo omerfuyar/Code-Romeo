@@ -35,6 +35,8 @@
 /// @brief Represents a batch of objects that share the same model for rendering.
 typedef Entity RendererBatch;
 
+// todo either make systems to use user exposed data and retrieve data from user passed pointers or move data to systems internal memory and use with getter/setters
+
 /// @brief Represents a camera used to render components.
 typedef struct RendererCamera
 {
