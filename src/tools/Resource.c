@@ -11,6 +11,7 @@
 
 #pragma region Source Only
 
+// todo shifts on removal. find another way
 ListLinked RESOURCE_TEXTURE_POOL = {0};
 
 #pragma region ResourceTexture
