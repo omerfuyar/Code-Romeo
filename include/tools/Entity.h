@@ -37,7 +37,7 @@ void Entity_Destroy(Entity entity);
 
 // todo add resize and callbacks
 
-void Entity_InternalData(RJ_Size *retCapacity, RJ_Size *retCount);
+void Entity_GetInternalData(RJ_Size *retCapacity, RJ_Size *retCount);
 
 /// @brief
 /// @param entity
@@ -61,10 +61,10 @@ void Entity_SetPosition(Entity entity, Vector3 position);
 
 /// @brief
 /// @param entity
-/// @param position
-void Entity_SetRotation(Entity entity, Vector3 position);
+/// @param rotation
+void Entity_SetRotation(Entity entity, Vector3 rotation);
 
 /// @brief
 /// @param entity
-/// @param position
-void Entity_SetScale(Entity entity, Vector3 position);
+/// @param scale
+void Entity_SetScale(Entity entity, Vector3 scale);

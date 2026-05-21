@@ -2,7 +2,7 @@
 
 #include "utilities/ListArray.h"
 
-#pragma region SourceOnly
+#pragma region Source Only
 
 #define ENTITY_FLAG_ACTIVE (1 << 0)
 
@@ -33,7 +33,7 @@ struct ENTITY
 
 #define eAssertEntity(entity) RJ_DebugAssert((entity) < ENTITY.data.count + ENTITY.data.freeIndices.count && entity != RJ_INDEX_INVALID && eIsActive(entity), "Entity %u either exceeds maximum possible index %u, invalid or inactive.", (entity), ENTITY.data.count + ENTITY.data.freeIndices.count)
 
-#pragma endregion SourceOnly
+#pragma endregion Source Only
 
 RJ_ResultWarn Entity_Initialize(RJ_Size initialEntityCapacity)
 {
@@ -100,7 +100,7 @@ Entity Entity_Create(Vector3 position, Vector3 rotation, Vector3 scale)
 {
     RJ_DebugAssert(ENTITY.data.count + ENTITY.data.freeIndices.count < ENTITY.data.capacity, "Maximum Entity capacity of %u reached.", ENTITY.data.capacity);
 
-    Entity newEntity = ENTITY.data.freeIndices.count != 0 ? *((RJ_Size *)ListArray_Pop(&ENTITY.data.freeIndices)) : ENTITY.data.count;
+    Entity newEntity = ENTITY.data.freeIndices.count != 0 ? (Entity) * ((RJ_Size *)ListArray_Pop(&ENTITY.data.freeIndices)) : ENTITY.data.count;
 
     ePosition(newEntity) = position;
     eRotation(newEntity) = rotation;
@@ -122,7 +122,7 @@ void Entity_Destroy(Entity entity)
     ENTITY.data.count--;
 }
 
-void Entity_InternalData(RJ_Size *retCapacity, RJ_Size *retCount)
+void Entity_GetInternalData(RJ_Size *retCapacity, RJ_Size *retCount)
 {
     if (retCapacity != NULL && ENTITY.data.flags != NULL)
     {

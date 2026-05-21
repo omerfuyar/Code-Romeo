@@ -10,6 +10,8 @@
 
 #pragma region typedefs
 
+// todo put buffer objects to batches and bind them on use
+
 #define RENDERER_OPENGL_CLEAR_COLOR 0.3f, 0.3f, 0.3f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
 
@@ -22,11 +24,6 @@
 #define RENDERER_DEBUG_VBO_POSITION_BINDING 0
 #define RENDERER_DEBUG_VBO_COLOR_BINDING 1
 
-#define RENDERER_CAMERA_DEFAULT_IS_PERSPECTIVE true
-#define RENDERER_CAMERA_DEFAULT_FOV 90.0f
-#define RENDERER_CAMERA_DEFAULT_ORTHOGRAPHIC_SIZE 10.0f
-#define RENDERER_CAMERA_DEFAULT_NEAR_CLIP_PLANE 0.01f
-#define RENDERER_CAMERA_DEFAULT_FAR_CLIP_PLANE 1000.0f
 #define RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER 1000.0f
 
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
@@ -50,17 +47,16 @@ typedef struct RendererCamera
 } RendererCamera;
 
 #define RendererCamera_Default \
-    (RendererCamera) { .position = Vector3_Zero, .rotation = Vector3_Zero, .size = 90.0f, .nearClipPlane = 0.01f, .farClipPlane = 100.0f, .isPerspective = true }
+    (RendererCamera) { .position = Vector3_Zero, .rotation = Vector3_Zero, .size = 90.0f, .nearClipPlane = 0.01f, .farClipPlane = 1000.0f, .isPerspective = true }
 
 #pragma endregion typedefs
 
 #pragma region Renderer
 
 /// @brief Initializes the renderer system.
-/// @param window The context window to render to.
 /// @param initialBatchCapacity The initial capacity for renderer batches.
 /// @return RJ_OK on success, RJ_ERROR_DEPENDENCY if glad or GLFW fails or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBatchCapacity);
+RJ_ResultWarn Renderer_Initialize(RJ_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
 void Renderer_Terminate(void);
@@ -75,14 +71,9 @@ bool Renderer_IsInitialized(void);
 /// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
 RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
-/// @brief Configures the camera parameters for the renderer.
-/// @param camera The address of the camera data struct to use for rendering.
-void Renderer_SetCamera(RendererCamera *camera);
+const RendererCamera *Renderer_GetCameraData(void);
 
-/// @brief Gets the camera used for rendering.
-/// @param retCamera Camera pointer reference to store returned data.
-/// @return RJ_OK on success,
-RJ_ResultWarn Renderer_GetCamera(RendererCamera **retCamera);
+void Renderer_SetCameraData(const RendererCamera *cameraData);
 
 /// @brief Converts screen coordinates to world coordinates with given depth.
 /// @param screenPosition Screen coordinate to convert.
@@ -112,6 +103,8 @@ RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView modelFile
 /// @brief Destroys a renderer batch.
 /// @param batch The handle to the renderer batch to destroy.
 void Renderer_BatchDestroy(RendererBatch batch);
+
+// todo maybe remove resizing
 
 /// @brief Configures the references for a renderer batch.
 /// @param batch The handle to the renderer batch.

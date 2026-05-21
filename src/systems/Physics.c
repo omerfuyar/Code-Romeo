@@ -11,7 +11,7 @@
 struct PHYSICS
 {
     struct PHYSICS_PROPERTIES
-    {
+    { // todo move as a struct to header and share through getters/setters or directly move logic to components instead of entire system
         float drag;
         float gravity;
         float elasticity;

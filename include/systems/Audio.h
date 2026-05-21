@@ -38,30 +38,30 @@ RJ_ResultWarn Audio_ComponentCreate(Entity entity, StringView audioFile);
 
 /// @brief Destroys an audio component and frees its resources.
 /// @param component Component to destroy.
-void Audio_ComponentDestroy(Entity component);
+void Audio_ComponentDestroy(Entity entity);
 
 /// @brief Is the audio of the component currently playing or not.
 /// @param component Component to check.
 /// @return True if the audio is playing, false if not.
-bool Audio_ComponentIsPlaying(Entity component);
+bool Audio_ComponentIsPlaying(Entity entity);
 
 /// @brief Sets the playing state of the audio component.
 /// @param component Component to check.
 /// @param play Play the audio if true, pause if false.
-void Audio_ComponentSetPlaying(Entity component, bool play);
+void Audio_ComponentSetPlaying(Entity entity, bool play);
 
 /// @brief Rewinds the audio by moving its cursor.
 /// @param batch Audio batch the component is in.
 /// @param component Component to rewind.
 /// @param interval Between 0 and 1. 0 is the start and 1 is the end. Clamps to 0-1 internally.
-void Audio_ComponentRewind(Entity component, float interval);
+void Audio_ComponentRewind(Entity entity, float interval);
 
 /// @brief Checks if the component is set to loop the audio.
 /// @param component Component to check.
 /// @return True if the component is set to loop the audio, false otherwise.
-bool Audio_ComponentIsLooping(Entity component);
+bool Audio_ComponentIsLooping(Entity entity);
 
 /// @brief Configures the component to loop the audio not.
 /// @param component Component to configure
 /// @param loop Loop or not.
-void Audio_ComponentSetLooping(Entity component, bool loop);
+void Audio_ComponentSetLooping(Entity entity, bool loop);

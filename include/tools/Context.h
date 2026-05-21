@@ -27,28 +27,29 @@ typedef struct ContextWindow
 {
     String title;
     Vector2Int size;
+    Context_VoidFunVoidptrIntInt resizeCallback;
     void *handle; // user should not use this variable
     bool vSync;
     bool fullScreen;
-    Context_VoidFunVoidptrIntInt resizeCallback;
 } ContextWindow;
 
 #define ContextWindow_Default \
-    (ContextWindow) { .title = {0}, .size = Vector2Int_New(640, 360), .vSync = true, .fullScreen = false }
+    (ContextWindow) { .title.characters = "RomeoMustDie", .title.length = 12, .size = Vector2Int_New(640, 360), .vSync = true, .fullScreen = false, .handle = NULL, .resizeCallback = NULL }
 
 #pragma endregion Typedefs
 
 /// @brief Initialize the context system and create the main window. Context can be initialized with data inside to avoid configuring again.
-/// @param retContext Pointer to store the address of the main window context structure.
 /// @return RJ_OK on success, or RJ_ERROR_DEPENDENCY if GLFW fails. Analyze the logs for more information.
-RJ_ResultWarn Context_Initialize(ContextWindow *retContext);
+RJ_ResultWarn Context_Initialize(void);
 
 /// @brief Clean up and terminate the context system
-void Context_Terminate(void);
+void Context_Destroy(void);
 
 /// @brief Get the status of context module.
 /// @return Context module is initialized or not.
 bool Context_IsInitialized(void);
+
+const ContextWindow *Context_GetInternalData(void);
 
 /// @brief Updates the window. Should be called before any system module update.
 /// @brief False if the window should close.
@@ -61,6 +62,7 @@ bool Context_Update(void);
 /// @param fullScreen Enable/disable fullscreen mode
 /// @param resizeCallback Function to call when window is resized
 void Context_Configure(StringView title, Vector2Int windowSize, bool vSync, bool fullScreen, Context_VoidFunVoidptrIntInt resizeCallback);
+// todo accept struct directly
 
 /// @brief Set the window title
 /// @param title New window title text

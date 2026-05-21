@@ -61,8 +61,6 @@ typedef struct RENDERER_BATCH
 
 struct RENDERER
 {
-    const ContextWindow *window;
-
     struct RENDERER_DATA
     {
         RJ_Size capacity;
@@ -82,7 +80,7 @@ struct RENDERER
 
     struct RENDERER_CAMERA
     {
-        RendererCamera *reference;
+        RendererCamera cam;
         Matrix4 projectionMatrix;
         Matrix4 viewMatrix;
     } camera;
@@ -186,12 +184,8 @@ static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint
 
 #pragma region Renderer
 
-RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBatchCapacity)
+RJ_ResultWarn Renderer_Initialize(RJ_Size initialBatchCapacity)
 {
-    RJ_DebugAssertNullPointerCheck(window);
-
-    RENDERER.window = window;
-
     RJ_ReturnAllocate(RendererEntityPair, RENDERER.pairs.entityToPairMap, initialBatchCapacity);
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, initialBatchCapacity);
 
@@ -236,64 +230,33 @@ RJ_ResultWarn Renderer_Initialize(const ContextWindow *window, RJ_Size initialBa
 
     //! ... other attributes in vertex
 
+    Renderer_SetCameraData(&RendererCamera_Default);
+
     RJ_DebugInfo("Renderer initialized successfully.");
     return RJ_OK;
 }
 
 void Renderer_Terminate(void)
 {
-    RENDERER.window = NULL;
-
     for (RJ_Size batch = RENDERER.data.count; batch > 0; batch--)
     {
         Renderer_BatchDestroy(batch - 1);
     }
 
     free(RENDERER.pairs.entityToPairMap);
-    RENDERER.pairs.entityToPairMap = NULL;
-
     free(RENDERER.data.batches);
-    RENDERER.data.batches = NULL;
-
-    RENDERER.data.capacity = 0;
-    RENDERER.data.count = 0;
-
-    RENDERER.camera.reference = NULL;
 
     if (RENDERER.shader.programHandle != 0)
     {
         glDeleteProgram(RENDERER.shader.programHandle);
     }
 
-    RENDERER.shader.programHandle = 0;
-
     glDeleteVertexArrays(1, &RENDERER.shader.vao);
     glDeleteBuffers(1, &RENDERER.shader.vboModelVertices);
     glDeleteBuffers(1, &RENDERER.shader.iboModelIndices);
     glDeleteBuffers(1, &RENDERER.shader.uboObjectMatrices);
 
-    RENDERER.shader.vao = 0;
-    RENDERER.shader.vboModelVertices = 0;
-    RENDERER.shader.iboModelIndices = 0;
-    RENDERER.shader.uboObjectMatrices = 0;
-
-    RENDERER.shader.camProjectionMatrix = 0;
-    RENDERER.shader.camViewMatrix = 0;
-    RENDERER.shader.camPosition = 0;
-    RENDERER.shader.camRotation = 0;
-    RENDERER.shader.camSize = 0;
-    RENDERER.shader.camIsPerspective = 0;
-
-    RENDERER.shader.matBaseColorFactor = 0;
-    RENDERER.shader.matMetallicFactor = 0;
-    RENDERER.shader.matRoughnessFactor = 0;
-    RENDERER.shader.matEmissiveFactor = 0;
-    RENDERER.shader.matBaseColorMap = 0;
-    RENDERER.shader.matHasBaseColorMap = 0;
-    RENDERER.shader.matMetallicRoughnessMap = 0;
-    RENDERER.shader.matHasMetallicRoughnessMap = 0;
-
-    RENDERER.shader.objectMatricesHandle = 0;
+    memset(&RENDERER, 0, sizeof(RENDERER));
 
     RJ_DebugInfo("Renderer terminated successfully.");
 }
@@ -388,41 +351,30 @@ RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView 
     return RJ_OK;
 }
 
-void Renderer_SetCamera(RendererCamera *camera)
+const RendererCamera *Renderer_GetCameraData(void)
 {
-    RJ_DebugAssertNullPointerCheck(camera);
-
-    RENDERER.camera.reference = camera;
+    return &RENDERER.camera.cam;
 }
 
-RJ_ResultWarn Renderer_GetCamera(RendererCamera **retCamera)
+void Renderer_SetCameraData(const RendererCamera *cameraData)
 {
-    RJ_DebugAssertNullPointerCheck(retCamera);
-
-    if (RENDERER.camera.reference == NULL)
-    {
-        *retCamera = NULL;
-        RJ_DebugWarning("Internal renderer camera is NULL");
-        return RJ_ERROR_INTERNAL;
-    }
-
-    *retCamera = RENDERER.camera.reference;
-    return RJ_OK;
+    RENDERER.camera.cam = *cameraData;
 }
 
 Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
 {
+    const ContextWindow *window = Context_GetInternalData();
     Vector3 nearWindowCoords = Vector3_New(
         (float)screenPosition.x,
-        (float)(RENDERER.window->size.y - screenPosition.y),
+        (float)(window->size.y - screenPosition.y),
         0.0f);
 
     Vector3 farWindowCoords = Vector3_New(
         (float)screenPosition.x,
-        (float)(RENDERER.window->size.y - screenPosition.y),
+        (float)(window->size.y - screenPosition.y),
         1.0f);
 
-    Vector4 viewport = Vector4_New(0, 0, (float)RENDERER.window->size.x, (float)RENDERER.window->size.y);
+    Vector4 viewport = Vector4_New(0, 0, (float)window->size.x, (float)window->size.y);
 
     mat4 tempMatrix;
     glm_mat4_mul((vec4 *)&RENDERER.camera.projectionMatrix, (vec4 *)&RENDERER.camera.viewMatrix, tempMatrix);
@@ -434,13 +386,13 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
 
     Vector3 rayDirection = Vector3_Normalized(Vector3_Sum(farPoint, Vector3_Scale(nearPoint, -1.0f)));
 
-    if (RENDERER.camera.reference->isPerspective)
+    if (RENDERER.camera.cam.isPerspective)
     {
-        return Vector3_Sum(RENDERER.camera.reference->position, Vector3_Scale(rayDirection, depth));
+        return Vector3_Sum(RENDERER.camera.cam.position, Vector3_Scale(rayDirection, depth));
     }
     else
     {
-        return Vector3_Sum(Vector3_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(RENDERER.camera.reference->nearClipPlane))), Vector3_Scale(rayDirection, depth));
+        return Vector3_Sum(Vector3_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(RENDERER.camera.cam.nearClipPlane))), Vector3_Scale(rayDirection, depth));
     }
 }
 
@@ -463,30 +415,32 @@ void Renderer_Update(void)
     glm_mat4_identity((vec4 *)&RENDERER.camera.projectionMatrix);
     glm_mat4_identity((vec4 *)&RENDERER.camera.viewMatrix);
 
-    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(RENDERER.camera.reference->rotation.x) * Maths_Cos(RENDERER.camera.reference->rotation.y),
-                                                       Maths_Sin(RENDERER.camera.reference->rotation.x),
-                                                       Maths_Cos(RENDERER.camera.reference->rotation.x) * Maths_Sin(RENDERER.camera.reference->rotation.y)));
+    const ContextWindow *window = Context_GetInternalData();
 
-    Vector3 center = Vector3_Sum(RENDERER.camera.reference->position, Vector3_Normalized(direction));
+    Vector3 direction = Vector3_Normalized(Vector3_New(Maths_Cos(RENDERER.camera.cam.rotation.x) * Maths_Cos(RENDERER.camera.cam.rotation.y),
+                                                       Maths_Sin(RENDERER.camera.cam.rotation.x),
+                                                       Maths_Cos(RENDERER.camera.cam.rotation.x) * Maths_Sin(RENDERER.camera.cam.rotation.y)));
 
-    glm_lookat((float *)&RENDERER.camera.reference->position, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RENDERER.camera.viewMatrix);
-    if (RENDERER.camera.reference->isPerspective)
+    Vector3 center = Vector3_Sum(RENDERER.camera.cam.position, Vector3_Normalized(direction));
+
+    glm_lookat((float *)&RENDERER.camera.cam.position, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RENDERER.camera.viewMatrix);
+    if (RENDERER.camera.cam.isPerspective)
     {
-        glm_perspective(Maths_DegToRad(RENDERER.camera.reference->size),
-                        (float)RENDERER.window->size.x / (float)RENDERER.window->size.y,
-                        RENDERER.camera.reference->nearClipPlane,
-                        RENDERER.camera.reference->farClipPlane,
+        glm_perspective(Maths_DegToRad(RENDERER.camera.cam.size),
+                        (float)window->size.x / (float)window->size.y,
+                        RENDERER.camera.cam.nearClipPlane,
+                        RENDERER.camera.cam.farClipPlane,
                         (vec4 *)&RENDERER.camera.projectionMatrix);
     }
     else
     {
-        float sizeX = (float)RENDERER.window->size.x * RENDERER.camera.reference->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
-        float sizeY = (float)RENDERER.window->size.y * RENDERER.camera.reference->size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeX = (float)window->size.x * RENDERER.camera.cam.size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
+        float sizeY = (float)window->size.y * RENDERER.camera.cam.size / RENDERER_CAMERA_ORTHOGRAPHIC_SIZE_MULTIPLIER;
 
         glm_ortho(-sizeX, sizeX,
                   -sizeY, sizeY,
-                  RENDERER.camera.reference->nearClipPlane,
-                  RENDERER.camera.reference->farClipPlane,
+                  RENDERER.camera.cam.nearClipPlane,
+                  RENDERER.camera.cam.farClipPlane,
                   (vec4 *)&RENDERER.camera.projectionMatrix);
     }
 
@@ -526,10 +480,10 @@ void Renderer_Render(void)
 
     glUniformMatrix4fv(RENDERER.shader.camProjectionMatrix, 1, GL_FALSE, (GLfloat *)&RENDERER.camera.projectionMatrix);
     glUniformMatrix4fv(RENDERER.shader.camViewMatrix, 1, GL_FALSE, (GLfloat *)&RENDERER.camera.viewMatrix);
-    glUniform3fv(RENDERER.shader.camPosition, 1, (GLfloat *)&RENDERER.camera.reference->position);
-    glUniform3fv(RENDERER.shader.camRotation, 1, (GLfloat *)&RENDERER.camera.reference->rotation);
-    glUniform1f(RENDERER.shader.camSize, RENDERER.camera.reference->size);
-    glUniform1i(RENDERER.shader.camIsPerspective, RENDERER.camera.reference->isPerspective);
+    glUniform3fv(RENDERER.shader.camPosition, 1, (GLfloat *)&RENDERER.camera.cam.position);
+    glUniform3fv(RENDERER.shader.camRotation, 1, (GLfloat *)&RENDERER.camera.cam.rotation);
+    glUniform1f(RENDERER.shader.camSize, RENDERER.camera.cam.size);
+    glUniform1i(RENDERER.shader.camIsPerspective, RENDERER.camera.cam.isPerspective);
 
     ResourceModel *previousModel = NULL;
 

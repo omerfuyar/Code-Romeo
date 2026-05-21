@@ -12,6 +12,8 @@
 #define INPUT_KEY_CONTROLS_COUNT 8
 #define INPUT_KEY_MOUSE_BUTTONS_COUNT 8
 
+bool INPUT_IS_INITIALIZED = false;
+
 InputState INPUT_KEY_SPACE = {0};
 InputState INPUT_KEY_NUMBERS[INPUT_KEY_NUMBERS_COUNT] = {0};
 InputState INPUT_KEY_ALPHABETS[INPUT_KEY_ALPHABETS_COUNT] = {0};
@@ -20,10 +22,9 @@ InputState INPUT_KEY_FUNCTIONS[INPUT_KEY_FUNCTIONS_COUNT] = {0};
 InputState INPUT_KEY_CONTROLS[INPUT_KEY_CONTROLS_COUNT] = {0};
 InputState INPUT_KEY_MOUSE_BUTTONS[INPUT_KEY_MOUSE_BUTTONS_COUNT] = {0};
 
-const ContextWindow *INPUT_MAIN_WINDOW = NULL;
 float INPUT_MOUSE_SCROLL = 0.0f;
 Vector2Int INPUT_MOUSE_POSITION = {0};
-Vector2Int INPUT_PREVIOUS_MOUSE_POSITION = {0};
+Vector2Int INPUT_MOUSE_PREVIOUS_POSITION = {0};
 
 /// @brief
 /// @param window
@@ -191,51 +192,52 @@ static void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, doub
 
 #pragma endregion Source Only
 
-void Input_Initialize(const ContextWindow *window)
+void Input_Initialize()
 {
-    RJ_DebugAssertNullPointerCheck(window);
+    const ContextWindow *window = Context_GetInternalData();
+    // todo add assertions for initialization order
 
-    INPUT_MAIN_WINDOW = window;
+    glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(window->handle, GLFW_STICKY_KEYS, GLFW_FALSE);
+    glfwSetInputMode(window->handle, GLFW_STICKY_MOUSE_BUTTONS, GLFW_FALSE);
+    glfwSetInputMode(window->handle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
+    glfwSetInputMode(window->handle, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_STICKY_KEYS, GLFW_FALSE);
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_STICKY_MOUSE_BUTTONS, GLFW_FALSE);
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+    glfwSetKeyCallback(window->handle, INPUT_KEY_CALLBACK);
+    glfwSetCursorPosCallback(window->handle, INPUT_MOUSE_POSITION_CALLBACK);
+    glfwSetMouseButtonCallback(window->handle, INPUT_MOUSE_BUTTON_CALLBACK);
+    glfwSetScrollCallback(window->handle, INPUT_MOUSE_SCROLL_CALLBACK);
 
-    glfwSetKeyCallback(INPUT_MAIN_WINDOW->handle, INPUT_KEY_CALLBACK);
-    glfwSetCursorPosCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_POSITION_CALLBACK);
-    glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_BUTTON_CALLBACK);
-    glfwSetScrollCallback(INPUT_MAIN_WINDOW->handle, INPUT_MOUSE_SCROLL_CALLBACK);
+    INPUT_IS_INITIALIZED = true;
 
     RJ_DebugInfo("Input system initialized successfully");
 }
 
 void Input_Terminate(void)
 {
-    glfwSetKeyCallback(INPUT_MAIN_WINDOW->handle, NULL);
-    glfwSetCursorPosCallback(INPUT_MAIN_WINDOW->handle, NULL);
-    glfwSetMouseButtonCallback(INPUT_MAIN_WINDOW->handle, NULL);
-    glfwSetScrollCallback(INPUT_MAIN_WINDOW->handle, NULL);
+    const ContextWindow *window = Context_GetInternalData();
 
-    INPUT_MAIN_WINDOW = NULL;
+    glfwSetKeyCallback(window->handle, NULL);
+    glfwSetCursorPosCallback(window->handle, NULL);
+    glfwSetMouseButtonCallback(window->handle, NULL);
+    glfwSetScrollCallback(window->handle, NULL);
+
+    INPUT_IS_INITIALIZED = false;
 }
 
 bool Input_IsInitialized(void)
 {
-    return INPUT_MAIN_WINDOW != NULL;
+    return INPUT_IS_INITIALIZED;
 }
 
 void Input_ConfigureMouseMode(InputMouseMode mode)
 {
-    RJ_DebugAssertNullPointerCheck(INPUT_MAIN_WINDOW);
-
-    glfwSetInputMode(INPUT_MAIN_WINDOW->handle, GLFW_CURSOR, (int)mode);
+    glfwSetInputMode(Context_GetInternalData()->handle, GLFW_CURSOR, (int)mode);
 }
 
 void Input_Update(void)
 {
-    INPUT_PREVIOUS_MOUSE_POSITION = INPUT_MOUSE_POSITION;
+    INPUT_MOUSE_PREVIOUS_POSITION = INPUT_MOUSE_POSITION;
     INPUT_MOUSE_SCROLL = 0.0f;
 
     switch (INPUT_KEY_SPACE)
@@ -409,7 +411,7 @@ Vector2Int Input_GetMousePosition(void)
 
 Vector2Int Input_GetMousePositionDelta(void)
 {
-    return Vector2_Sum(INPUT_MOUSE_POSITION, Vector2_Scale(INPUT_PREVIOUS_MOUSE_POSITION, -1));
+    return Vector2_Sum(INPUT_MOUSE_POSITION, Vector2_Scale(INPUT_MOUSE_PREVIOUS_POSITION, -1));
 }
 
 Vector3 Input_GetMovementVector(void)

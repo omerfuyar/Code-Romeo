@@ -20,6 +20,7 @@
 /// @param elasticity The elasticity to be applied to components (0-1).
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
 RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, float gravity, float elasticity);
+// todo more properties
 
 /// @brief Destroys a physics scene and all its components.
 void Physics_Terminate(void);
