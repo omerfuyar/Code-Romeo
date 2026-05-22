@@ -8,6 +8,15 @@
 #include "utilities/Vector.h"
 #include "utilities/ListArray.h"
 
+typedef struct AudioListener
+{
+    Vector3 position;
+    Vector3 rotation;
+
+    //? float range;
+    //? float sensitivity;
+} AudioListener;
+
 /// @brief Initialize the audio system with the specified component capacity.
 /// @param initialComponentCapacity The initial capacity for audio components.
 /// @return RJ_OK on success or RJ_ERROR_DEPENDENCY if miniaudio fails or RJ_ERROR_ALLOCATION if internal allocation fails.
@@ -16,10 +25,9 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity);
 /// @brief Terminate and free the necessary resources for audio system.
 void Audio_Terminate(void);
 
-/// @brief Configure the audio listener's position and rotation references.
-/// @param positionReference Reference to the listener's position.
-/// @param rotationReference Reference to the listener's rotation.
-void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationReference);
+const AudioListener *Audio_GetListenerData(void);
+
+void Audio_SetListenerData(const AudioListener *listenerData);
 
 /// @brief Reconfigure the audio system's position references and component capacity.
 /// @param newComponentCapacity The new capacity for audio components.

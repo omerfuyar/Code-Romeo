@@ -13,23 +13,18 @@
 struct AUDIO
 {
     ma_engine engine;
+    AudioListener listener;
 
     struct AUDIO_DATA
     {
         RJ_Size capacity;
         RJ_Size count;
 
-        Entity *entityToCompMap; // sparse, accessing the entity from component, access entity data like positions etc.
-        Entity *compToEntityMap; // dense, accessing component from entity, to access internal component data etc.
+        Entity *entityToCompMap; // sparse, accessing the component from entity, to access internal component data etc.
+        Entity *compToEntityMap; // dense, accessing entity from component, access entity data like positions etc.
 
         ma_sound *sounds; // dense, indexed by component, the actual miniaudio sound objects
     } data;
-
-    struct AUDIO_LISTENER
-    {
-        Vector3 *positionReference;
-        Vector3 *rotationReference;
-    } listener;
 } AUDIO = {0};
 
 #define aComponent(entity) (AUDIO.data.entityToCompMap[entity])
@@ -59,7 +54,10 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity)
     AUDIO.data.capacity = initialComponentCapacity;
     AUDIO.data.count = 0;
 
-    RJ_ReturnAllocate(RJ_Size, AUDIO.data.entityToCompMap, initialComponentCapacity,
+    RJ_Size entityCapacity = 0;
+    Entity_GetInternalData(&entityCapacity, NULL);
+
+    RJ_ReturnAllocate(RJ_Size, AUDIO.data.entityToCompMap, entityCapacity,
                       ma_engine_uninit(&AUDIO.engine);
 
                       AUDIO.data.capacity = 0;
@@ -80,7 +78,7 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity)
                       AUDIO.data.capacity = 0;
                       AUDIO.data.count = 0;);
 
-    memset(AUDIO.data.entityToCompMap, 0xff, sizeof(Entity) * initialComponentCapacity);
+    memset(AUDIO.data.entityToCompMap, 0xff, sizeof(Entity) * entityCapacity);
     memset(AUDIO.data.compToEntityMap, 0xff, sizeof(Entity) * initialComponentCapacity);
 
     RJ_DebugInfo("Audio system initialized with component capacity %u.", initialComponentCapacity);
@@ -91,31 +89,23 @@ void Audio_Terminate(void)
 {
     ma_engine_uninit(&AUDIO.engine);
 
-    AUDIO.data.capacity = 0;
-    AUDIO.data.count = 0;
-
     free(AUDIO.data.entityToCompMap);
     free(AUDIO.data.compToEntityMap);
     free(AUDIO.data.sounds);
 
-    AUDIO.data.entityToCompMap = NULL;
-    AUDIO.data.compToEntityMap = NULL;
-    AUDIO.data.sounds = NULL;
-
-    AUDIO.listener.positionReference = NULL;
-    AUDIO.listener.rotationReference = NULL;
+    memset(&AUDIO, 0, sizeof(AUDIO));
 
     RJ_DebugInfo("Audio system terminated successfully.");
 }
 
-// todo make it like Camera design in renderer, where struct is exposed to user and pass a pointer
-void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationReference)
+const AudioListener *Audio_GetListenerData(void)
 {
-    RJ_DebugAssertNullPointerCheck(positionReference);
-    RJ_DebugAssertNullPointerCheck(rotationReference);
+    return &AUDIO.listener;
+}
 
-    AUDIO.listener.positionReference = positionReference;
-    AUDIO.listener.rotationReference = rotationReference;
+void Audio_SetListenerData(const AudioListener *listenerData)
+{
+    AUDIO.listener = *listenerData;
 }
 
 /*
