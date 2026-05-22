@@ -35,7 +35,7 @@ Entity Entity_Create(Vector3 position, Vector3 rotation, Vector3 scale);
 /// @param entity
 void Entity_Destroy(Entity entity);
 
-// todo add resize and callbacks
+// todo add callbacks
 
 void Entity_GetInternalData(RJ_Size *retCapacity, RJ_Size *retCount);
 

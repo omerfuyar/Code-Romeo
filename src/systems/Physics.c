@@ -218,8 +218,10 @@ RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, f
     PHYSICS.properties.drag = drag;
     PHYSICS.properties.gravity = gravity;
     PHYSICS.properties.elasticity = elasticity;
+    RJ_Size entityCapacity = 0;
+    Entity_GetInternalData(&entityCapacity, NULL);
 
-    RJ_ReturnAllocate(Entity, PHYSICS.data.entityToCompMap, PHYSICS.data.capacity);
+    RJ_ReturnAllocate(Entity, PHYSICS.data.entityToCompMap, entityCapacity);
 
     RJ_ReturnAllocate(Entity, PHYSICS.data.compToEntityMap, PHYSICS.data.capacity,
                       free(PHYSICS.data.entityToCompMap););
@@ -246,7 +248,7 @@ RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, f
                       free(PHYSICS.data.compToEntityMap);
                       free(PHYSICS.data.entityToCompMap););
 
-    memset(PHYSICS.data.entityToCompMap, 0xff, sizeof(Entity) * initialComponentCapacity);
+    memset(PHYSICS.data.entityToCompMap, 0xff, sizeof(Entity) * entityCapacity);
     memset(PHYSICS.data.compToEntityMap, 0xff, sizeof(Entity) * initialComponentCapacity);
 
     RJ_DebugInfo("Physics initialized with component capacity %u.", PHYSICS.data.capacity);
@@ -270,12 +272,7 @@ void Physics_Terminate(void)
     free(PHYSICS.data.masses);
     free(PHYSICS.data.flags);
 
-    PHYSICS.data.entityToCompMap = NULL;
-    PHYSICS.data.compToEntityMap = NULL;
-    PHYSICS.data.velocities = NULL;
-    PHYSICS.data.colliderSizes = NULL;
-    PHYSICS.data.masses = NULL;
-    PHYSICS.data.flags = NULL;
+    memset(&PHYSICS, 0, sizeof(PHYSICS));
 
     RJ_DebugInfo("Physics terminated successfully.");
 }
@@ -285,7 +282,8 @@ bool Physics_IsInitialized(void)
     return PHYSICS.data.capacity > 0;
 }
 
-RJ_ResultWarn Physics_Resize(RJ_Size newCapacity)
+/*
+!RJ_ResultWarn Physics_Resize(RJ_Size newCapacity)
 {
     RJ_DebugAssert(newCapacity > PHYSICS.data.count, "New component capacity must be greater than current physics component count.");
 
@@ -321,6 +319,7 @@ RJ_ResultWarn Physics_Resize(RJ_Size newCapacity)
     RJ_DebugInfo("Physics position references reconfigured with new capacity %u.", PHYSICS.data.capacity);
     return RJ_OK;
 }
+*/
 
 bool Physics_IsColliding(Entity entity1, Entity entity2, Vector3 *overlapRet)
 {

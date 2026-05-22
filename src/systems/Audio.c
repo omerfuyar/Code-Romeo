@@ -118,7 +118,8 @@ void Audio_ConfigureListener(Vector3 *positionReference, Vector3 *rotationRefere
     AUDIO.listener.rotationReference = rotationReference;
 }
 
-RJ_ResultWarn Audio_Resize(RJ_Size newComponentCapacity)
+/*
+!RJ_ResultWarn Audio_Resize(RJ_Size newComponentCapacity)
 {
     RJ_DebugAssert(newComponentCapacity > AUDIO.data.count, "New component capacity must be greater than current audio component count");
 
@@ -148,6 +149,7 @@ void Audio_Update(void)
     ma_engine_listener_set_position(&AUDIO.engine, 0, AUDIO.listener.positionReference->x, AUDIO.listener.positionReference->y, AUDIO.listener.positionReference->z);
     ma_engine_listener_set_direction(&AUDIO.engine, 0, AUDIO.listener.rotationReference->x, AUDIO.listener.rotationReference->y, AUDIO.listener.rotationReference->z); // todo forward rotation
 }
+*/
 
 RJ_ResultWarn Audio_ComponentCreate(Entity entity, StringView audioFile)
 {

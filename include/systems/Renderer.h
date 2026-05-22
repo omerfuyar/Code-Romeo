@@ -84,7 +84,7 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth);
 /// @brief Resizes the renderer's batch capacity.
 /// @param newBatchCapacity The new capacity for renderer batches.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity);
+//! RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity);
 
 /// @brief Updates the renderer system. Call before using any renderer function in during the frame.
 void Renderer_Update(void);
@@ -110,7 +110,7 @@ void Renderer_BatchDestroy(RendererBatch batch);
 /// @param batch The handle to the renderer batch.
 /// @param newComponentCapacity The new capacity for components in the batch.
 /// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity);
+//! RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.

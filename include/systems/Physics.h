@@ -30,7 +30,7 @@ bool Physics_IsInitialized(void);
 /// @brief Changes the position references for all physics components in the scene.
 /// @param newCapacity The maximum number of position vectors available.
 /// @return RJ_OK on success, or RJ_ERROR_ALLOCATION if internal allocation fails.
-RJ_ResultWarn Physics_Resize(RJ_Size newCapacity);
+//! RJ_ResultWarn Physics_Resize(RJ_Size newCapacity);
 
 /// @brief Checks for collision between two AABB colliders.
 /// @param component1 The first component.

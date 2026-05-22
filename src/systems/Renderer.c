@@ -186,7 +186,10 @@ static void RENDERER_MAIN_WINDOW_LOG_CALLBACK(GLenum source, GLenum type, GLuint
 
 RJ_ResultWarn Renderer_Initialize(RJ_Size initialBatchCapacity)
 {
-    RJ_ReturnAllocate(RendererEntityPair, RENDERER.pairs.entityToPairMap, initialBatchCapacity);
+    RJ_Size entityCapacity = 0;
+    Entity_GetInternalData(&entityCapacity, NULL);
+
+    RJ_ReturnAllocate(RendererEntityPair, RENDERER.pairs.entityToPairMap, entityCapacity);
     RJ_ReturnAllocate(RENDERER_BATCH, RENDERER.data.batches, initialBatchCapacity);
 
     RENDERER.data.capacity = initialBatchCapacity;
@@ -396,7 +399,8 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
     }
 }
 
-RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
+/*
+!RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
 {
     RJ_DebugAssert(newBatchCapacity > RENDERER.data.count, "New batch capacity %u is must be greater than current batch count %u.", newBatchCapacity, RENDERER.data.count);
 
@@ -408,6 +412,7 @@ RJ_ResultWarn Renderer_Resize(RJ_Size newBatchCapacity)
     RJ_DebugInfo("Renderer resized to new batch capacity of %u successfully.", newBatchCapacity);
     return RJ_OK;
 }
+*/
 
 // todo move this to shader, compute in gpu
 void Renderer_Update(void)
@@ -611,7 +616,8 @@ void Renderer_BatchDestroy(RendererBatch batch)
     RENDERER.data.count--;
 }
 
-RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity)
+/*
+!RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity)
 {
     rAssertBatch(batch);
     RJ_DebugAssert(newComponentCapacity > rBatch(batch).data.count, "New component capacity %u must be greater than current physics component count %u.", newComponentCapacity, rBatch(batch).data.count);
@@ -627,6 +633,7 @@ RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapa
 
     return RJ_OK;
 }
+*/
 
 void Renderer_ComponentCreate(RendererBatch batch, Entity entity)
 {
