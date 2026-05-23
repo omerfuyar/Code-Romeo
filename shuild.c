@@ -133,7 +133,7 @@ int main(int argc, char **argv)
     }
 
     SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C99 " -w");
-    SHU_CompilerAddFlags(isDebug ? SHUM_FLAGS_DEBUG SHUM_FLAGS_OPTIMIZATION_DEBUG : SHUM_FLAGS_OPTIMIZATION_HIGH);
+    SHU_CompilerAddFlags(isDebug ? SHUM_FLAGS_DEBUG : SHUM_FLAGS_OPTIMIZATION_HIGH);
     SHU_CompilerAddFlags(isDynamic ? "" : " -DCGLM_STATIC");
 
 #if SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS

@@ -4,15 +4,14 @@
 
 #pragma region Source Only
 
-//! BE CAREFUL
-#define INPUT_KEY_NUMBERS_COUNT 10
-#define INPUT_KEY_ALPHABETS_COUNT 26
-#define INPUT_KEY_SPECIALS_COUNT 10
-#define INPUT_KEY_FUNCTIONS_COUNT 12
-#define INPUT_KEY_CONTROLS_COUNT 8
-#define INPUT_KEY_MOUSE_BUTTONS_COUNT 8
+#define INPUT_KEY_NUMBERS_COUNT (InputKeyCode_Num9 - InputKeyCode_Num0 + 1)
+#define INPUT_KEY_ALPHABETS_COUNT (InputKeyCode_Z - InputKeyCode_A + 1)
+#define INPUT_KEY_SPECIALS_COUNT (InputKeyCode_UpArrow - InputKeyCode_Escape + 1)
+#define INPUT_KEY_FUNCTIONS_COUNT (InputKeyCode_F12 - InputKeyCode_F1 + 1)
+#define INPUT_KEY_CONTROLS_COUNT (InputKeyCode_RightSuper - InputKeyCode_LeftShift + 1)
+#define INPUT_MOUSE_BUTTONS_COUNT (InputMouseButtonCode_F5 - InputMouseButtonCode_Left + 1)
 
-bool INPUT_IS_INITIALIZED = false;
+bool INPUT_IS_INITIALIZED = {0};
 
 InputState INPUT_KEY_SPACE = {0};
 InputState INPUT_KEY_NUMBERS[INPUT_KEY_NUMBERS_COUNT] = {0};
@@ -20,18 +19,12 @@ InputState INPUT_KEY_ALPHABETS[INPUT_KEY_ALPHABETS_COUNT] = {0};
 InputState INPUT_KEY_SPECIALS[INPUT_KEY_SPECIALS_COUNT] = {0};
 InputState INPUT_KEY_FUNCTIONS[INPUT_KEY_FUNCTIONS_COUNT] = {0};
 InputState INPUT_KEY_CONTROLS[INPUT_KEY_CONTROLS_COUNT] = {0};
-InputState INPUT_KEY_MOUSE_BUTTONS[INPUT_KEY_MOUSE_BUTTONS_COUNT] = {0};
+InputState INPUT_MOUSE_BUTTONS[INPUT_MOUSE_BUTTONS_COUNT] = {0};
 
-float INPUT_MOUSE_SCROLL = 0.0f;
+float INPUT_MOUSE_SCROLL = {0};
 Vector2Int INPUT_MOUSE_POSITION = {0};
 Vector2Int INPUT_MOUSE_PREVIOUS_POSITION = {0};
 
-/// @brief
-/// @param window
-/// @param key
-/// @param scanCode
-/// @param action
-/// @param mods
 static void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int action, int mods)
 {
     (void)window;
@@ -130,10 +123,6 @@ static void INPUT_KEY_CALLBACK(GLFWwindow *window, int key, int scanCode, int ac
     }
 }
 
-/// @brief
-/// @param window
-/// @param positionX
-/// @param positionY
 static void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, double positionY)
 {
     (void)window;
@@ -144,11 +133,6 @@ static void INPUT_MOUSE_POSITION_CALLBACK(GLFWwindow *window, double positionX, 
     INPUT_MOUSE_POSITION.y = (int)positionY;
 }
 
-/// @brief
-/// @param window
-/// @param button
-/// @param action
-/// @param mods
 static void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int action, int mods)
 {
     (void)window;
@@ -156,15 +140,15 @@ static void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int acti
 
     // RJ_DebugInfo("Mouse button %d action %s", button, action == GLFW_PRESS ? "pressed" : action == GLFW_RELEASE ? "released" : "unknown");
 
-    if (button >= InputMouseButtonCode_Left && button <= InputMouseButtonCode_Fn5)
+    if (button >= InputMouseButtonCode_Left && button <= InputMouseButtonCode_F5)
     {
         switch (action)
         {
         case GLFW_PRESS:
-            INPUT_KEY_MOUSE_BUTTONS[button] = InputState_Down;
+            INPUT_MOUSE_BUTTONS[button] = InputState_Down;
             break;
         case GLFW_RELEASE:
-            INPUT_KEY_MOUSE_BUTTONS[button] = InputState_Up;
+            INPUT_MOUSE_BUTTONS[button] = InputState_Up;
             break;
         default:
             break;
@@ -176,10 +160,6 @@ static void INPUT_MOUSE_BUTTON_CALLBACK(GLFWwindow *window, int button, int acti
     }
 }
 
-/// @brief
-/// @param window
-/// @param offsetX
-/// @param offsetY
 static void INPUT_MOUSE_SCROLL_CALLBACK(GLFWwindow *window, double offsetX, double offsetY)
 {
     (void)window;
@@ -230,7 +210,7 @@ bool Input_IsInitialized(void)
     return INPUT_IS_INITIALIZED;
 }
 
-void Input_ConfigureMouseMode(InputMouseMode mode)
+void Input_ConfigureCursorMode(InputCursorMode mode)
 {
     glfwSetInputMode(Context_GetInternalData()->handle, GLFW_CURSOR, (int)mode);
 }
@@ -327,15 +307,15 @@ void Input_Update(void)
         }
     }
 
-    for (RJ_Size i = 0; i < INPUT_KEY_MOUSE_BUTTONS_COUNT; i++)
+    for (RJ_Size i = 0; i < INPUT_MOUSE_BUTTONS_COUNT; i++)
     {
-        switch (INPUT_KEY_MOUSE_BUTTONS[i])
+        switch (INPUT_MOUSE_BUTTONS[i])
         {
         case InputState_Up:
-            INPUT_KEY_MOUSE_BUTTONS[i] = InputState_Released;
+            INPUT_MOUSE_BUTTONS[i] = InputState_Released;
             break;
         case InputState_Down:
-            INPUT_KEY_MOUSE_BUTTONS[i] = InputState_Pressed;
+            INPUT_MOUSE_BUTTONS[i] = InputState_Pressed;
             break;
         default:
             break;
@@ -381,16 +361,16 @@ InputState Input_GetKeyState(InputKeyCode key)
     }
     else
     {
-        RJ_DebugWarning("Unhandled key input: %d", key);
+        RJ_DebugWarning("Unhandled key input: %d. Returning InputState_Released.", key);
         return InputState_Released;
     }
 }
 
 InputState Input_GetMouseButtonState(InputMouseButtonCode button)
 {
-    if (button >= InputMouseButtonCode_Left && button <= InputMouseButtonCode_Fn5)
+    if (button >= InputMouseButtonCode_Left && button <= InputMouseButtonCode_F5)
     {
-        return INPUT_KEY_MOUSE_BUTTONS[button];
+        return INPUT_MOUSE_BUTTONS[button];
     }
     else
     {

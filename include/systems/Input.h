@@ -6,7 +6,7 @@
 
 #include "tools/Context.h"
 
-/// @brief Key codes for input handling.
+/// @brief Key codes for keyboard.
 typedef enum InputKeyCode
 {
     InputKeyCode_Space = 32,
@@ -83,64 +83,67 @@ typedef enum InputKeyCode
     InputKeyCode_RightSuper = 347
 } InputKeyCode;
 
-/// @brief Mouse button codes for input handling.
+/// @brief Button codes for mouse.
 typedef enum InputMouseButtonCode
 {
     InputMouseButtonCode_Left = 0,
     InputMouseButtonCode_Right = 1,
     InputMouseButtonCode_Middle = 2,
 
-    InputMouseButtonCode_Fn1 = 3,
-    InputMouseButtonCode_Fn2 = 4,
-    InputMouseButtonCode_Fn3 = 5,
-    InputMouseButtonCode_Fn4 = 6,
-    InputMouseButtonCode_Fn5 = 7
+    InputMouseButtonCode_F1 = 3,
+    InputMouseButtonCode_F2 = 4,
+    InputMouseButtonCode_F3 = 5,
+    InputMouseButtonCode_F4 = 6,
+    InputMouseButtonCode_F5 = 7,
 } InputMouseButtonCode;
 
-/// @brief States of a key or button. Can be used with flags in parameters.
+// todo controller/gamepad support
+
+/// @brief States of a key/button. Can be used with flags in parameters. (eg. InputState_Released | InputState_Up)
 typedef enum InputState
 {
-    InputState_Released = (1 << 0),
-    InputState_Down = (1 << 1),
-    InputState_Pressed = (1 << 2),
-    InputState_Up = (1 << 3)
+    InputState_Released = (1 << 0), // The key/button is released
+    InputState_Down = (1 << 1),     // The key/button is pressed just in the last frame
+    InputState_Pressed = (1 << 2),  // The key/button is pressed
+    InputState_Up = (1 << 3)        // The key/button is released just in the last frame
 } InputState;
 
-/// @brief Mouse modes for the input system.
-typedef enum InputMouseMode
+/// @brief Mouse cursor modes for the input system.
+typedef enum InputCursorMode
 {
-    InputMouseMode_Normal = 0x00034001,  // makes the cursor visible and behaving normally.
-    InputMouseMode_Hidden = 0x00034002,  // makes the cursor invisible when it is over the content area of the window but does not restrict the cursor from leaving.
-    InputMouseMode_Captured = 0x00034003 // hides and grabs the cursor, providing virtual and unlimited cursor movement. This is useful for implementing for example 3D camera controls
-} InputMouseMode;
+    InputCursorMode_Normal = 0x00034001,  // Makes the cursor visible and behaving normally.
+    InputCursorMode_Hidden = 0x00034002,  // Makes the cursor invisible when it is over the content area of the window but does not restrict the cursor from leaving.
+    InputCursorMode_Captured = 0x00034003 // Hides and grabs the cursor, providing virtual and unlimited cursor movement.
+} InputCursorMode;
 
-/// @brief Initialization function for the input system. Can be called multiple times if the GLFW window changes.
+/// @brief Initialization function for the input system.
 void Input_Initialize(void);
 
-// todo these are not crucial, no memory allocation
-
+/// @brief Termination function for the input system.
 void Input_Terminate(void);
 
+/// @brief The input system is initialized or not.
+/// @return True if the system is initialized previously and not terminated, false otherwise.
 bool Input_IsInitialized(void);
 
-/// @brief Configures the mouse mode of the main window.
+/// @brief Configures the mouse cursor mode for the context window.
 /// @param mode Mode to set.
-void Input_ConfigureMouseMode(InputMouseMode mode);
+void Input_ConfigureCursorMode(InputCursorMode mode);
 
-/// @brief Updates the state of all input devices (keyboard, mouse) for the current frame
-/// @note This function should be called once per frame before any input queries
+/// @brief Updates the state of all input devices (keyboard and mouse) for the current frame
+/// todo @note This function should be called once per frame before any input queries before Context update
 void Input_Update(void);
 
-/// @brief Checks if a keyboard key is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state.
-/// @param key The key code to check
-/// @param state The input state to check against (Down, Pressed, Up, Released)
-/// @return true if the key is in the specified state, false otherwise
+/// @brief Checks if a keyboard key is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state (eg. InputState_Released | InputState_Up).
+/// @param key The key code to check.
+/// @param state The input state to compare. (Down, Pressed, Up, Released)
+/// @return True if the key is in the specified state, false otherwise.
 bool Input_GetKey(InputKeyCode key, InputState state);
 
-/// @brief Checks if a mouse button is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state.
-/// @param button The mouse button code to check
-/// @param state The input state to check against (Down, Pressed, Up, Released)
-/// @return true if the mouse button is in the specified state, false otherwise
+/// @brief Checks if a mouse button is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state (eg. InputState_Released | InputState_Up).
+/// @param button The mouse button code to check.
+/// @param state The input state to compare. (Down, Pressed, Up, Released)
+/// @return True if the mouse button is in the specified state, false otherwise.
 bool Input_GetMouseButton(InputMouseButtonCode button, InputState state);
 
 /// @brief Gets the current state of a keyboard key
@@ -153,16 +156,16 @@ InputState Input_GetKeyState(InputKeyCode key);
 /// @return The current state of the mouse button (Down, Pressed, Up, Released)
 InputState Input_GetMouseButtonState(InputMouseButtonCode button);
 
-/// @brief Gets the current mouse wheel scroll delta
-/// @return A float value representing the scroll amount (positive for scrolling up, negative for scrolling down)
+/// @brief Gets the current mouse wheel scroll delta, how much the mouse scroll scrolled last frame.
+/// @return A float value representing the scroll amount, positive for scrolling up and negative for scrolling down.
 float Input_GetMouseScroll(void);
 
-/// @brief Gets the current mouse cursor position in screen coordinates. Relative to the top-left corner of the window.
-/// @return A Vector2Int containing the (x, y) coordinates of the mouse cursor
+/// @brief Gets the current mouse cursor position in screen coordinates.
+/// @return Coordinates of the mouse cursor. Relative to the top-left corner of the window.
 Vector2Int Input_GetMousePosition(void);
 
-/// @brief Gets the change in mouse position since the last frame. Relative to the top-left corner of the window.
-/// @return A Vector2Int containing the (deltaX, deltaY) of the mouse movement
+/// @brief Gets the change in mouse position since the last frame.
+/// @return Delta of the mouse movement. Relative to the top-left corner of the window.
 Vector2Int Input_GetMousePositionDelta(void);
 
 /// @brief Gets the movement vector of the user. X axis is D-A / RightArrow-LeftArrow, Y axis is W-S / UpArrow-DownArrow, Z axis is Space-(LeftControl/RightControl).

@@ -155,6 +155,8 @@ static RJ_ResultWarn ResourceTexture_GetFromMemoryOrCreate(ResourceTexture **ret
         return RJ_ERROR_RESOURCE;
     }
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
     glTexImage2D(GL_TEXTURE_2D, 0, (GLint)format, x, y, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
