@@ -98,6 +98,8 @@ typedef enum InputMouseButtonCode
 } InputMouseButtonCode;
 
 // todo controller/gamepad support
+// todo maybe move dynamic initialization of tools (like context and entity) to system initialization functions so user dont need to call tool functions, less error prone
+// todo maybe move input to tools because it is not using component system.
 
 /// @brief States of a key/button. Can be used with flags in parameters. (eg. InputState_Released | InputState_Up)
 typedef enum InputState
