@@ -3,7 +3,7 @@
 #define String_Min(a, b) ((a) < (b) ? (a) : (b))
 #define String_Max(a, b) ((a) > (b) ? (a) : (b))
 
-String String_CreateCopySafe(const char *string, RJ_Size length)
+String String_CreateCopy(const char *string, RJ_Size length)
 {
     RJ_DebugAssertNullPointerCheck(string);
 
@@ -32,6 +32,11 @@ void String_Destroy(String *string)
 void String_Change(String *string, StringView newString)
 {
     RJ_DebugAssertNullPointerCheck(string);
+
+    if (string->characters == newString.characters)
+    {
+        return;
+    }
 
     string->length = newString.length;
     string->characters = (char *)realloc(string->characters, (string->length + 1));

@@ -27,12 +27,12 @@ typedef struct StringView
 /// @param string Any char pointer.
 /// @param length Length of the given string.
 /// @return Newly created null terminated String object holding a pointer to copy of the original string.
-String String_CreateCopySafe(const char *string, RJ_Size length);
+String String_CreateCopy(const char *string, RJ_Size length);
 
 /// @brief Create a owner copy of the given string it can be a view or owner.
 /// @param stringToCopy String to copy. Not a pointer.
 #define scc(stringToCopy) \
-    String_CreateCopySafe((stringToCopy).characters, (stringToCopy).length)
+    String_CreateCopy((stringToCopy).characters, (stringToCopy).length)
 
 /// @brief Create a view from char pointer and length.
 /// @param string Char pointer to create a view of.

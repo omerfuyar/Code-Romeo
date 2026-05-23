@@ -12,12 +12,18 @@
 #pragma region Source Only
 
 // todo shifts on removal. find another way
-ListLinked RESOURCE_TEXTURE_POOL = {0};
+ListLinked RESOURCE_TEXTURE_POOL = {0}; // ResourceTexture
 
 #pragma region ResourceTexture
 
 static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retTexture, StringView name, StringView filePathInResources)
 {
+    // todo better fix
+    if (RESOURCE_TEXTURE_POOL.head == NULL)
+    {
+        RESOURCE_TEXTURE_POOL = ListLinked_Create("Resource Texture", sizeof(ResourceTexture));
+    }
+
     for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
         ResourceTexture *texture = (ResourceTexture *)ListLinked_Get(&RESOURCE_TEXTURE_POOL, textureIndex);
@@ -94,6 +100,12 @@ static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retText
 
 static RJ_ResultWarn ResourceTexture_GetFromMemoryOrCreate(ResourceTexture **retTexture, StringView name, const void *bufferData, size_t bufferSize)
 {
+    // todo better fix
+    if (RESOURCE_TEXTURE_POOL.head == NULL)
+    {
+        RESOURCE_TEXTURE_POOL = ListLinked_Create("Resource Texture", sizeof(ResourceTexture));
+    }
+
     for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
         ResourceTexture *texture = (ResourceTexture *)ListLinked_Get(&RESOURCE_TEXTURE_POOL, textureIndex);
@@ -260,7 +272,7 @@ RJ_ResultWarn ResourceText_Create(ResourceText **retResource, StringView file)
 
     dataBuffer[dataIndex] = '\0';
 
-    resource->data = String_CreateCopySafe(dataBuffer, dataIndex);
+    resource->data = String_CreateCopy(dataBuffer, dataIndex);
 
     free(dataBuffer);
 

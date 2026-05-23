@@ -60,6 +60,7 @@ void Context_Destroy(void)
 {
     glfwDestroyWindow(CONTEXT.handle);
     glfwTerminate();
+    String_Destroy(&CONTEXT.title);
 
     memset(&CONTEXT, 0, sizeof(CONTEXT));
     RJ_DebugInfo("Context terminated successfully.");

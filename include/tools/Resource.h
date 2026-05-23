@@ -6,6 +6,11 @@
 #include "utilities/Vector.h"
 #include "utilities/ListArray.h"
 
+// todo add init and term functions for resource too.
+// todo resource system might allocate redundant memory for textures/models in case the user dont use renderer at all
+// todo add ref counter for resources, currently renderer batch leaks memory.
+// todo overall destroy functions are dogshit
+
 /// @brief Maximum character count for a single line in a resource file.
 #define RESOURCE_FILE_LINE_MAX_CHAR_COUNT 256
 /// @brief Maximum token count for a single line in a resource file.
