@@ -2,6 +2,8 @@
 // #undef RJ_DEBUG_INFO
 // #define RJ_DEBUG_INFO false
 
+// todo maybe move Debug logs to the caller instead of calling inside the utility functions. but that will require wrapping actual functions. also error handling will be a problem
+
 #include "utilities/ListArray.h"
 
 #define ListArray_Min(a, b) ((a) < (b) ? (a) : (b))
