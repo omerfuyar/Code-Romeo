@@ -149,6 +149,8 @@ void RJ_Terminate(int exitCode, char *message)
         RJ_TERMINATE_CALLBACK(exitCode, message);
     }
 
+    RJ_DebugInfo("Terminating application with exit code: %d\nExit message : \n%s");
+
 #if !RJ_DEBUG_SAFE_LOGGING
     if (RJ_DEBUG_FILE != NULL)
     {
