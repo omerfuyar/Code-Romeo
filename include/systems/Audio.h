@@ -24,6 +24,11 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity);
 
 /// @brief Terminate and free the necessary resources for audio system.
 void Audio_Terminate(void);
+// todo add callbacks to terminate systems
+
+/// @brief The audio system is initialized or not.
+/// @return True if the system is initialized previously and not terminated, false otherwise.
+bool Audio_IsInitialized(void);
 
 /// @brief Gets the internal listener information.
 /// @return Pointer to the internal listener data, safe to read, should not be written.
@@ -40,7 +45,7 @@ void Audio_Update(void);
 
 /// @brief Creates an audio component and associates it with an entity.
 /// @param entity The entity to associate the component with.
-/// @param audioFile The audio file to be used by the component.
+/// @param audioFile The audio file to be used by the component. Relative to resources folder.
 /// @return RJ_OK / RJ_ERROR_DEPENDENCY
 RJ_ResultWarn Audio_ComponentCreate(Entity entity, StringView audioFile);
 // todo maybe add sound files to resource and make reference counted resources

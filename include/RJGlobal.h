@@ -174,7 +174,8 @@ typedef enum RJ_Result
     RJ_ERROR_DEPENDENCY, // Errors received from dependency functions
     RJ_ERROR_RESOURCE,   // Errors received from resource operations
     RJ_ERROR_NOT_FOUND,  // Errors received from finding functions
-    RJ_ERROR_INTERNAL    // Errors received from functions called in wrong order
+    RJ_ERROR_INTERNAL,   // Errors received from functions called in wrong order
+    RJ_ERROR_CAPACITY    // Errors received from functions that internal datas are full
 } RJ_Result;
 
 #if RJ_COMPILER == RJ_COMPILER_GCC || RJ_COMPILER == RJ_COMPILER_CLANG

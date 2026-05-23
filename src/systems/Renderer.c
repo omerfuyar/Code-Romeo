@@ -635,17 +635,23 @@ void Renderer_BatchDestroy(RendererBatch batch)
 }
 */
 
-void Renderer_ComponentCreate(RendererBatch batch, Entity entity)
+RJ_ResultWarn Renderer_ComponentCreate(RendererBatch batch, Entity entity)
 {
     rAssertBatch(batch);
-    RJ_DebugAssert(rBatch(batch).data.count < rBatch(batch).data.capacity,
-                   "Maximum renderer batch %u component capacity of %u reached.", batch, rBatch(batch).data.capacity); // todo expand capacity
+
+    if (rBatch(batch).data.count >= rBatch(batch).data.capacity)
+    {
+        RJ_DebugWarning("Maximum renderer batch %u component capacity of %u reached.", batch, rBatch(batch).data.capacity); // todo expand capacity
+        return RJ_ERROR_CAPACITY;
+    }
 
     Entity component = rBatch(batch).data.count;
 
     rEntity(((RendererEntityPair){batch, component})) = entity;
 
     rBatch(batch).data.count++;
+
+    return RJ_OK;
 }
 
 void Renderer_ComponentDestroy(Entity entity)

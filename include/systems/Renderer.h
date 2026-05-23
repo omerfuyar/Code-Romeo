@@ -115,8 +115,8 @@ void Renderer_BatchDestroy(RendererBatch batch);
 /// @brief Creates a renderer component within a specified batch.
 /// @param entity The entity associated with the renderer component.
 /// @param batch The handle to the renderer batch.
-/// @return The handle to the created renderer component.
-void Renderer_ComponentCreate(RendererBatch batch, Entity entity);
+/// @return RJ_OK / RJ_
+RJ_ResultWarn Renderer_ComponentCreate(RendererBatch batch, Entity entity);
 
 /// @brief Destroys a renderer component within a specified batch.
 /// @param batch The handle to the renderer batch.

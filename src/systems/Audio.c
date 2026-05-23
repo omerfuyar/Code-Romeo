@@ -98,6 +98,11 @@ void Audio_Terminate(void)
     RJ_DebugInfo("Audio system terminated successfully.");
 }
 
+bool Audio_IsInitialized(void)
+{
+    return AUDIO.data.capacity > 0;
+}
+
 const AudioListener *Audio_GetListenerData(void)
 {
     return &AUDIO.listener;
