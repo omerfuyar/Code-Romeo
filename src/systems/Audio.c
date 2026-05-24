@@ -87,6 +87,11 @@ RJ_ResultWarn Audio_Initialize(RJ_Size initialComponentCapacity)
 
 void Audio_Terminate(void)
 {
+    for (RJ_Size component = AUDIO.data.count; component > 0; component--)
+    {
+        ma_sound_uninit(&AUDIO.data.sounds[component - 1]);
+    }
+
     ma_engine_uninit(&AUDIO.engine);
 
     free(AUDIO.data.entityToCompMap);
