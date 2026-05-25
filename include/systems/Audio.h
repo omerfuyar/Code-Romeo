@@ -30,10 +30,12 @@ void Audio_Terminate(void);
 /// @return True if the system is initialized previously and not terminated, false otherwise.
 bool Audio_IsInitialized(void);
 
-/// @brief Gets the internal listener information.
+/// @brief Access the internal listener data.
 /// @return Pointer to the internal listener data, safe to read, should not be written.
 const AudioListener *Audio_GetListenerData(void);
 
+/// @brief Assign the internal listener data.
+/// @param listenerData Pointer to the data to assign to internal listener.
 void Audio_SetListenerData(const AudioListener *listenerData);
 
 /// @brief Reconfigure the audio system's position references and component capacity.
@@ -43,7 +45,7 @@ void Audio_SetListenerData(const AudioListener *listenerData);
 /// @brief Update the audio system. Should be called every frame.
 void Audio_Update(void);
 
-/// @brief Creates an audio component and associates it with an entity.
+/// @brief Creates an audio component.
 /// @param entity The entity to associate the component with.
 /// @param audioFile The audio file to be used by the component. Relative to resources folder.
 /// @return RJ_OK / RJ_ERROR_DEPENDENCY

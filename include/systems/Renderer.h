@@ -11,6 +11,7 @@
 #pragma region typedefs
 
 // todo put buffer objects to batches and bind them on use
+// todo move macros to source
 
 #define RENDERER_OPENGL_CLEAR_COLOR 0.3f, 0.3f, 0.3f, 1.0f
 #define RENDERER_OPENGL_INFO_LOG_BUFFER 4096
@@ -29,7 +30,7 @@
 #define RENDERER_BATCH_MAX_OBJECT_COUNT 256 //! MUST MATCH WITH VERTEX SHADER
 #define RENDERER_BATCH_INITIAL_CAPACITY 16
 
-/// @brief Represents a batch of objects that share the same model for rendering.
+/// @brief Represents a batch of objects that share the same model for rendering. Some kind of a factory for component creation.
 typedef Entity RendererBatch;
 
 // todo either make systems to use user exposed data and retrieve data from user passed pointers or move data to systems internal memory and use with getter/setters
@@ -40,12 +41,13 @@ typedef struct RendererCamera
     Vector3 position;
     Vector3 rotation;
 
-    float size; // fov if perspective, orthographic size if orthographic
+    float size; // FOV if perspective, orthographic size if orthographic
     float nearClipPlane;
     float farClipPlane;
     bool isPerspective;
 } RendererCamera;
 
+/// @brief Default camera struct values, used by default when renderer is initialized.
 #define RendererCamera_Default \
     (RendererCamera) { .position = Vector3_Zero, .rotation = Vector3_Zero, .size = 90.0f, .nearClipPlane = 0.01f, .farClipPlane = 1000.0f, .isPerspective = true }
 
@@ -55,24 +57,28 @@ typedef struct RendererCamera
 
 /// @brief Initializes the renderer system.
 /// @param initialBatchCapacity The initial capacity for renderer batches.
-/// @return RJ_OK on success, RJ_ERROR_DEPENDENCY if glad or GLFW fails or RJ_ERROR_ALLOCATION if internal allocation fails.
+/// @return RJ_OK / RJ_ERROR_DEPENDENCY / RJ_ERROR_ALLOCATION
 RJ_ResultWarn Renderer_Initialize(RJ_Size initialBatchCapacity);
 
 /// @brief Terminates the renderer system.
 void Renderer_Terminate(void);
 
-/// @brief Get the status of renderer module.
-/// @return Renderer module is initialized or not.
+/// @brief The renderer system is initialized or not.
+/// @return True if the system is initialized previously and not terminated, false otherwise.
 bool Renderer_IsInitialized(void);
 
 /// @brief Configures the shaders used by the renderer.
 /// @param vertexShaderFile The file path of the vertex shader.
 /// @param fragmentShaderFile The file path of the fragment shader.
-/// @return RJ_OK on success, RJ_ERROR_FILE if internal file read fails, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_DEPENDENCY if opengl fails.
+/// @return RJ_OK / RJ_ERROR_FILE / RJ_ERROR_ALLOCATION / RJ_ERROR_DEPENDENCY
 RJ_ResultWarn Renderer_ConfigureShaders(StringView vertexShaderFile, StringView fragmentShaderFile);
 
+/// @brief Access internal camera data.
+/// @return Pointer to the internal data, safe to read, should not be written.
 const RendererCamera *Renderer_GetCameraData(void);
 
+/// @brief Assign the internal camera data.
+/// @param cameraData Pointer to the data to assign to internal camera.
 void Renderer_SetCameraData(const RendererCamera *cameraData);
 
 /// @brief Converts screen coordinates to world coordinates with given depth.
@@ -93,15 +99,14 @@ void Renderer_Update(void);
 void Renderer_Render(void);
 
 /// @brief Creates a renderer batch.
-
 /// @param modelFile The file path to the .glb or .gltf model file.
 /// @param retBatch The handle to the created renderer batch.
 /// @param initialComponentCapacity The initial capacity for components in the batch.
-/// @return RJ_OK on success, RJ_ERROR_ALLOCATION if internal allocation fails, RJ_ERROR_FILE if model loading fails.
+/// @return RJ_OK / RJ_ERROR_ALLOCATION / RJ_ERROR_FILE
 RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView modelFile, RJ_Size initialComponentCapacity);
 
-/// @brief Destroys a renderer batch.
-/// @param batch The handle to the renderer batch to destroy.
+/// @brief Destroys a renderer batch and its components.
+/// @param batch Renderer batch to destroy.
 void Renderer_BatchDestroy(RendererBatch batch);
 
 // todo maybe remove resizing
@@ -113,14 +118,13 @@ void Renderer_BatchDestroy(RendererBatch batch);
 //! RJ_ResultWarn Renderer_BatchResize(RendererBatch batch, RJ_Size newComponentCapacity);
 
 /// @brief Creates a renderer component within a specified batch.
+/// @param batch Batch to create component on.
 /// @param entity The entity associated with the renderer component.
-/// @param batch The handle to the renderer batch.
-/// @return RJ_OK / RJ_
+/// @return RJ_OK / RJ_ERROR_CAPACITY
 RJ_ResultWarn Renderer_ComponentCreate(RendererBatch batch, Entity entity);
 
-/// @brief Destroys a renderer component within a specified batch.
-/// @param batch The handle to the renderer batch.
-/// @param component The handle to the renderer component to destroy.
+/// @brief Destroys a renderer component.
+/// @param entity Component to destroy.
 void Renderer_ComponentDestroy(Entity entity);
 
 #pragma endregion Renderer

@@ -133,7 +133,7 @@ bool Input_IsInitialized(void);
 void Input_ConfigureCursorMode(InputCursorMode mode);
 
 /// @brief Updates the state of all input devices (keyboard and mouse) for the current frame
-/// todo @note This function should be called once per frame before any input queries before Context update
+/// @note This function should be called once per frame before any input queries and Context_Update call.
 void Input_Update(void);
 
 /// @brief Checks if a keyboard key is in one of the given state parameter. Parameter can be passed with operator "|" to check more than one state (eg. InputState_Released | InputState_Up).
