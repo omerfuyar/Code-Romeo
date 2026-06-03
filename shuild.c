@@ -72,11 +72,6 @@ int main(int argc, char **argv)
         SHU_LogError(1, "Unknown argument '%s', Specify debug or release build with second parameter <r/d/dsa/dst/dsu/dsm>.", buildOptStr);
     }
 
-    if (isDebug > DEBUG_REGULAR && strcmp(compilerStr, "clang") != 0)
-    {
-        SHU_LogError(1, "Sanitizers can only be used with Clang compiler.");
-    }
-
     for (int i = 3; i < argc; i++)
     {
         const char *const optionalArg = argv[i];
@@ -116,7 +111,9 @@ int main(int argc, char **argv)
     switch (isDebug)
     {
     case DEBUG_SANITIZE_ADDRESS:
-        SHU_CompilerAddFlags("-fsanitize=address,leak");
+        SHU_CompilerAddFlags(SHUM_HOST_PLATFORM == SHUM_PLATFORM_WINDOWS
+                                 ? "-fsanitize=address"
+                                 : "-fsanitize=address,leak");
         break;
 
     case DEBUG_SANITIZE_THREAD:
