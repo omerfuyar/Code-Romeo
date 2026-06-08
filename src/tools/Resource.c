@@ -18,12 +18,6 @@ ListLinked RESOURCE_TEXTURE_POOL = {0}; // ResourceTexture
 
 static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retTexture, StringView name, StringView filePathInResources)
 {
-    // todo better fix
-    if (RESOURCE_TEXTURE_POOL.head == NULL)
-    {
-        RESOURCE_TEXTURE_POOL = ListLinked_Create("Resource Texture", sizeof(ResourceTexture));
-    }
-
     for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
         ResourceTexture *texture = (ResourceTexture *)ListLinked_Get(&RESOURCE_TEXTURE_POOL, textureIndex);
@@ -100,12 +94,6 @@ static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retText
 
 static RJ_ResultWarn ResourceTexture_GetFromMemoryOrCreate(ResourceTexture **retTexture, StringView name, const void *bufferData, size_t bufferSize)
 {
-    // todo better fix
-    if (RESOURCE_TEXTURE_POOL.head == NULL)
-    {
-        RESOURCE_TEXTURE_POOL = ListLinked_Create("Resource Texture", sizeof(ResourceTexture));
-    }
-
     for (RJ_Size textureIndex = 0; textureIndex < RESOURCE_TEXTURE_POOL.count; textureIndex++)
     {
         ResourceTexture *texture = (ResourceTexture *)ListLinked_Get(&RESOURCE_TEXTURE_POOL, textureIndex);
@@ -125,8 +113,6 @@ static RJ_ResultWarn ResourceTexture_GetFromMemoryOrCreate(ResourceTexture **ret
     texture->name = scc(name);
     texture->refCount = 1;
 
-    stbi_set_flip_vertically_on_load(true);
-
     int x, y, channels;
     unsigned char *data = stbi_load_from_memory((const unsigned char *)bufferData, (int)bufferSize, &x, &y, &channels, 0);
     if (!data)
@@ -140,8 +126,8 @@ static RJ_ResultWarn ResourceTexture_GetFromMemoryOrCreate(ResourceTexture **ret
     glGenTextures(1, &texture->handle);
     glBindTexture(GL_TEXTURE_2D, texture->handle);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -203,6 +189,22 @@ static void ResourceTexture_Destroy(ResourceTexture *texture)
 #pragma endregion ResourceTexture
 
 #pragma endregion Source Only
+
+void Resource_Initialize(void)
+{
+    RESOURCE_TEXTURE_POOL = ListLinked_Create("Resource Texture", sizeof(ResourceTexture));
+}
+
+void Resource_Terminate(void)
+{
+    // todo cleanup
+    ListLinked_Destroy(&RESOURCE_TEXTURE_POOL);
+}
+
+bool Resource_IsInitialized(void)
+{
+    return RESOURCE_TEXTURE_POOL.head != NULL;
+}
 
 #pragma region ResourceText
 
@@ -272,7 +274,7 @@ RJ_ResultWarn ResourceText_Create(ResourceText **retResource, StringView file)
 
     dataBuffer[dataIndex] = '\0';
 
-    resource->data = String_CreateCopy(dataBuffer, dataIndex);
+    resource->data = scc(scs(dataBuffer, dataIndex));
 
     free(dataBuffer);
 
@@ -323,7 +325,6 @@ RJ_ResultWarn ResourceImage_Create(ResourceImage **retResourceImage, StringView 
     String_ConcatBegin(&fullPath, scl(RJ_GetExecutablePath()));
     swn(&fullPath);
 
-    stbi_set_flip_vertically_on_load(true);
     resourceImage->data = stbi_load(fullPath.characters, &resourceImage->size.x, &resourceImage->size.y, &resourceImage->channels, 0);
     if (resourceImage->data == NULL)
     {
@@ -401,7 +402,7 @@ static void ProcessNode(cgltf_node *node, mat4 parentTransform, ResourceModel *m
                     posAcc = primitive->attributes[a].data;
                 else if (primitive->attributes[a].type == cgltf_attribute_type_normal)
                     normAcc = primitive->attributes[a].data;
-                else if (primitive->attributes[a].type == cgltf_attribute_type_texcoord)
+                else if (primitive->attributes[a].type == cgltf_attribute_type_texcoord && primitive->attributes[a].index == 0)
                     uvAcc = primitive->attributes[a].data;
             }
 
@@ -426,7 +427,11 @@ static void ProcessNode(cgltf_node *node, mat4 parentTransform, ResourceModel *m
                     vec3 normVec = {norm[0], norm[1], norm[2]};
                     mat3 normalMatrix;
 
-                    glm_mat4_pick3(globalTransform, normalMatrix);
+                    mat4 inv;
+                    glm_mat4_inv(globalTransform, inv);
+                    glm_mat4_transpose(inv);
+                    glm_mat4_pick3(inv, normalMatrix);
+
                     glm_mat3_mulv(normalMatrix, normVec, normVec);
                     glm_vec3_normalize(normVec);
 

@@ -56,7 +56,7 @@ RJ_ResultWarn Context_Initialize(void)
     return RJ_OK;
 }
 
-void Context_Destroy(void)
+void Context_Terminate(void)
 {
     glfwDestroyWindow(CONTEXT.handle);
     glfwTerminate();

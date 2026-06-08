@@ -3,7 +3,6 @@
 #include "RJGlobal.h"
 
 #include "tools/Entity.h"
-#include "tools/Context.h"
 
 #include "utilities/String.h"
 #include "utilities/Vector.h"

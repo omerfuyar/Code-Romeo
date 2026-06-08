@@ -43,7 +43,7 @@ typedef struct ContextWindow
 RJ_ResultWarn Context_Initialize(void);
 
 /// @brief Clean up and terminate the context system
-void Context_Destroy(void);
+void Context_Terminate(void);
 
 /// @brief Get the status of context module.
 /// @return Context module is initialized or not.

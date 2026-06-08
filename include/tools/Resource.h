@@ -103,6 +103,19 @@ typedef struct ResourceModel
 
 #pragma endregion Typedefs
 
+/// @brief
+/// @param
+void Resource_Initialize(void);
+
+/// @brief
+/// @param
+void Resource_Terminate(void);
+
+/// @brief
+/// @param
+/// @return
+bool Resource_IsInitialized(void);
+
 #pragma region ResourceText
 
 /// @brief Creates a new resource.

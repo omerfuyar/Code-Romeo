@@ -4,8 +4,6 @@
 
 #include "utilities/Vector.h"
 
-#include "tools/Context.h"
-
 /// @brief Key codes for keyboard.
 typedef enum InputKeyCode
 {
