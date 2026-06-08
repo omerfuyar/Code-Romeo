@@ -54,8 +54,8 @@ static RJ_ResultWarn ResourceTexture_GetByNameOrCreate(ResourceTexture **retText
     glGenTextures(1, &texture->handle);
     glBindTexture(GL_TEXTURE_2D, texture->handle);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -192,6 +192,7 @@ static void ResourceTexture_Destroy(ResourceTexture *texture)
 
 void Resource_Initialize(void)
 {
+    stbi_set_flip_vertically_on_load(true);
     RESOURCE_TEXTURE_POOL = ListLinked_Create("Resource Texture", sizeof(ResourceTexture));
 }
 
@@ -442,7 +443,7 @@ static void ProcessNode(cgltf_node *node, mat4 parentTransform, ResourceModel *m
                 {
                     float uv[2] = {0};
                     cgltf_accessor_read_float(uvAcc, v, uv, 2);
-                    vertex.uv = Vector2_New(uv[0], uv[1]);
+                    vertex.uv = Vector2_New(uv[0], 1.0f - uv[1]);
                 }
 
                 ListArray_Add(&model->vertices, &vertex);
