@@ -169,5 +169,5 @@ Vector2Int Input_GetMousePosition(void);
 Vector2Int Input_GetMousePositionDelta(void);
 
 /// @brief Gets the movement vector of the user. X axis is D-A / RightArrow-LeftArrow, Y axis is W-S / UpArrow-DownArrow, Z axis is Space-(LeftControl/RightControl).
-/// @return The built vector from user input. Final vector is normalized;
+/// @return The built vector from user input. Final vector is NOT normalized;
 Vector3 Input_GetMovementVector(void);

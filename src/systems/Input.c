@@ -399,42 +399,19 @@ Vector2Int Input_GetMousePositionDelta(void)
 
 Vector3 Input_GetMovementVector(void)
 {
-    Vector3 input = {0};
-
-    if (Input_GetKey(InputKeyCode_W, InputState_Down | InputState_Pressed) ||
-        Input_GetKey(InputKeyCode_UpArrow, InputState_Down | InputState_Pressed))
-    {
-        input.y += 1.0f;
-    }
-
-    if (Input_GetKey(InputKeyCode_S, InputState_Down | InputState_Pressed) ||
-        Input_GetKey(InputKeyCode_DownArrow, InputState_Down | InputState_Pressed))
-    {
-        input.y -= 1.0f;
-    }
-
-    if (Input_GetKey(InputKeyCode_D, InputState_Down | InputState_Pressed) ||
-        Input_GetKey(InputKeyCode_RightArrow, InputState_Down | InputState_Pressed))
-    {
-        input.x += 1.0f;
-    }
-
-    if (Input_GetKey(InputKeyCode_A, InputState_Down | InputState_Pressed) ||
-        Input_GetKey(InputKeyCode_LeftArrow, InputState_Down | InputState_Pressed))
-    {
-        input.x -= 1.0f;
-    }
-
-    if (Input_GetKey(InputKeyCode_Space, InputState_Down | InputState_Pressed))
-    {
-        input.z += 1.0f;
-    }
-
-    if (Input_GetKey(InputKeyCode_LeftControl, InputState_Down | InputState_Pressed) ||
-        Input_GetKey(InputKeyCode_RightControl, InputState_Down | InputState_Pressed))
-    {
-        input.z -= 1.0f;
-    }
-
-    return Vector3_Normalized(input);
+    return Vector3_New(
+        // x
+        (Input_GetKey(InputKeyCode_D, InputState_Down | InputState_Pressed) ||
+         Input_GetKey(InputKeyCode_RightArrow, InputState_Down | InputState_Pressed)) -
+            (Input_GetKey(InputKeyCode_A, InputState_Down | InputState_Pressed) ||
+             Input_GetKey(InputKeyCode_LeftArrow, InputState_Down | InputState_Pressed)),
+        // y
+        (Input_GetKey(InputKeyCode_W, InputState_Down | InputState_Pressed) ||
+         Input_GetKey(InputKeyCode_UpArrow, InputState_Down | InputState_Pressed)) -
+            (Input_GetKey(InputKeyCode_S, InputState_Down | InputState_Pressed) ||
+             Input_GetKey(InputKeyCode_DownArrow, InputState_Down | InputState_Pressed)),
+        // z
+        Input_GetKey(InputKeyCode_Space, InputState_Down | InputState_Pressed) -
+            (Input_GetKey(InputKeyCode_LeftControl, InputState_Down | InputState_Pressed) ||
+             Input_GetKey(InputKeyCode_RightControl, InputState_Down | InputState_Pressed)));
 }
