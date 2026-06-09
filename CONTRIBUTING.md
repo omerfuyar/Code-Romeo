@@ -17,12 +17,12 @@ Even though I do not think anyone would contribute to my non-significant project
 
 The framework's stability relies on a strict, one-way dependency rule. The layers are defined as follows:
 
-0.   **RJGlobal:** The `RJGlobal` module. It includes all global definitions and utilities that every other header file in the framework must include.
+0.   **RJGlobal:** The `RJGlobal` module. It includes all global definitions and utilities that every other header file in the framework should include.
 1.   **Utilities:** Absolute utilities like `String`, `Maths` and `Data Structures`.
 2.   **Tools:** Tools and wrappers that are abstraction layers over standard or third party libraries, like `Resources` and `Context`.
 3.   **Systems:** Modules that are using wrappers to provide higher-level functionality like `Renderer`, `Physics`, and `Input`.
 
-No system in a layer may depend on a system in a higher or same layer.
+No module in a layer may depend on a module at higher or same layer.
 
 ## Folder Structure
 
@@ -44,34 +44,34 @@ Layers explained above are also represented in the folder structure of the proje
     └── RJGlobal.c
 ```
 
-*   All elements (function, struct, macro, extern variable) for a module must be declared in its corresponding header file in correct folder.
-*   All elements declared in headers must have their documentation. Documentation guidelines are explained in the "Documentation Formats" section below.
-*   All functions in header files must be defined in their corresponding source file under src folder.
-*   Structs and typedefs must be defined in header files. No struct or typedef definitions in source files unless they are internal and not exposed to user.
+*   All elements (function, struct, macro, extern variable) for a module should be declared in its corresponding header file in correct folder.
+*   All elements declared in headers should have their documentation. Documentation guidelines are explained in the "Documentation Formats" section below.
+*   All functions in header files should be defined in their corresponding source file under src folder.
+*   Structs and typedefs should be defined in header files. No struct or typedef definitions in source files unless they are internal and not exposed to user.
 
 ## Naming Conventions
 
-There are modules that are providing framework elements to the user, elements under a module must be prefixed with the module name to avoid name collisions and ease of use.
+There are modules that are providing framework elements to the user, elements under a module should be prefixed with the module name to avoid name collisions and ease of use.
 
-*   **Types:** `PascalCase` - Types also must be prefixed with the module name like `RendererScene`, `InputKeyCode` and `PhysicsComponent`.
-*   **Functions:** `Prefix_PascalCase` - Name of the module or type to indicate must be prefixed to the function name like `RendererScene_CreateBatch`, `Context_Initialize` and `RJ_GetExecutablePath`. Macro functions must also follow this rule.
-*   **Enum Members:** `Prefix_PascalCase` - The enum type must be prefixed to the enum value like `InputKeyCode_F`, `InputState_Down` and `InputMouseMode_Hidden`.
+*   **Types:** `PascalCase` - Types also should be prefixed with the module name like `RendererScene`, `InputKeyCode` and `PhysicsComponent`.
+*   **Functions:** `Prefix_PascalCase` - Name of the module or type to indicate should be prefixed to the function name like `RendererScene_CreateBatch`, `Context_Initialize` and `RJ_GetExecutablePath`. Macro functions should also follow this rule.
+*   **Enum Members:** `Prefix_PascalCase` - The enum type should be prefixed to the enum value like `InputKeyCode_F`, `InputState_Down` and `InputMouseMode_Hidden`.
 *   **Variables:** `camelCase` - Local variables like `window` and `deltaTime`.
 *   **Constants & Internals:** `ALL_CAPS_SNAKE_CASE` - Constant variables or global values/functions not exposed to user like `RJ_BUILD_DEBUG` and `RJ_DEBUG_FILE`.
 
 ## Module / File Management
 
-*  Each module that requires initialization must have an `Initialize` function.
-*  If a module requires cleanup, it must have a `Terminate` function that frees all allocated resources.
-*  Inside of each module source file, sections must be wrapped with `#pragma region` and `#pragma endregion` for better readability.
-*  If there are any typedefs in a module header file, they must be inside `Typedefs` region.
-*  If there are any internal elements in a module source file, this section must be inside `Source Only` region.
+*  Each module that requires initialization should have an `Initialize` function.
+*  If a module requires cleanup, it should have a `Terminate` function that frees all allocated resources.
+*  Inside of each module source file, sections should be wrapped with `#pragma region` and `#pragma endregion` for better readability.
+*  If there are any typedefs in a module header file, they should be inside `Typedefs` region.
+*  If there are any internal elements in a module source file, this section should be inside `Source Only` region.
 
 ## Object Lifecycle Management
 
-*   Any object in the framework that requires an initialization must have a `Create` function.
-*   If an object requires cleanup, it must have a `Destroy` function that frees all allocated resources for that object.
-*   If an object depends on another object, the dependent object must not outlive the object it depends on. That means if you need a `RendererScene` to create a `RendererBatch`, `Create` function must be handled by `RendererScene`. Also `RendererScene` object must be destroyed after the `RendererBatch`.
+*   Any object in the framework that requires an initialization should have a `Create` function.
+*   If an object requires cleanup, it should have a `Destroy` function that frees all allocated resources for that object.
+*   If an object depends on another object, the dependent object should not outlive the object it depends on. That means if you need a `RendererScene` to create a `RendererBatch`, `Create` function should be handled by `RendererScene`. Also `RendererScene` object should be destroyed after the `RendererBatch`.
 
 ## Error Handling
 
@@ -79,7 +79,7 @@ Currently there are no standard error handling systems in the framework. There a
 
 ## Documentation Guidelines
 
-Currently there are no documentation for entire files. But all public elements in header files must have documentation blocks explaining their purpose and usage. Internal elements which are not exposed to the user does not required to have documentation, but it is encouraged. Documentation must follow these formats:
+Currently there are no documentation for entire files. But all public elements in header files should have documentation blocks explaining their purpose and usage. Internal elements which are not exposed to the user does not required to have documentation, but it is encouraged. Documentation should follow these formats:
 
 ### Functions
 
@@ -99,11 +99,11 @@ int String_Compare(StringView string, StringView other);
     (StringView) { .characters = stringLiteral, .length = RJ_Size(stringLiteral) }
 ```
 
-`@note` tag is not mandatory but if the developer thinks there is something extra to say about the function, it can be added. Other than that, every parameter must be documented with `@param` tag and the return value must be documented with `@return` tag. Because macro functions do not have return types, they do not need `@return` tag.
+`@note` tag is not mandatory but if the developer thinks there is something extra to say about the function, it can be added. Other than that, every parameter should be documented with `@param` tag and the return value should be documented with `@return` tag. Because macro functions do not have return types, they do not need `@return` tag.
 
 ### Others
 
-Other elements like types, enums and macros (if not explicit like `Vector3_One`) must have a brief documentation block explaining their purpose:
+Other elements like types, enums and macros (if not explicit like `Vector3_One`) should have a brief documentation block explaining their purpose:
 
 ``` C
 /// @brief The resize multiplier used when the ListArray size reached to the capacity when adding new item
@@ -124,7 +124,7 @@ FILE *RJ_DEBUG_FILE = NULL;
 
 ### Branching
 
-All new features, bugfixes, or refactors must be done on a separate branch. It is not ok to commit directly to `main` branch:
+All new features, bugfixes, or refactors should be done on a separate branch:
 
 *   **feature/<feature>** - `feature/text-rendering`
 *   **fix/<bug>** - `fix/physics-collision-bug`
@@ -133,7 +133,7 @@ All new features, bugfixes, or refactors must be done on a separate branch. It i
 
 ### Commit Messages 
 
-Commit messages must follow the format:
+Commit messages should follow the format:
 
 ```
 -General info for the change

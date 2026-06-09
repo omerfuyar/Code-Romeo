@@ -1,5 +1,5 @@
 #pragma once
-
+// todo maybe move input to tools?
 #include "RJGlobal.h"
 
 #include "utilities/Vector.h"

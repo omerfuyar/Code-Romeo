@@ -258,13 +258,6 @@ RJ_ResultWarn Physics_Initialize(RJ_Size initialComponentCapacity, float drag, f
 
 void Physics_Terminate(void)
 {
-    PHYSICS.data.capacity = 0;
-    PHYSICS.data.count = 0;
-
-    PHYSICS.properties.drag = 0.0f;
-    PHYSICS.properties.gravity = 0.0f;
-    PHYSICS.properties.elasticity = 0.0f;
-
     free(PHYSICS.data.entityToCompMap);
     free(PHYSICS.data.compToEntityMap);
     free(PHYSICS.data.velocities);
@@ -411,6 +404,11 @@ void Physics_ComponentDestroy(Entity entity)
     rComponent(entity) = RJ_INDEX_INVALID;
 
     PHYSICS.data.count--;
+}
+
+bool Physics_ComponentValidate(Entity entity)
+{
+    return (rComponent(entity) < PHYSICS.data.count);
 }
 
 Vector3 Physics_ComponentGetVelocity(Entity entity)

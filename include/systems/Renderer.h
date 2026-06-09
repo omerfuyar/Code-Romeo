@@ -108,6 +108,11 @@ RJ_ResultWarn Renderer_BatchCreate(RendererBatch *retBatch, StringView modelFile
 /// @param batch Renderer batch to destroy.
 void Renderer_BatchDestroy(RendererBatch batch);
 
+/// @brief
+/// @param batch
+/// @return
+bool Renderer_BatchValidate(RendererBatch batch);
+
 // todo maybe remove resizing
 
 /// @brief Configures the references for a renderer batch.
@@ -125,5 +130,10 @@ RJ_ResultWarn Renderer_ComponentCreate(RendererBatch batch, Entity entity);
 /// @brief Destroys a renderer component.
 /// @param entity Component to destroy.
 void Renderer_ComponentDestroy(Entity entity);
+
+/// @brief
+/// @param entity
+/// @return
+bool Renderer_ComponentValidate(Entity entity);
 
 #pragma endregion Renderer

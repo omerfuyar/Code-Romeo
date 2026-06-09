@@ -59,6 +59,11 @@ void Physics_ComponentCreate(Entity entity, Vector3 colliderSize, float mass, bo
 /// @param entity The component to destroy.
 void Physics_ComponentDestroy(Entity entity);
 
+/// @brief
+/// @param entity
+/// @return
+bool Physics_ComponentValidate(Entity entity);
+
 /// @brief Gets the velocity of a physics component.
 /// @param entity The component to query.
 /// @return The velocity of the component.

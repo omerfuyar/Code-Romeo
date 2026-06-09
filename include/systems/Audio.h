@@ -56,6 +56,11 @@ RJ_ResultWarn Audio_ComponentCreate(Entity entity, StringView audioFile);
 /// @param entity Component to destroy.
 void Audio_ComponentDestroy(Entity entity);
 
+/// @brief
+/// @param entity
+/// @return
+bool Audio_ComponentValidate(Entity entity);
+
 /// @brief Rewinds the audio by moving its cursor.
 /// @param entity Component to rewind.
 /// @param interval Between 0 and 1. 0 is the start and 1 is the end. Clamps to 0-1 internally.

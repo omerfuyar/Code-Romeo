@@ -13,6 +13,7 @@
 #define INPUT_KEY_CONTROLS_COUNT (InputKeyCode_RightSuper - InputKeyCode_LeftShift + 1)
 #define INPUT_MOUSE_BUTTONS_COUNT (InputMouseButtonCode_F5 - InputMouseButtonCode_Left + 1)
 
+// todo maybe move to heap memory
 bool INPUT_IS_INITIALIZED = {0};
 
 InputState INPUT_KEY_SPACE = {0};

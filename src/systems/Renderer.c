@@ -123,13 +123,11 @@ struct RENDERER
 
 #define rObjectMatrix(pair) (rBatch((pair).batch).data.objectMatrices[(pair).component])
 
-#define rAssertBatch(batch) RJ_DebugAssert((batch) != RJ_INDEX_INVALID &&                       \
-                                               (batch) < RENDERER.data.count,                   \
+#define rAssertBatch(batch) RJ_DebugAssert((batch) < RENDERER.data.count,                       \
                                            "Renderer batch %u exceeds maximum batch count %u.", \
                                            (batch), RENDERER.data.count)
 
 #define rAssertEntity(entity) RJ_DebugAssert((entity) != RJ_INDEX_INVALID &&                                                               \
-                                                 rPair(entity).component != RJ_INDEX_INVALID &&                                            \
                                                  rEntity(rPair(entity)) == entity &&                                                       \
                                                  rPair(entity).component < rBatch(rPair(entity).batch).data.count,                         \
                                              "Renderer component %u or Entity %u either exceeds maximum possible index %u or is invalid.", \
@@ -603,18 +601,17 @@ void Renderer_BatchDestroy(RendererBatch batch)
     rAssertBatch(batch);
 
     // todo refcount ResourceModel_Destroy(rBatch(batch).model);
-    rBatch(batch).model = NULL;
-
-    rBatch(batch).data.capacity = 0;
-    rBatch(batch).data.count = 0;
-
     free(rBatch(batch).data.compToEntityMap);
     free(rBatch(batch).data.objectMatrices);
 
-    rBatch(batch).data.compToEntityMap = NULL;
-    rBatch(batch).data.objectMatrices = NULL;
+    memset(&rBatch(batch), 0x00, sizeof(rBatch(batch)));
 
     RENDERER.data.count--;
+}
+
+bool Renderer_BatchValidate(RendererBatch batch)
+{
+    return batch < RENDERER.data.count;
 }
 
 /*
@@ -662,6 +659,11 @@ void Renderer_ComponentDestroy(Entity entity)
     rEntity(rPair(entity)) = RJ_INDEX_INVALID;
 
     rBatch(rPair(entity).batch).data.count--;
+}
+
+bool Renderer_ComponentValidate(Entity entity)
+{
+    return (rPair(entity).batch < RENDERER.data.count && rPair(entity).component < rBatch(rPair(entity).batch).data.count);
 }
 
 #pragma endregion Renderer
