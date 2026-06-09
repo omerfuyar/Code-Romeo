@@ -200,9 +200,9 @@ void Audio_ComponentDestroy(Entity entity)
     AUDIO.data.count--;
 }
 
-bool Physics_ComponentValidate(Entity entity)
+bool Audio_ComponentValidate(Entity entity)
 {
-    return (rComponent(entity) < AUDIO.data.count);
+    return (aComponent(entity) < AUDIO.data.count);
 }
 
 void Audio_ComponentRewind(Entity entity, float interval)

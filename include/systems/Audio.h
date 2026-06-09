@@ -17,6 +17,10 @@ typedef struct AudioListener
     //? float sensitivity;
 } AudioListener;
 
+/// @brief Default camera struct values, used by default when renderer is initialized.
+#define AudioListener_Default \
+    (AudioListener) { .position = Vector3_Zero, .rotation = Vector3_Zero /*, .range = 10.0f, .sensitivity = 1.0f*/ }
+
 /// @brief Initialize the audio system with the specified component capacity.
 /// @param initialComponentCapacity The initial capacity for audio components.
 /// @return RJ_OK / RJ_ERROR_DEPENDENCY / RJ_ERROR_ALLOCATION

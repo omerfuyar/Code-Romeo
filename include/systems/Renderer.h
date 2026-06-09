@@ -33,6 +33,7 @@
 typedef Entity RendererBatch;
 
 // todo either make systems to use user exposed data and retrieve data from user passed pointers or move data to systems internal memory and use with getter/setters
+// todo fix these configs like RendererCamera / AudioListener
 
 /// @brief Represents a camera used to render components.
 typedef struct RendererCamera
