@@ -59,12 +59,18 @@ Vector3 Entity_GetScale(Entity entity);
 /// @param position
 void Entity_SetPosition(Entity entity, Vector3 position);
 
+void Entity_AddPosition(Entity entity, Vector3 position);
+
 /// @brief
 /// @param entity
 /// @param rotation
 void Entity_SetRotation(Entity entity, Vector3 rotation);
 
+void Entity_AddRotation(Entity entity, Vector3 rotation);
+
 /// @brief
 /// @param entity
 /// @param scale
 void Entity_SetScale(Entity entity, Vector3 scale);
+
+void Entity_ScaleScale(Entity entity, Vector3 scale);

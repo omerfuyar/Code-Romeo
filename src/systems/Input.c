@@ -394,7 +394,7 @@ Vector2Int Input_GetMousePosition(void)
 
 Vector2Int Input_GetMousePositionDelta(void)
 {
-    return Vector2_Sum(INPUT_MOUSE_POSITION, Vector2_Scale(INPUT_MOUSE_PREVIOUS_POSITION, -1));
+    return Vector2G_Sum(INPUT_MOUSE_POSITION, Vector2G_Scale(INPUT_MOUSE_PREVIOUS_POSITION, -1));
 }
 
 Vector3 Input_GetMovementVector(void)

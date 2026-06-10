@@ -194,6 +194,7 @@ static void PhysicsScene_ResolveCollision(Entity firstComponent, Entity secondCo
         return;
     }
 
+    // todo separate arrays to avoid branching
     if (pIsStatic(firstComponent))
     {
         PhysicsScene_ResolveStaticVsDynamic(firstComponent, secondComponent, overlap);
@@ -322,27 +323,29 @@ bool Physics_IsColliding(Entity entity1, Entity entity2, Vector3 *overlapRet)
     Vector3 colliderSize1 = pColliderSize(rComponent(entity1));
     Vector3 colliderSize2 = pColliderSize(rComponent(entity2));
 
-    float overlapX = Maths_Min(position1.x + colliderSize1.x / 2.0f,
-                               position2.x + colliderSize2.x / 2.0f) -
-                     Maths_Max(position1.x - colliderSize1.x / 2.0f,
-                               position2.x - colliderSize2.x / 2.0f);
+    Vector3 overlap = Vector3_Zero;
 
-    float overlapY = Maths_Min(position1.y + colliderSize1.y / 2.0f,
-                               position2.y + colliderSize2.y / 2.0f) -
-                     Maths_Max(position1.y - colliderSize1.y / 2.0f,
-                               position2.y - colliderSize2.y / 2.0f);
+    overlap.x = Maths_Min(position1.x + colliderSize1.x / 2.0f,
+                          position2.x + colliderSize2.x / 2.0f) -
+                Maths_Max(position1.x - colliderSize1.x / 2.0f,
+                          position2.x - colliderSize2.x / 2.0f);
 
-    float overlapZ = Maths_Min(position1.z + colliderSize1.z / 2.0f,
-                               position2.z + colliderSize2.z / 2.0f) -
-                     Maths_Max(position1.z - colliderSize1.z / 2.0f,
-                               position2.z - colliderSize2.z / 2.0f);
+    overlap.y = Maths_Min(position1.y + colliderSize1.y / 2.0f,
+                          position2.y + colliderSize2.y / 2.0f) -
+                Maths_Max(position1.y - colliderSize1.y / 2.0f,
+                          position2.y - colliderSize2.y / 2.0f);
+
+    overlap.z = Maths_Min(position1.z + colliderSize1.z / 2.0f,
+                          position2.z + colliderSize2.z / 2.0f) -
+                Maths_Max(position1.z - colliderSize1.z / 2.0f,
+                          position2.z - colliderSize2.z / 2.0f);
 
     if (overlapRet != NULL)
     {
-        *overlapRet = Vector3_New(overlapX, overlapY, overlapZ);
+        *overlapRet = overlap;
     }
 
-    return overlapX > 0.0f && overlapY > 0.0f && overlapZ > 0.0f;
+    return overlap.x > 0.0f && overlap.y > 0.0f && overlap.z > 0.0f;
 }
 
 void Physics_UpdateComponents(float deltaTime)
@@ -354,10 +357,10 @@ void Physics_UpdateComponents(float deltaTime)
             continue;
         }
 
-        pVelocity(component) = Vector3_Sum(pVelocity(component), Vector3_New(0.0f, PHYSICS.properties.gravity * deltaTime, 0.0f));
-        pVelocity(component) = Vector3_Scale(pVelocity(component), 1.0f - PHYSICS.properties.drag);
+        pVelocity(component) = Vector3G_Sum(pVelocity(component), Vector3_New(0.0f, PHYSICS.properties.gravity * deltaTime, 0.0f));
+        pVelocity(component) = Vector3G_Scale(pVelocity(component), 1.0f - PHYSICS.properties.drag);
 
-        Entity_SetPosition(rEntity(component), Vector3_Sum(Entity_GetPosition(rEntity(component)), Vector3_Scale(pVelocity(component), deltaTime)));
+        Entity_SetPosition(rEntity(component), Vector3G_Sum(Entity_GetPosition(rEntity(component)), Vector3G_Scale(pVelocity(component), deltaTime)));
     }
 }
 

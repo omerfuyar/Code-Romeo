@@ -128,13 +128,21 @@ typedef struct Matrix4
 
 // Generic functions for both float and integer vectors
 
-#define Vector2_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y})
-#define Vector3_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y, (v1).z + (v2).z})
-#define Vector4_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y, (v1).z + (v2).z, (v1).w + (v2).w})
+#define Vector2G_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y})
+#define Vector3G_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y, (v1).z + (v2).z})
+#define Vector4G_Sum(v1, v2) ((typeof(v1)){(v1).x + (v2).x, (v1).y + (v2).y, (v1).z + (v2).z, (v1).w + (v2).w})
 
-#define Vector2_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s})
-#define Vector3_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s, v1.z * s})
-#define Vector4_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s, (v1).z * s, (v1).w * s})
+#define Vector2G_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s})
+#define Vector3G_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s, v1.z * s})
+#define Vector4G_Scale(v1, s) ((typeof(v1)){(v1).x * s, (v1).y * s, (v1).z * s, (v1).w * s})
+
+#define Vector2G_ScaleV(v1, v2) ((typeof(v1)){(v1).x * (v2).x, (v1).y * (v2).y})
+#define Vector3G_ScaleV(v1, v2) ((typeof(v1)){(v1).x * (v2).x, (v1).y * (v2).y, (v1).z * (v2).z})
+#define Vector4G_ScaleV(v1, v2) ((typeof(v1)){(v1).x * (v2).x, (v1).y * (v2).y, (v1).z * (v2).z, (v1).w * (v2).w})
+
+#define Vector2G_Dot(v1, v2) ((float)((v1).x * (v2).x + (v1).y * (v2).y))
+#define Vector3G_Dot(v1, v2) ((float)((v1).x * (v2).x + (v1).y * (v2).y + (v1).z * (v2).z))
+#define Vector4G_Dot(v1, v2) ((float)((v1).x * (v2).x + (v1).y * (v2).y + (v1).z * (v2).z + (v1).w * (v2).w))
 
 #define Vector2_ToInt(v) (Vector2Int_New((v).x, (v).y))
 #define Vector3_ToInt(v) (Vector3Int_New((v).x, (v).y, (v).z))
@@ -156,12 +164,6 @@ Vector2 Vector2_Normalized(Vector2 vector);
 /// @return The magnitude of the vector.
 float Vector2_Magnitude(Vector2 vector);
 
-/// @brief Calculates the dot product of two 2D vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The dot product of the two vectors.
-float Vector2_Dot(Vector2 vector1, Vector2 vector2);
-
 /// @brief Linearly interpolates between two 2D vectors.
 /// @param startVector The starting vector.
 /// @param endVector The ending vector.
@@ -182,12 +184,6 @@ Vector3 Vector3_Normalized(Vector3 vector);
 /// @param vector The vector to calculate the magnitude for.
 /// @return The magnitude of the vector.
 float Vector3_Magnitude(Vector3 vector);
-
-/// @brief Calculates the dot product of two 3D vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The dot product of the two vectors.
-float Vector3_Dot(Vector3 vector1, Vector3 vector2);
 
 /// @brief Calculates the cross product of two Vector3 vectors.
 /// @param vector1 The first vector.
@@ -216,12 +212,6 @@ Vector4 Vector4_Normalized(Vector4 vector);
 /// @return The magnitude of the vector.
 float Vector4_Magnitude(Vector4 vector);
 
-/// @brief Calculates the dot product of two 4D vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The dot product of the two vectors.
-float Vector4_Dot(Vector4 vector1, Vector4 vector2);
-
 /// @brief Linearly interpolates between two 4D vectors.
 /// @param startVector The starting vector.
 /// @param endVector The ending vector.
@@ -233,12 +223,6 @@ Vector4 Vector4_Lerp(Vector4 startVector, Vector4 endVector, float time);
 
 #pragma region Vector2Int
 
-/// @brief Calculates the dot product of two 2D integer vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The dot product of the two vectors.
-float Vector2Int_Dot(Vector2Int vector1, Vector2Int vector2);
-
 /// @brief Calculates the magnitude (length) of a 2D integer vector.
 /// @param vector The vector to calculate the magnitude for.
 /// @return The magnitude of the vector.
@@ -248,12 +232,6 @@ float Vector2Int_Magnitude(Vector2Int vector);
 
 #pragma region Vector3Int
 
-/// @brief Calculates the dot product of two 3D integer vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The dot product of the two vectors.
-float Vector3Int_Dot(Vector3Int vector1, Vector3Int vector2);
-
 /// @brief Calculates the magnitude (length) of a 3D integer vector.
 /// @param vector The vector to calculate the magnitude for.
 /// @return The magnitude of the vector.
@@ -262,12 +240,6 @@ float Vector3Int_Magnitude(Vector3Int vector);
 #pragma endregion Vector3Int
 
 #pragma region Vector4Int
-
-/// @brief Calculates the dot product of two 4D integer vectors.
-/// @param vector1 The first vector.
-/// @param vector2 The second vector.
-/// @return The dot product of the two vectors.
-float Vector4Int_Dot(Vector4Int vector1, Vector4Int vector2);
 
 /// @brief Calculates the magnitude (length) of a 4D integer vector.
 /// @param vector The vector to calculate the magnitude for.

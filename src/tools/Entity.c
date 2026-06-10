@@ -159,14 +159,32 @@ void Entity_SetPosition(Entity entity, Vector3 position)
     ePosition(entity) = position;
 }
 
+void Entity_AddPosition(Entity entity, Vector3 position)
+{
+    eAssertEntity(entity);
+    ePosition(entity) = Vector3G_Sum(ePosition(entity), position);
+}
+
 void Entity_SetRotation(Entity entity, Vector3 rotation)
 {
     eAssertEntity(entity);
     eRotation(entity) = rotation;
 }
 
+void Entity_AddRotation(Entity entity, Vector3 rotation)
+{
+    eAssertEntity(entity);
+    eRotation(entity) = Vector3G_Sum(eRotation(entity), rotation);
+}
+
 void Entity_SetScale(Entity entity, Vector3 scale)
 {
     eAssertEntity(entity);
     eScale(entity) = scale;
+}
+
+void Entity_ScaleScale(Entity entity, Vector3 scale)
+{
+    eAssertEntity(entity);
+    eScale(entity) = Vector3G_ScaleV(eScale(entity), scale);
 }

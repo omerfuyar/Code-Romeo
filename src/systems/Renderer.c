@@ -386,15 +386,15 @@ Vector3 Renderer_ScreenToWorldSpace(Vector2Int screenPosition, float depth)
     glm_unproject((float *)&nearWindowCoords, (vec4 *)tempMatrix, (float *)&viewport, (float *)&nearPoint);
     glm_unproject((float *)&farWindowCoords, (vec4 *)tempMatrix, (float *)&viewport, (float *)&farPoint);
 
-    Vector3 rayDirection = Vector3_Normalized(Vector3_Sum(farPoint, Vector3_Scale(nearPoint, -1.0f)));
+    Vector3 rayDirection = Vector3_Normalized(Vector3G_Sum(farPoint, Vector3G_Scale(nearPoint, -1.0f)));
 
     if (RENDERER.camera.cam.isPerspective)
     {
-        return Vector3_Sum(RENDERER.camera.cam.position, Vector3_Scale(rayDirection, depth));
+        return Vector3G_Sum(RENDERER.camera.cam.position, Vector3G_Scale(rayDirection, depth));
     }
     else
     {
-        return Vector3_Sum(Vector3_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(RENDERER.camera.cam.nearClipPlane))), Vector3_Scale(rayDirection, depth));
+        return Vector3G_Sum(Vector3G_Sum(nearPoint, Vector3_New(0.0f, 0.0f, -(RENDERER.camera.cam.nearClipPlane))), Vector3G_Scale(rayDirection, depth));
     }
 }
 
@@ -425,7 +425,7 @@ void Renderer_Update(void)
                                                        Maths_Sin(RENDERER.camera.cam.rotation.x),
                                                        Maths_Cos(RENDERER.camera.cam.rotation.x) * Maths_Sin(RENDERER.camera.cam.rotation.y)));
 
-    Vector3 center = Vector3_Sum(RENDERER.camera.cam.position, Vector3_Normalized(direction));
+    Vector3 center = Vector3G_Sum(RENDERER.camera.cam.position, Vector3_Normalized(direction));
 
     glm_lookat((float *)&RENDERER.camera.cam.position, (float *)&center, (float *)&(vec3){0, 1, 0}, (vec4 *)&RENDERER.camera.viewMatrix);
     if (RENDERER.camera.cam.isPerspective)
