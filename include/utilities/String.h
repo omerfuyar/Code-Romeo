@@ -2,6 +2,8 @@
 
 #include "RJGlobal.h"
 
+// todo add format, append functions like shuild
+
 /// @brief Buffer size for numeric to string conversions.
 #define STRING_NUMERIC_CHAR_BUFFER (RJ_TEMP_BUFFER_SIZE / 4)
 

@@ -187,6 +187,11 @@ static void PhysicsScene_ResolveDynamicVsDynamic(Entity firstComponent, Entity s
 /// @param secondComponent Second physics component.
 static void PhysicsScene_ResolveCollision(Entity firstComponent, Entity secondComponent)
 {
+    if (pIsStatic(firstComponent) && pIsStatic(secondComponent))
+    {
+        return;
+    }
+
     Vector3 overlap;
 
     if (!Physics_IsColliding(rEntity(firstComponent), rEntity(secondComponent), &overlap))
