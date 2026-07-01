@@ -16,3 +16,6 @@
 [submodule "dependencies/stb"]
 	path = dependencies/stb
 	url = https://github.com/nothings/stb.git
+[submodule "dependencies/shu"]
+	path = dependencies/shu
+	url = https://github.com/omerfuyar/shu.git

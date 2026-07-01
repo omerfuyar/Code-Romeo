@@ -2,7 +2,7 @@
 #define SHUC_MAX_COMMAND_BUFFER_SIZE 8192
 #define SHUC_SHORT_LOG
 #define SHUC_ENABLE_INCREMENTAL
-#define SHUILD_IMPLEMENTATION
+#define SHU_IMPLEMENTATION
 #include "dependencies/shuild/shuild.h"
 
 #define DEBUG_REGULAR 1
@@ -146,29 +146,29 @@ int main(int argc, char **argv)
     SHU_ModuleBegin("cglm", "dependencies/cglm/");
     SHU_ModuleAddIncludeDirectory("include/");
     SHU_ModuleAddSourceFile("src/");
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     SHU_ModuleBegin("glfw", "dependencies/glfw/");
     SHU_ModuleAddIncludeDirectory("include/");
     SHU_ModuleAddSourceFile("src/");
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     SHU_ModuleBegin("glad", "dependencies/glad/");
     SHU_ModuleAddIncludeDirectory("include/");
     SHU_ModuleAddSourceFile("src/glad.c");
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     SHU_ModuleBegin("miniaudio", "dependencies/miniaudio/");
     SHU_ModuleAddSourceFile("miniaudio.c");
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     SHU_ModuleBegin("cgltf", "dependencies/cgltf/");
     SHU_ModuleAddSourceFile("../cgltf.c");
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     SHU_ModuleBegin("stb", "dependencies/stb/");
     SHU_ModuleAddSourceFile("../stb.c");
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     SHU_CompilerAddFlags(SHUM_FLAGS_STANDARD_C23);
 
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 
     SHU_ModuleAddSourceFile("src/");
 
-    SHU_ModuleCompile(strBuffer, isDynamic ? SHUM_MODULE_LIBRARY_DYNAMIC : SHUM_MODULE_LIBRARY_STATIC);
+    SHU_ModuleCompile(strBuffer, isDynamic ? SHUModuleType_LibraryDynamic : SHUModuleType_LibraryStatic);
 
     return 0;
 }
