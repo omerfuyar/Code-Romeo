@@ -6,6 +6,8 @@
 
 #define ENTITY_FLAG_ACTIVE (1 << 0)
 
+//todo make this module the ECS manager, define init, update, terminate callbacks for each system afterwards.
+
 struct ENTITY
 {
     struct ENTITY_DATA
